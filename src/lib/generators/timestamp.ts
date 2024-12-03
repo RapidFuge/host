@@ -1,0 +1,1 @@
+export default (_length: number) => `${Date.now()}`;

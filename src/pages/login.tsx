@@ -1,0 +1,105 @@
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/router";
+import Header from "@components/Header";
+import Footer from "@components/Footer";
+import { NextSeo } from "next-seo";
+import Link from "next/link";
+
+export default function LoginPage() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const res = await signIn("credentials", {
+      redirect: false,
+      username,
+      password,
+    });
+
+    if (res?.error) {
+      setError("Invalid credentials");
+    } else {
+      const callbackUrl = (router.query.cbU as string) || "/dashboard";
+      router.push(callbackUrl);
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen text-white bg-black">
+      <NextSeo
+        title="RAPID HOST - Login"
+        description="Login to Rapid Host"
+        canonical="https://i.rapidfuge.xyz/login"
+      />
+
+      <Header />
+
+      <main className="flex-grow flex items-center justify-center text-center px-4">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 rounded-lg shadow-md w-full max-w-sm"
+        >
+          <h1 className="text-2xl font-bold mb-6">Login</h1>
+          {error && (
+            <div className="mb-4 p-2 text-red-500 bg-red-100 rounded">
+              {error}
+            </div>
+          )}
+          <div className="mb-4">
+            <label
+              htmlFor="username"
+              className="block text-sm font-semibold mb-1"
+            >
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-600 bg-black rounded text-white focus:outline-none focus:ring focus:border-blue-500"
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold mb-1"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-600 bg-black rounded text-white focus:outline-none focus:ring focus:border-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="tr04 w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none"
+          >
+            Login
+          </button>
+          <p className="mt-4 text-sm text-gray-400">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="text-blue-500 hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </form>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
