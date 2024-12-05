@@ -147,9 +147,10 @@ export async function getServerSideProps(
   const session = await getSession(context);
 
   if (!session) {
+    const callbackUrl = encodeURIComponent(context.resolvedUrl || "/");
     return {
       redirect: {
-        destination: "/login",
+        destination: `/login?cbU=${callbackUrl}`,
         permanent: false,
       },
     };
@@ -161,14 +162,18 @@ export async function getServerSideProps(
 
   try {
     // Fetch user data from the API
-    const userResponse = await fetch(`${baseUrl}/api/getUser`, {
-      headers: {
-        Authorization: session.user.token,
-      },
-    });
+    const userResponse = await fetch(
+      `${baseUrl}/api/users/${session.user.username}`,
+      {
+        headers: {
+          Authorization: session.user.token,
+        },
+      }
+    );
     const userData = await userResponse.json();
     if (userResponse.ok && userData.user.shortener) {
       userShortener = userData.user.shortener;
+      console.log();
     }
   } catch (error) {
     console.error("Error fetching data in getServerSideProps:", error);

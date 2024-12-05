@@ -4,7 +4,7 @@ import db from "@lib/db";
 import { getToken } from "next-auth/jwt";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method !== "POST") return res.setHeader('Allow', ['POST']).status(405).json(errorGenerator(405, "Method not allowed"));
+    if (req.method !== "DELETE") return res.setHeader('Allow', ['DELETE']).status(405).json(errorGenerator(405, "Method not allowed"));
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;
@@ -14,6 +14,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
     if (!user?.isAdmin) return res.status(403).json({ error: "Forbidden" });
 
-    const tokens = await db.getSignUpTokens();
-    res.json({ success: true, tokens });
+    const signUpToken = req.query.token;
+    if (!signUpToken) return res.status(400).json(errorGenerator(400, "Token is not specified!"));
+
+    await db.removeSignUpToken(signUpToken as string);
+    return res.send({ success: true });
 };

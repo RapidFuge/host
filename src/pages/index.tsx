@@ -36,7 +36,7 @@ export default function Home() {
           <h1 className="text-6xl lg:text-8xl md:text-7xl text-center lh-6 ld-04 font-black text-white mb-6">
             RAPID HOST
           </h1>
-          <h2 className="text-2xl font-4 font-semibold lh-6 ld-04 pb-11 text-gray-300 text-center">
+          <h2 className="text-2xl font-semibold lh-6 ld-04 pb-11 text-gray-300 text-center">
             Rapid Host. a network for ShareX. AKA a file/image host.
           </h2>
           <div className="ml-6 text-center">
@@ -72,10 +72,11 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <div className="text-sm text-gray-400">UPTIME</div>
                 <div
-                  className={`text-lg font-bold ${loading
+                  className={`text-lg font-bold ${
+                    loading
                       ? "animate-pulse text-gray-300 w-48 mx-auto h-6"
                       : "text-gray-300"
-                    }`}
+                  }`}
                 >
                   {loading ? (
                     "Loading..."
@@ -94,10 +95,11 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <div className="text-sm text-gray-400">UPLOADS</div>
                 <div
-                  className={`text-lg font-bold ${loading
+                  className={`text-lg font-bold ${
+                    loading
                       ? "animate-pulse text-gray-300 w-48 mx-auto h-6"
                       : "text-gray-300"
-                    }`}
+                  }`}
                 >
                   {loading ? "Loading..." : <CountUp end={uploads} />}
                 </div>

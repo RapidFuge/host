@@ -33,7 +33,6 @@ export default NextAuth({
                 if (!password || !validPassword(password)) throw new Error("Invalid password: Must be less than 100 characters.");
 
                 if (signUpToken) {
-                    // Validate the signUpToken (e.g., check in the database or any validation logic)
                     if (!validToken(signUpToken)) throw new Error("Invalid Sign Up Token.");
 
                     const exists = await db.getUser(username);
@@ -48,7 +47,7 @@ export default NextAuth({
                     await db.addUser(username, hashed, token);
                     await db.removeSignUpToken(signUpToken);
                     console.log(`Used sign up token ${token} to create account ${username}.`);
-                    return { success: true, username };  // Return the new user object
+                    return { success: true, username };
                 }
 
                 const user = await db.getUser(username);

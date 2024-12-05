@@ -24,7 +24,6 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
         switch (req.method) {
             case "DELETE":
                 if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
-
                 if (link?.owner !== user?.username || !user?.isAdmin) return res.status(403).json(errorGenerator(403, "You are not allowed to delete that link."));
 
                 await db.removeLink(tag as string);

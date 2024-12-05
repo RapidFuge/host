@@ -32,7 +32,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
         const tag = (isValid && !inUse) ? providedTag : generators[generator](6);
         await db.addLink(tag, trim(url), user.username);
 
-        return res.status(200).json({ success: true, url: `${getBase(req)}/u/${tag}` });
+        return res.status(200).json({ success: true, url: `${getBase(req)}/${tag}` });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         return res.status(500).json({ error: error.message });
