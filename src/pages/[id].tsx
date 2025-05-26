@@ -1,212 +1,695 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// This entire page should be rewritten and reworked.
-import { getBase } from "@lib";
+// pages/[id].tsx
 import { GetServerSidePropsContext } from "next";
-import { getSession, GetSessionParams } from "next-auth/react";
+import { getSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import { NextSeo } from "next-seo";
+import { useState, useEffect } from "react";
+import { remark } from "remark";
+import html from "remark-html";
+import {
+  Highlight,
+  themes,
+  Language,
+  LineInputProps,
+  TokenInputProps,
+} from "prism-react-renderer";
+import { filesize } from "filesize";
+import mime from "mime-types";
 
-const extensions = [
-  "html",
-  "css",
-  "ejs",
-  "md",
-  "js",
-  "py",
-  "ts",
-  "Lua",
-  "cpp",
-  "c",
-  "bat",
-  "h",
-  "pl",
-  "java",
-  "sh",
-  "swift",
-  "vb",
-  "cs",
-  "haml",
-  "yml",
-  "markdown",
-  "hs",
-  "pl",
-  "ex",
-  "yaml",
-  "jsx",
-  "tsx",
-  "txt",
-];
+import { getBase } from "@lib";
+import Header from "@components/Header";
+import Footer from "@components/Footer";
 
-export default function FilePage({
-  file,
-  isAuthenticated,
-  isOwner,
-  fileUrl,
-  contentHtml,
-}: {
-  file: any;
+interface FileData {
+  id: string;
+  name: string;
+  extension: string;
+  mimetype: string;
+  size: number;
+  owner: string;
+  isPrivate: boolean;
+}
+
+interface FilePageProps {
+  fileData: FileData | null;
+  rawFileContent: string | null;
   isAuthenticated: boolean;
   isOwner: boolean;
   fileUrl: string;
-  contentHtml: string;
-}) {
+  baseUrl: string;
+  error?: string;
+}
+
+interface HighlightRenderProps {
+  className: string;
+  style: React.CSSProperties;
+  tokens: Array<Array<{ content: string; types: string[] }>>;
+  getLineProps: (input: LineInputProps) => Record<string, unknown>;
+  getTokenProps: (input: TokenInputProps) => Record<string, unknown>;
+}
+
+const getLanguage = (extension: string): Language => {
+  const langMap: { [key: string]: string } = {
+    js: "javascript",
+    jsx: "jsx",
+    ts: "typescript",
+    tsx: "tsx",
+    py: "python",
+    md: "markdown",
+    html: "markup",
+    css: "css",
+    json: "json",
+    java: "java",
+    c: "c",
+    cpp: "cpp",
+    cs: "csharp",
+    go: "go",
+    rb: "ruby",
+    php: "php",
+    swift: "swift",
+    sh: "bash",
+    yaml: "yaml",
+    yml: "yaml",
+    lua: "lua",
+    pl: "perl",
+  };
+  return (langMap[extension?.toLowerCase() || ""] || "clike") as Language;
+};
+
+const TEXT_BASED_EXTENSIONS = new Set([
+  "txt",
+  "md",
+  "markdown",
+  "js",
+  "ts",
+  "jsx",
+  "tsx",
+  "json",
+  "html",
+  "css",
+  "xml",
+  "svg",
+  "py",
+  "java",
+  "c",
+  "cpp",
+  "h",
+  "cs",
+  "go",
+  "rb",
+  "php",
+  "swift",
+  "sh",
+  "yaml",
+  "yml",
+  "ini",
+  "cfg",
+  "toml",
+  "lua",
+  "pl",
+  "sql",
+  "ejs",
+  "bat",
+  "vb",
+  "haml",
+  "hs",
+  "ex",
+]);
+
+export default function FileViewerPage({
+  fileData,
+  rawFileContent,
+  isAuthenticated,
+  isOwner,
+  fileUrl,
+  baseUrl,
+  error,
+}: FilePageProps) {
   const router = useRouter();
+  const [renderMarkdown, setRenderMarkdown] = useState(true);
+  const [processedMarkdownHtml, setProcessedMarkdownHtml] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (
+      fileData?.extension?.toLowerCase() === "md" &&
+      rawFileContent &&
+      renderMarkdown
+    ) {
+      remark()
+        .use(html)
+        .process(rawFileContent)
+        .then((file) => setProcessedMarkdownHtml(file.toString()))
+        .catch(() =>
+          setProcessedMarkdownHtml("<p>Error rendering Markdown.</p>")
+        );
+    }
+  }, [fileData, rawFileContent, renderMarkdown]);
+
+  let seoConfig = {};
+  if (error) {
+    seoConfig = {
+      title: "Error - RapidHost",
+      description: error,
+      noindex: true,
+      nofollow: true,
+    };
+  } else if (!fileData) {
+    seoConfig = {
+      title: "File Not Found - RapidHost",
+      description: "The requested file could not be found.",
+      noindex: true,
+      nofollow: true,
+    };
+  } else {
+    const { id, name, mimetype, size, owner, isPrivate } = fileData;
+    const isImage = mimetype?.startsWith("image/");
+    const pageFullUrl = `${baseUrl}/${id}`;
+    const embedDescription = `Size: ${
+      size ? filesize(size) : "N/A"
+    } | Type: ${mimetype}${owner ? ` | Uploaded by: ${owner}` : ""}`;
+
+    seoConfig = {
+      title: `${name || "View File"} - RapidHost`,
+      description: `View file: ${name}. ${embedDescription}`,
+      canonical: pageFullUrl,
+      noindex: isPrivate,
+      nofollow: isPrivate,
+      openGraph: {
+        url: pageFullUrl,
+        site_name: "RapidHost",
+        type: isImage ? "image.png" : "article",
+        title: name || "View File",
+        description: isImage ? name : embedDescription,
+        images: isImage
+          ? [{ url: fileUrl, alt: name, type: mimetype }]
+          : undefined,
+      },
+      twitter: { cardType: isImage ? "summary_large_image" : "summary" },
+    };
+  }
+
+  if (error) {
+    return (
+      <>
+        {" "}
+        <NextSeo {...seoConfig} /> <Header />{" "}
+        <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center p-4">
+          {" "}
+          <h1 className="text-2xl text-red-500">Error</h1>{" "}
+          <p className="text-zinc-300 mt-2">{error}</p>{" "}
+          <button
+            onClick={() => router.back()}
+            className="mt-4 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+          >
+            {" "}
+            Go Back{" "}
+          </button>{" "}
+        </div>{" "}
+        <Footer />{" "}
+      </>
+    );
+  }
+  if (!fileData) {
+    return (
+      <>
+        {" "}
+        <NextSeo {...seoConfig} /> <Header />{" "}
+        <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center">
+          {" "}
+          File not found or not accessible.{" "}
+        </div>{" "}
+        <Footer />{" "}
+      </>
+    );
+  }
+
+  const { id, name, extension, mimetype, size, isPrivate, owner } = fileData;
+  const language = getLanguage(extension);
+  const isMarkdown =
+    extension?.toLowerCase() === "md" ||
+    extension?.toLowerCase() === "markdown";
+  const isTextBased = extension
+    ? TEXT_BASED_EXTENSIONS.has(extension.toLowerCase())
+    : false;
 
   const handleDelete = async () => {
-    // Implement file deletion if the user is the owner or admin
     if (isOwner) {
-      try {
-        await fetch(`/api/file/${file.id}`, { method: "DELETE" });
-        router.push("/dashboard"); // Redirect after deletion
-      } catch (_error) {
-        alert("Failed to delete the file");
+      if (
+        confirm(
+          "Are you sure you want to delete this file? This action cannot be undone."
+        )
+      ) {
+        try {
+          const res = await fetch(`/api/files/${id}`, { method: "DELETE" });
+          if (!res.ok) {
+            const errData = await res
+              .json()
+              .catch(() => ({ message: "Failed to delete file." }));
+            throw new Error(errData.message);
+          }
+          alert("File deleted successfully.");
+          router.push("/dashboard");
+        } catch (err: any) {
+          alert(`Failed to delete the file: ${err.message}`);
+        }
       }
     }
   };
 
   const renderFileContent = () => {
-    const extension = file.extension.toLowerCase();
-    if (["js", "ts", "md", "txt"].includes(extension)) {
-      // If it's a text-based document (JS, TS, MD, TXT)
-      if (extension === "md") {
-        return <div dangerouslySetInnerHTML={{ __html: contentHtml }} />;
+    const commonPreStyles =
+      "p-4 overflow-auto text-sm bg-gray-900 rounded w-full h-full";
+    const commonArticleStyles =
+      "prose prose-sm sm:prose-base lg:prose-lg prose-invert max-w-none mx-auto p-4 bg-gray-800 rounded w-full h-full overflow-y-auto";
+
+    if (isMarkdown) {
+      if (renderMarkdown && processedMarkdownHtml) {
+        return (
+          <article
+            className={commonArticleStyles}
+            dangerouslySetInnerHTML={{ __html: processedMarkdownHtml }}
+          />
+        );
       } else {
-        return <pre className="bg-gray-800 p-4 text-white">{contentHtml}</pre>;
+        return (
+          <Highlight
+            theme={themes.nightOwl}
+            code={rawFileContent || ""}
+            language={language}
+          >
+            {({
+              className,
+              style,
+              tokens,
+              getLineProps,
+              getTokenProps,
+            }: HighlightRenderProps) => (
+              <pre className={`${className} ${commonPreStyles}`} style={style}>
+                {" "}
+                {tokens.map((line, i) => {
+                  const lineProps = getLineProps({ line, key: i });
+                  return (
+                    <div key={i} {...lineProps}>
+                      {" "}
+                      {line.map((token, key) => {
+                        const tokenProps = getTokenProps({ token, key });
+                        return <span key={key} {...tokenProps} />;
+                      })}{" "}
+                    </div>
+                  );
+                })}{" "}
+              </pre>
+            )}
+          </Highlight>
+        );
       }
-    } else if (["jpg", "jpeg", "png", "gif", "webp"].includes(extension)) {
-      // If it's an image
-      return <img src={fileUrl} alt={file.name} className="max-w-full" />;
-    } else if (["mp4", "mkv", "webm"].includes(extension)) {
-      // If it's a video
+    } else if (isTextBased && rawFileContent) {
       return (
-        <video controls className="max-w-full">
-          <source src={file.url} type={`video/${extension}`} />
+        <Highlight
+          theme={themes.nightOwl}
+          code={rawFileContent}
+          language={language}
+        >
+          {({
+            className,
+            style,
+            tokens,
+            getLineProps,
+            getTokenProps,
+          }: HighlightRenderProps) => (
+            <pre className={`${className} ${commonPreStyles}`} style={style}>
+              {" "}
+              {tokens.map((line, i) => {
+                const lineProps = getLineProps({ line, key: i });
+                return (
+                  <div key={i} {...lineProps}>
+                    {" "}
+                    {line.map((token, key) => {
+                      const tokenProps = getTokenProps({ token, key });
+                      return <span key={key} {...tokenProps} />;
+                    })}{" "}
+                  </div>
+                );
+              })}{" "}
+            </pre>
+          )}
+        </Highlight>
+      );
+    } else if (mimetype?.startsWith("image/")) {
+      return (
+        <img
+          src={fileUrl}
+          alt={name}
+          className="max-w-full max-h-full object-contain rounded shadow-lg"
+        />
+      );
+    } else if (mimetype?.startsWith("video/")) {
+      return (
+        <video
+          controls
+          className="max-w-full max-h-full mx-auto rounded shadow-lg"
+          src={fileUrl}
+        >
           Your browser does not support the video tag.
         </video>
       );
-    } else if (["mp3", "wav", "ogg"].includes(extension)) {
-      // If it's audio
+    } else if (mimetype?.startsWith("audio/")) {
       return (
-        <audio controls>
-          <source src={file.url} type={`audio/${extension}`} />
+        <audio controls className="w-full max-w-lg mx-auto mt-4" src={fileUrl}>
           Your browser does not support the audio element.
         </audio>
       );
     } else {
-      // For any other file, just show raw content
-      return <pre className="bg-gray-800 p-4 text-white">{contentHtml}</pre>;
+      return (
+        <div className="p-6 bg-gray-800 rounded text-center">
+          {" "}
+          <p className="text-lg">
+            {" "}
+            This file type ({extension}) cannot be previewed directly.{" "}
+          </p>{" "}
+          <p className="text-sm text-gray-400 mt-1">MIME Type: {mimetype}</p>{" "}
+          <a
+            href={fileUrl}
+            download={name}
+            className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Download {name}
+          </a>{" "}
+        </div>
+      );
     }
   };
 
-  return (
-    <div className="flex flex-col min-h-screen text-white bg-black">
-      <main className="flex-grow px-4 py-8">
-        <h1 className="text-3xl font-bold">{file.name}</h1>
-        <div className="mt-4">{renderFileContent()}</div>
+  const headerHeightPx = 64; // Adjust to your actual fixed header's height
+  const mainContentPaddingTop = `pt-[${headerHeightPx}px]`;
 
-        {isAuthenticated && isOwner && (
-          <div className="mt-4 flex space-x-4">
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded"
-            >
-              Delete
-            </button>
-            <a
-              href={file.url}
-              download={fileUrl}
-              className="px-4 py-2 bg-blue-600 text-white rounded"
-            >
-              Download
-            </a>
+  // Estimate height for the top info/action bar for max-h calculation
+  // This is a rough estimate, adjust after inspecting the layout
+  const topBarApproxHeightPx = 100; // Increase if more items or wrapping occurs
+
+  return (
+    <>
+      <NextSeo {...seoConfig} />
+      <div className="flex flex-col min-h-screen bg-black text-zinc-100">
+        <Header />
+        <main
+          className={`flex-grow flex flex-col items-center w-full px-2 py-6 sm:px-4 sm:py-8 ${mainContentPaddingTop}`}
+        >
+          <div className="w-full max-w-5xl">
+            {/* File Title, Info, and Actions Area */}
+            <div className="mb-4 p-3 sm:p-4 bg-gray-800 rounded-md shadow">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                <h1
+                  className="text-xl sm:text-2xl lg:text-3xl font-bold truncate mr-4"
+                  title={name}
+                >
+                  {" "}
+                  {name}{" "}
+                </h1>
+                {isMarkdown && (
+                  <button
+                    onClick={() => setRenderMarkdown(!renderMarkdown)}
+                    className="mt-2 sm:mt-0 px-3 py-1.5 text-xs sm:text-sm bg-gray-600 hover:bg-gray-500 rounded transition-colors flex-shrink-0"
+                  >
+                    {" "}
+                    {renderMarkdown
+                      ? "View Raw Markdown"
+                      : "Render Markdown"}{" "}
+                  </button>
+                )}
+              </div>
+              {/* File Info */}
+              <div className="text-xs sm:text-sm text-gray-400 mb-3">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <span>
+                    ID:{" "}
+                    <span className="font-mono text-gray-300 select-all">
+                      {id}
+                    </span>
+                  </span>
+                  <span>
+                    Size:{" "}
+                    <span className="text-gray-300">
+                      {size ? filesize(size) : "N/A"}
+                    </span>
+                  </span>
+                  <span>
+                    Type: <span className="text-gray-300">{mimetype}</span>
+                  </span>
+                  <span>
+                    Owner: <span className="text-gray-300">{owner}</span>
+                  </span>
+                  {isPrivate && (
+                    <span className="text-yellow-400 font-semibold">
+                      (Private File)
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm border-t border-gray-700 pt-3 mt-3">
+                {isTextBased && rawFileContent && (
+                  <a
+                    href={`${fileUrl}?raw=true`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    title="View Raw File"
+                  >
+                    Raw
+                  </a>
+                )}
+                <a
+                  href={fileUrl}
+                  download={name}
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  title="Download File"
+                >
+                  Download
+                </a>
+                {isAuthenticated && isOwner && (
+                  <button
+                    onClick={handleDelete}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    title="Delete File"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* File Content Display Area */}
+            <div className="bg-gray-850 rounded-lg shadow-xl overflow-hidden">
+              <div
+                className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-gray-900 ${
+                  isMarkdown || (isTextBased && rawFileContent)
+                    ? "overflow-y-auto"
+                    : "flex justify-center items-center p-1 sm:p-2"
+                }`}
+              >
+                {isMarkdown || (isTextBased && rawFileContent) ? (
+                  renderFileContent()
+                ) : (
+                  <div className="w-full h-full flex justify-center items-center">
+                    {renderFileContent()}
+                  </div>
+                )}
+              </div>
+              {/* This bottom bar is now removed as actions are at the top */}
+              {/* <div className="bg-gray-800 p-3 sm:p-4 border-t border-gray-700 ..."> ... </div> */}
+            </div>
           </div>
-        )}
-      </main>
-    </div>
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }
 
-export async function getServerSideProps({
-  params,
-  req,
-  res,
-  resolvedUrl,
-  query,
-}: GetSessionParams & GetServerSidePropsContext) {
+// getServerSideProps remains the same as the previous version
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const { params, req, res, query, resolvedUrl } = context;
   const session = await getSession({ req });
-  const id = params?.id;
-  const baseUrl = getBase(req);
+  const reqId = params?.id as string;
+  const pageBaseUrl = getBase(req);
 
-  if (!id) return { notFound: true };
-  // Check if it is a shortened url.
-  const targetReq = await fetch(`${baseUrl}/api/url/${id}`);
-  if (targetReq.ok) {
-    const target = await targetReq.json();
+  if (!reqId) {
+    return { notFound: true };
+  }
 
-    if (target) {
+  try {
+    const shortUrlCheckResponse = await fetch(
+      `${pageBaseUrl}/api/url/${reqId}`
+    );
+    if (shortUrlCheckResponse.ok) {
+      const targetData = await shortUrlCheckResponse.json();
+      if (targetData?.link?.url) {
+        return {
+          redirect: { destination: targetData.link.url, permanent: false },
+        };
+      }
+    }
+  } catch (e) {
+    console.warn(`Short URL check failed for ${reqId}:`, e);
+  }
+
+  const fileInfoReqHeaders: HeadersInit = { getInfo: "true" };
+  if (session?.user.token) {
+    fileInfoReqHeaders["Authorization"] = session.user.token;
+  }
+
+  const fileInfoResponse = await fetch(`${pageBaseUrl}/api/files/${reqId}`, {
+    headers: fileInfoReqHeaders,
+  });
+
+  if (!fileInfoResponse.ok) {
+    if (fileInfoResponse.status === 401 || fileInfoResponse.status === 403) {
+      if (!session) {
+        const callbackUrl = encodeURIComponent(resolvedUrl || `/${reqId}`);
+        return {
+          redirect: {
+            destination: `/login?cbU=${callbackUrl}`,
+            permanent: false,
+          },
+        };
+      }
+      const errorMsg =
+        "Access Denied: You may not have permission to view this file.";
       return {
-        redirect: {
-          destination: target.link.url,
-          permanent: false, // Use a 302 redirect
+        props: {
+          error: errorMsg,
+          fileData: null,
+          rawFileContent: null,
+          isAuthenticated: !!session,
+          isOwner: false,
+          fileUrl: "",
+          baseUrl: pageBaseUrl,
         },
       };
     }
+    return { notFound: true };
   }
 
-  const fileRequest = await fetch(`${baseUrl}/api/files/${id}`, {
-    headers: {
-      // Incase the file is marked as private and needs extra credentials.
-      Authorization: session?.user.token,
-      getInfo: true,
-    },
-  });
-  if (!fileRequest.ok) return { notFound: true };
+  type RawApiFileData = {
+    id: string;
+    fileName: string;
+    extension: string;
+    size: number;
+    owner: string;
+    isPrivate: boolean;
+  };
+  const rawApiFileData: RawApiFileData = await fileInfoResponse.json();
 
-  const file = await fileRequest.json();
-  if (!file) return { notFound: true };
-
-  const fileUrl = `${baseUrl}/api/files/${file.id}`;
-  const isAuthenticated = Boolean(session);
-  const isOwner = isAuthenticated && session?.user.username === file.owner;
-  const fileContent = await fetch(fileUrl, {
-    headers: {
-      Authorization: session?.user.token,
-    },
-  });
-  const arrayBuffer = await fileContent.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  let contentHtml;
-  const { raw, r, download, d } = query;
-
-  if (raw || r || download || d) {
-    res.end(buffer);
-
-    return { props: {} };
-  }
-
-  // if (extensions.includes(file.extension)) {
-  //   const processedContent = await remark()
-  //     .use(html)
-  //     .process(buffer.toString());
-  //   contentHtml = processedContent.toString();
-  // }
-
-  if (file.isPrivate && !session) {
-    const callbackUrl = encodeURIComponent(resolvedUrl || "/");
+  if (
+    !rawApiFileData?.id ||
+    !rawApiFileData.fileName ||
+    typeof rawApiFileData.size !== "number"
+  ) {
+    const errorMsg = "Invalid or incomplete file data received from API.";
     return {
-      redirect: {
-        destination: `/login?cbU=${callbackUrl}`,
-        permanent: false,
+      props: {
+        error: errorMsg,
+        fileData: null,
+        rawFileContent: null,
+        isAuthenticated: !!session,
+        isOwner: false,
+        fileUrl: "",
+        baseUrl: pageBaseUrl,
       },
     };
   }
 
+  const derivedMimetype =
+    mime.lookup(rawApiFileData.fileName) || "application/octet-stream";
+  const fileData: FileData = {
+    id: rawApiFileData.id,
+    name: rawApiFileData.fileName,
+    extension: rawApiFileData.extension,
+    mimetype: derivedMimetype,
+    size: rawApiFileData.size,
+    owner: rawApiFileData.owner,
+    isPrivate: rawApiFileData.isPrivate,
+  };
+
+  const { raw, r, download, d } = query;
+  if (raw || r || download || d) {
+    const rawFileAuthHeaders: HeadersInit = {};
+    if (session?.user.token) {
+      rawFileAuthHeaders["Authorization"] = session.user.token;
+    }
+    const rawFileResponse = await fetch(
+      `${pageBaseUrl}/api/files/${fileData.id}`,
+      { headers: rawFileAuthHeaders }
+    );
+    if (!rawFileResponse.ok || !rawFileResponse.body) {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("File not found or unable to stream.");
+      return { props: {} };
+    }
+    res.writeHead(200, {
+      "Content-Type": fileData.mimetype,
+      "Content-Disposition": `${
+        download || d ? "attachment" : "inline"
+      }; filename="${fileData.name}"`,
+    });
+    try {
+      for await (const chunk of rawFileResponse.body as unknown as AsyncIterable<Uint8Array>) {
+        res.write(chunk);
+      }
+      res.end();
+    } catch (streamError) {
+      console.error("Streaming error:", streamError);
+      if (!res.writableEnded) {
+        res.end();
+      }
+    }
+    return { props: {} };
+  }
+
+  let rawFileContent: string | null = null;
+  if (
+    fileData.extension &&
+    TEXT_BASED_EXTENSIONS.has(fileData.extension.toLowerCase())
+  ) {
+    const textContentAuthHeaders: HeadersInit = {};
+    if (session?.user.token) {
+      textContentAuthHeaders["Authorization"] = session.user.token;
+    }
+    const fileContentResponse = await fetch(
+      `${pageBaseUrl}/api/files/${fileData.id}`,
+      { headers: textContentAuthHeaders }
+    );
+    if (fileContentResponse.ok) {
+      rawFileContent = await fileContentResponse.text();
+    } else {
+      console.warn(
+        `Could not fetch text content for ${fileData.id} for preview. Status: ${fileContentResponse.status}`
+      );
+    }
+  }
+
+  if (fileData.isPrivate && !session) {
+    const callbackUrl = encodeURIComponent(resolvedUrl || `/${fileData.id}`);
+    return {
+      redirect: { destination: `/login?cbU=${callbackUrl}`, permanent: false },
+    };
+  }
+
+  const isAuthenticated = !!session;
+  const isOwner = isAuthenticated && session?.user.username === fileData.owner;
+
   return {
     props: {
-      file,
+      fileData,
+      rawFileContent,
       isAuthenticated,
       isOwner,
-      fileUrl,
-      contentHtml,
+      fileUrl: `${pageBaseUrl}/api/files/${fileData.id}`,
+      baseUrl: pageBaseUrl,
+      error: null,
     },
   };
 }

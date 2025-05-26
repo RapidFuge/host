@@ -28,4 +28,6 @@ const LinkSchema: Schema<Link> = new Schema({
   },
 });
 
-export default mongoose.model<Link>('Urls', LinkSchema);
+const Model = mongoose.models.Urls || mongoose.model<Link>('Urls', LinkSchema);
+
+export default Model;

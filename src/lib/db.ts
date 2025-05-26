@@ -10,6 +10,7 @@ import { shorteners } from './generators';
 import { FileStat } from '@asun01/webdav';
 
 const PAGE_SIZE = 20;
+let databaseInstance: Database | null = null;
 
 class Database {
 	public userBase = userBase;
@@ -77,7 +78,7 @@ class Database {
 		if (files) {
 			for (const file of files) {
 				if (!dbList.find((f) => f.basename === file.fileName || f.basename === file.videoThumbnail)) {
-					// if (process.env.ISPRODUCTION === "true") await this.removeFile(file.id);
+					if (process.env.ISPRODUCTION === "true") await this.removeFile(file.id);
 					console.log(`DATABASE-CLEANUP --> Removed DB Entry ${file.id}.${file.extension} from file database.`);
 				}
 			}
@@ -89,7 +90,7 @@ class Database {
 					exists = await this.getFileByVideoThumbnail(file.basename);
 					if (!exists) {
 						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from owncloud.`);
-						// if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
+						if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
 						continue; // Skip to the next file, no need to check further
 					}
 				}
@@ -98,7 +99,7 @@ class Database {
 					exists = await this.getFileByName(file.basename);
 					if (!exists) {
 						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from owncloud.`);
-						// if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
+						if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
 					}
 				}
 			}
@@ -155,16 +156,15 @@ class Database {
 
 	public async getUserFiles(username: string, page = 0) {
 		const offset = page * PAGE_SIZE;
-		const files = await this.getAllUserFiles(username);
+		const allUserFiles = await this.getAllUserFiles(username);
 
-		// Filter files based on the pagination offset
-		const filteredFiles = files.splice(offset, PAGE_SIZE);
+		const totalCount = allUserFiles.length;
+		const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-		// Calculate total pages
-		const totalPages = Math.ceil(files.length / PAGE_SIZE);
+		const filesForCurrentPage = allUserFiles.slice(offset, offset + PAGE_SIZE);
 
 		return {
-			files: filteredFiles,
+			files: filesForCurrentPage,
 			totalPages,
 		};
 	}
@@ -184,8 +184,8 @@ class Database {
 	}
 
 	// Adds file
-	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, isPrivate = false) {
-		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), isPrivate });
+	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false) {
+		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate });
 	}
 
 	public async addUser(username: string, passwordHash: string, token: string) {
@@ -218,8 +218,8 @@ class Database {
 		const user = await this.getUser(username);
 		if (user) await this.userBase.deleteOne({ username });
 
-		const files = await this.getUserFiles(username);
-		for (const file of files) {
+		const res = await this.getUserFiles(username);
+		for (const file of res.files) {
 			await this.fileBase.deleteOne({ id: file.id });
 		}
 	}
@@ -252,4 +252,21 @@ class Database {
 
 }
 
-export default new Database();
+
+export async function getDatabase(): Promise<Database> {
+	if (databaseInstance && mongoose.connection.readyState === 1) {
+		return databaseInstance;
+	}
+
+	if (!databaseInstance) {
+		databaseInstance = new Database();
+	}
+
+	if (mongoose.connection.readyState !== 1) {
+		await databaseInstance.initialize();
+	}
+
+	return databaseInstance;
+}
+
+// export default new Database();

@@ -22,4 +22,6 @@ const UpTokensSchema: Schema<UpTokens> = new Schema({
     },
 });
 
-export default mongoose.model<UpTokens>('UpTokens', UpTokensSchema);
+const Model = mongoose.models.UpTokens || mongoose.model<UpTokens>('UpTokens', UpTokensSchema);
+
+export default Model;

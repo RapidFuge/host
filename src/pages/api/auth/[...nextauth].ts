@@ -1,9 +1,11 @@
 import NextAuth from 'next-auth';
 import { isLength, isAlphanumeric, isAscii } from 'validator';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import db from '@lib/db';
+import { getDatabase } from '@lib/db';
 import { compare, hash } from 'bcrypt';
 import { generateToken, hashRounds } from '@lib';
+
+const db = await getDatabase();
 
 const validUsername = (str: string | undefined) => str && typeof str === "string" && isLength(str, {
     min: 3,
@@ -14,8 +16,6 @@ const validPassword = (str: string | undefined) => str && typeof str === "string
     max: 100
 });
 const validToken = (str: string) => str && typeof str === "string" && isAscii(str);
-
-await db.initialize();
 
 export default NextAuth({
     providers: [

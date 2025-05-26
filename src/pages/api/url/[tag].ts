@@ -3,11 +3,12 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import { errorGenerator } from '@lib';
 import * as generators from '@lib/generators';
-import db from '@lib/db';
+import { getDatabase } from '@lib/db';
 
 const validTag = (tag: string) => typeof tag === "string" && !isEmpty(tag) && (isAscii(tag) || generators.checkIfZws(tag));
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const db = await getDatabase();
     const { query } = req;
     const { tag } = query;
 

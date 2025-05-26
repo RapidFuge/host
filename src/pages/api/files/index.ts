@@ -1,11 +1,12 @@
+// api/files/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
-import formidable from 'formidable';
+import formidable, { File as FormidableFile } from 'formidable'; // Import File type from formidable
 import { errorGenerator, getBase } from '@lib';
 import * as generators from '@lib/generators';
 import removeGPS from '@lib/removeGPS';
 import fs from 'fs-extra';
-import db from '@lib/db';
+import { getDatabase } from '@lib/db';
 
 export const config = {
     api: {
@@ -25,47 +26,87 @@ const genFileName = async (originalname: string | null): Promise<string> => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') return res.setHeader('Allow', ['POST']).status(405).json({ error: 'Method Not Allowed' });
+    const db = await getDatabase();
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;
     if (!token && !authHeader) return res.status(401).json(errorGenerator(401, "Unauthorized"));
 
-    const user = await db.getUserByToken(authHeader || token?.token);
+    const userToken = authHeader ? authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader : token?.token;
+    if (!userToken) return res.status(401).json(errorGenerator(401, "Unauthorized: Token is invalid or missing."));
+
+    const user = await db.getUserByToken(userToken);
     if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
 
     const form = formidable({ multiples: true });
-    const isPrivate = Boolean(req.headers.isPrivate);
+    const isPrivate = Boolean(req.headers.isprivate === 'true' || req.headers.isPrivate === "true"); // More robust check
 
-    return form.parse(req, async (err, _fields, files) => {
-        if (err) return res.status(400).json(errorGenerator(400, "Failed to process file upload."));
+    // formidable v2/v3 types: files is an object, not an array directly
+    // files.files will be an array if multiple files are uploaded with the same field name "files"
+    // or a single File object if only one file is uploaded with that name.
+    return form.parse(req, async (err, fields, files) => {
+        if (err) {
+            console.error("Formidable parsing error:", err);
+            return res.status(400).json(errorGenerator(400, "Failed to process file upload."));
+        }
 
-        const uploadedFiles = Array.isArray(files.files) ? files.files : [files.files];
-        if (!uploadedFiles.length) return res.status(400).json(errorGenerator(400, "No file upload detected!"));
+        // Normalize 'files.files' to always be an array of FormidableFile
+        let filesToProcess: FormidableFile[] = [];
+        if (files.files) {
+            filesToProcess = Array.isArray(files.files) ? files.files : [files.files];
+        }
 
-        let responseSent = false;
+        if (filesToProcess.length === 0) {
+            return res.status(400).json(errorGenerator(400, "No file upload detected with field name 'files'!"));
+        }
 
-        for (const file of uploadedFiles) {
-            // If this is not included, it will error saying file might be undefined.
-            if (!file) continue;
-            await removeGPS(file.filepath).catch(() => false);
-            const fileContent = await fs.readFile(file.filepath);
-            let filename = await genFileName(file.originalFilename);
-            const ext = filename.split('.').pop();
-            const id = generators[user.shortener || 'random'](user.shortener === 'gfycat' ? 2 : 6);
+        const results = []; // To store results if you want to send multiple URLs back
 
-            if (ext?.toLowerCase() === 'heic') filename = filename.replace(/heic$/i, 'jpg');
+        for (const file of filesToProcess) {
+            if (!file) continue; // Should not happen if filesToProcess is constructed correctly
 
-            await db.imageDrive.put(filename, fileContent);
-            await db.addFile(filename, id, ext || undefined, user.username, isPrivate);
+            try {
+                await removeGPS(file.filepath).catch((gpsError) => {
+                    console.warn(`GPS removal failed for ${file.originalFilename}: ${gpsError.message}`);
+                    // Decide if this is a critical error or if you want to continue
+                });
 
-            if (!responseSent) {
-                responseSent = true;
+                const fileContent = await fs.readFile(file.filepath);
+                const fileSizeInBytes = fileContent.length; // <--- GET FILE SIZE HERE
+
+                let filename = await genFileName(file.originalFilename);
+                const extSplit = filename.split('.');
+                let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
+                const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);
+
+                if (ext?.toLowerCase() === 'heic') {
+                    filename = filename.replace(/heic$/i, 'jpg');
+                    ext = 'jpg'
+                }
+
+                await db.imageDrive.put(filename, fileContent);
+                await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate);
+
                 const base = getBase(req);
-                res.status(200).json({
+                results.push({
                     url: `${base}/${id}`,
                     deletionUrl: `${base}/dashboard`,
                 });
+
+            } catch (uploadError: any) {
+                console.error(`Error processing file ${file.originalFilename}:`, uploadError);
+                if (results.length === 0 && filesToProcess.indexOf(file) === filesToProcess.length - 1) {
+                    return res.status(500).json(errorGenerator(500, `Failed to process file: ${file.originalFilename}. ${uploadError.message}`));
+                }
+            } finally {
+                if (file && file.filepath) {
+                    await fs.unlink(file.filepath).catch(unlinkErr => console.error(`Failed to delete temp file ${file.filepath}:`, unlinkErr));
+                }
             }
         }
+
+        if (results.length === 0) return res.status(500).json(errorGenerator(500, "All files failed to process."));
+
+        return res.status(200).json({ ...results[0], files: results });
     });
 }

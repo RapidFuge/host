@@ -1,0 +1,36 @@
+# .dockerignore
+
+# Git
+.git
+.gitignore
+
+# Node modules
+node_modules
+
+# Next.js build artifacts (will be handled by the Dockerfile)
+.next
+
+# Local environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Docker
+Dockerfile
+.dockerignore
+
+# IDE / Editor specific
+.vscode
+.idea
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS specific
+.DS_Store
+Thumbs.db

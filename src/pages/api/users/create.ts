@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hashRounds, errorGenerator, generateToken } from "@lib";
-import db from "@lib/db";
+import { getDatabase } from '@lib/db';
 import { hash } from "bcrypt";
 import { getToken } from "next-auth/jwt";
 
@@ -9,6 +9,7 @@ const validPassword = (str: string) => str && typeof str === "string" && str.len
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== "POST") return res.setHeader('Allow', ['POST']).status(405).json(errorGenerator(405, "Method not allowed"));
+    const db = await getDatabase();
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;

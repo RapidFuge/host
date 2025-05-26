@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: {
     APP_VERSION: version
-  }
+  },
 };
 
 export default nextConfig;

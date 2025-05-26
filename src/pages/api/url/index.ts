@@ -1,16 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { errorGenerator, getBase } from '@lib';
-import db from '@lib/db';
+import { getDatabase } from '@lib/db';
 import { isURL, trim } from 'validator';
 import { getToken } from 'next-auth/jwt';
 import * as generators from '@lib/generators';
 
-const validTag = (tag: string) => typeof tag === "string" && tag.length > 2 && tag.length < 20;
+const validTag = (tag: string) => typeof tag === "string" && tag.length > 2 && tag.length < 69;
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== "POST") return res.setHeader('Allow', ['POST']).status(405).json({ error: 'Method Not Allowed' });
-
     const { body, headers } = req;
+    const db = await getDatabase();
 
     try {
         const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });

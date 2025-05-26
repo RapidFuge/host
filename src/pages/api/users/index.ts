@@ -1,10 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { errorGenerator } from "@lib";
-import db from "@lib/db";
+import { getDatabase } from '@lib/db';
 import { getToken } from "next-auth/jwt";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== "GET") return res.setHeader('Allow', ['GET']).status(405).json(errorGenerator(405, "Method not allowed"));
+    const db = await getDatabase();
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;

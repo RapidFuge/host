@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import { errorGenerator } from '@lib';
 import * as generators from '@lib/generators';
-import db from '@lib/db';
+import { getDatabase } from '@lib/db';
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
@@ -10,7 +10,14 @@ import { isAscii } from 'validator';
 import mime from 'mime-types';
 const removeExt = (str: string) => str.substring(0, str.indexOf('.'));
 
+export const config = {
+    api: {
+        responseLimit: false
+    }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const db = await getDatabase();
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;
     let user;
@@ -38,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(200).json({ success: true, message: "File deleted." });
             case "GET":
                 if (file.isPrivate && (!user || file.owner !== user.username && !user.isAdmin)) return res.status(403).json(errorGenerator(403, "Forbidden."));
-                if (req.headers.getInfo === "true") return res.json(file.toJSON());
+                if (req.headers.getinfo === "true") return res.json(file.toJSON());
 
                 const Path = path.join(os.tmpdir(), file.fileName);
                 const Mime = mime.lookup(file.fileName) || "application/octet-stream";

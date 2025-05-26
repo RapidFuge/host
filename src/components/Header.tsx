@@ -8,7 +8,7 @@ import {
   faSignOutAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { faUser } from "@fortawesome/free-regular-svg-icons";
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import { faGitAlt } from "@fortawesome/free-brands-svg-icons";
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
@@ -88,13 +88,13 @@ export default function Header() {
             </button>
           )}
           <Link
-            href="https://github.com/"
+            href="https://git.fuge.dev/rapid/host"
             rel="noopener noreferrer"
             target="_blank"
             className="pl-7 min-w-[24px] min-h-[24px] text-gray-300 hover:text-white tr04"
           >
             <FontAwesomeIcon
-              icon={faGithub}
+              icon={faGitAlt}
               className="text-2xl"
             ></FontAwesomeIcon>
           </Link>

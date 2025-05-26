@@ -4,6 +4,7 @@ export interface File extends Document {
   created: Date;
   extension?: string;
   id: string;
+  size: number;
   fileName: string;
   videoThumbnail?: string;
   owner: string;
@@ -25,6 +26,10 @@ const FileSchema: Schema<File> = new Schema({
     required: true,
     unique: true,
   },
+  size: {
+    type: Number,
+    required: true
+  },
   fileName: {
     type: String,
     required: true,
@@ -44,4 +49,6 @@ const FileSchema: Schema<File> = new Schema({
   }
 });
 
-export default mongoose.model<File>('Files', FileSchema);
+const Model = mongoose.models.Files || mongoose.model<File>('Files', FileSchema);
+
+export default Model;
