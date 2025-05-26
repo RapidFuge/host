@@ -1,12 +1,13 @@
-// components/Dashboard/FileModal.tsx
+// components/dashboard/FileModal.tsx
+import Link from "next/link";
 import React, { useEffect } from "react";
 
 export interface ModalFileItem {
-  // Renamed to avoid conflict if FileItem is global
   id: string;
   filename: string;
   mimetype: string;
-  url: string; // Direct URL to the file, e.g., /api/files/[id]
+  url: string;
+  openURL: string;
   isPrivate: boolean;
   created?: Date;
 }
@@ -16,7 +17,6 @@ interface FileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDelete: (fileId: string) => Promise<void>;
-  // No token needed if onDelete is handled by parent that has token
 }
 
 export default function FileModal({
@@ -33,7 +33,7 @@ export default function FileModal({
     };
     if (isOpen) {
       document.addEventListener("keydown", handleEscKey);
-      document.body.style.overflow = "hidden"; // Prevent background scroll
+      document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
@@ -54,17 +54,12 @@ export default function FileModal({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Consider closing modal or not based on UX preference
   };
-
   const handleDeleteClick = () => {
-    // Confirmation is handled in GalleryComponent before calling onDelete
     onDelete(file.id);
   };
-
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
-      // Only close if backdrop itself is clicked
       onClose();
     }
   };
@@ -77,21 +72,28 @@ export default function FileModal({
       aria-modal="true"
       aria-labelledby="file-modal-title"
     >
-      <div className="bg-gray-800 text-zinc-100 rounded-lg shadow-xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-700 min-h-[60px]">
-          <h2
+      <div className="bg-neutral-800 text-zinc-100 rounded-lg shadow-xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        {" "}
+        {/* neutral */}
+        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-neutral-700 min-h-[60px]">
+          {" "}
+          {/* neutral border */}
+          <Link
             id="file-modal-title"
-            className="text-lg sm:text-xl font-semibold truncate"
+            className="text-lg sm:text-xl font-semibold truncate text-blue-400 hover:underline"
             title={file.filename}
+            href={file.openURL}
           >
             {file.filename}
-          </h2>
+          </Link>{" "}
+          {/* Link color kept for primary action feel */}
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700 transition-colors"
+            className="text-neutral-400 hover:text-white p-1 rounded-full hover:bg-neutral-700 transition-colors"
             aria-label="Close modal"
           >
+            {" "}
+            {/* neutral */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -108,11 +110,10 @@ export default function FileModal({
             </svg>
           </button>
         </div>
-
-        {/* Content: Image, Video, Audio Preview */}
-        <div className="p-2 sm:p-4 flex-grow overflow-y-auto flex justify-center items-center bg-gray-900 min-h-[200px]">
+        <div className="p-2 sm:p-4 flex-grow overflow-y-auto flex justify-center items-center bg-neutral-900 min-h-[200px]">
+          {" "}
+          {/* neutral */}
           {file.mimetype.startsWith("image/") && (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={file.url}
               alt={file.filename}
@@ -137,13 +138,15 @@ export default function FileModal({
             </div>
           )}
         </div>
-
-        {/* Footer with Actions & Info */}
-        <div className="p-3 sm:p-4 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 min-h-[70px]">
-          <div className="text-xs sm:text-sm text-gray-400 space-y-0.5">
+        <div className="p-3 sm:p-4 border-t border-neutral-700 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 min-h-[70px]">
+          {" "}
+          {/* neutral border */}
+          <div className="text-xs sm:text-sm text-neutral-400 space-y-0.5">
+            {" "}
+            {/* neutral */}
             <p>
               Type:{" "}
-              <span className="text-gray-200 font-medium">{file.mimetype}</span>
+              <span className="text-zinc-200 font-medium">{file.mimetype}</span>
             </p>
             {file.isPrivate ? (
               <p className="text-yellow-400 font-semibold">
@@ -157,7 +160,7 @@ export default function FileModal({
             {file.created && (
               <p>
                 Uploaded:{" "}
-                <span className="text-gray-200">
+                <span className="text-zinc-200">
                   {new Date(file.created).toLocaleDateString()}
                 </span>
               </p>

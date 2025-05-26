@@ -3,7 +3,7 @@
   "version": "5.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -19,6 +19,7 @@
     "bcrypt": "^6.0.0",
     "filesize": "^10.1.6",
     "formidable": "^3.5.2",
+    "fs": "^0.0.1-security",
     "fs-extra": "^11.2.0",
     "mime-types": "^3.0.1",
     "mongoose": "^8.8.1",

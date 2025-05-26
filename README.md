@@ -1,4 +1,4 @@
-# This is an experimental version of Rapid-host mostly coded with chatgpt.
+# This is an experimental version of Rapid host mostly coded with ai.
 This will not likely be a public release anytime soon. This is still highly experimental with many bugs and issues. Many code will look like crap and is probably crap. Remember, this is only an experimental thing.
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).

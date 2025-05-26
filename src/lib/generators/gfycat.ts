@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
 const MIN_LENGTH = 1;
 const count = 2;

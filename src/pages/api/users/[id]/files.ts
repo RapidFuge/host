@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(401).json(errorGenerator(401, "Unauthorized: No token or auth header."));
     }
 
-    const userToken = authHeader ? authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader : token?.token;
+    const userToken = authHeader ? authHeader : token?.token;
 
     if (!userToken) {
         return res.status(401).json(errorGenerator(401, "Unauthorized: Token is invalid or missing."));

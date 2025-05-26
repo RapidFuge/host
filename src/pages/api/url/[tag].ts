@@ -9,8 +9,7 @@ const validTag = (tag: string) => typeof tag === "string" && !isEmpty(tag) && (i
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
     const db = await getDatabase();
-    const { query } = req;
-    const { tag } = query;
+    const { tag } = req.query;
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;
@@ -25,7 +24,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
         switch (req.method) {
             case "DELETE":
                 if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
-                if (link?.owner !== user?.username || !user?.isAdmin) return res.status(403).json(errorGenerator(403, "You are not allowed to delete that link."));
+                if ((link?.owner !== user?.username) && !user?.isAdmin) return res.status(403).json(errorGenerator(403, "You are not allowed to delete that link."));
 
                 await db.removeLink(tag as string);
                 return res.json({ success: true, message: "Link removed!" });

@@ -2,74 +2,101 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getDatabase } from '@lib/db';
 import { getBase, generateToken, errorGenerator } from "@lib";
 import { getToken } from "next-auth/jwt";
+import { User } from "@lib/models/user";
+import { hash } from "bcrypt"; // For password hashing
+import { hashRounds } from "@lib"; // Your hashRounds constant
+import { shorteners } from "@lib/generators";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { id } = req.query;
+    const { id } = req.query; // This 'id' is the username of the target user for config changes
     const db = await getDatabase();
 
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;
-    if (!token && !authHeader) return res.status(401).json(errorGenerator(401, "Unauthorized"));
+    const requestorTokenString = authHeader ? authHeader : jwtToken?.token;
 
-    const user = await db.getUserByToken(authHeader || token?.token);
-    if (!user || (id !== user.username && !user.isAdmin)) return res.status(401).json(errorGenerator(401, "Unauthorized."));
-
-    const isLink = Boolean(req.query.link);
-    const isSharenix = Boolean(req.query.sharenix);
-    const urlBase = `${getBase(req)}/api`;
-    let userToken = user.token;
-
-    if (!userToken) {
-        userToken = await generateToken();
-        await db.setToken(user.username, userToken);
+    if (!requestorTokenString) {
+        return res.status(401).json(errorGenerator(401, "Unauthorized: Token missing."));
     }
 
-    if (isSharenix) {
-        const config = generateSharenixConfig(user, userToken, urlBase, urlBase);
-        res.setHeader("Content-Disposition", `attachment; filename="${user.username} Sharenix Config.json"`);
-        res.setHeader("Content-Type", "application/json");
+    const requestorUser = await db.getUserByToken(requestorTokenString);
+
+    if (!requestorUser) {
+        return res.status(401).json(errorGenerator(401, "Unauthorized: Invalid requestor token."));
+    }
+
+    // User whose configuration is being targeted
+    const targetUser = await db.getUser(id as string);
+    if (!targetUser) {
+        return res.status(404).json(errorGenerator(404, "Target user not found."));
+    }
+
+    // Authorization: Requestor must be admin OR must be the target user
+    if (requestorUser.username !== targetUser.username && !requestorUser.isAdmin) {
+        return res.status(403).json(errorGenerator(403, "Forbidden: You cannot modify this user's configuration."));
+    }
+
+    if (req.method === 'GET') {
+        // This GET might also be a place to return user settings like 'shortener' if needed
+        // For example:
+        // if (req.query.getSettings === 'true') {
+        //    return res.json({ success: true, user: { username: targetUser.username, shortener: targetUser.shortener, token: targetUser.token } });
+        // }
+        // ... (rest of your GET logic) ...
+        const isLink = Boolean(req.query.link);
+        const urlBase = `${getBase(req)}/api`;
+        let userTokenForConfig = targetUser.token; // Use target user's token for config
+
+        if (!userTokenForConfig) {
+            userTokenForConfig = await generateToken();
+            await db.setToken(targetUser.username, userTokenForConfig); // Save new token for target user
+        }
+
+        const config = generateSXCUConfig(targetUser, userTokenForConfig, isLink, urlBase);
+        res.setHeader("Content-Disposition", `attachment; filename="${targetUser.username} ${isLink ? "Link shorten" : "Upload"}.sxcu"`);
+        res.setHeader("Content-Type", "application/sxcu");
         return res.send(config);
-    }
+    } else if (req.method === 'POST') {
+        // Handle updates to user configuration
+        const { password, resetToken, shortener } = req.body;
 
-    const config = generateSXCUConfig(user, userToken, isLink, urlBase);
-    res.setHeader("Content-Disposition", `attachment; filename="${user.username} ${isLink ? "Link shorten" : "Upload"}.sxcu"`);
-    res.setHeader("Content-Type", "application/sxcu");
-    return res.send(config);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function generateSharenixConfig(user: any, token: string, hostname: string, urlBase: string) {
-    // Generate Sharenix-specific config
-    return {
-        DefaultFileUploader: `${hostname} ${user.username} Upload`,
-        DefaultImageUploader: `${hostname} ${user.username} Upload`,
-        DefaultUrlShortener: `${hostname} ${user.username} URL service`,
-        Services: [
-            {
-                Name: `${hostname} ${user.username} Upload`,
-                RequestType: "POST",
-                Headers: { Authorization: token },
-                RequestURL: `${urlBase}/files`,
-                FileFormName: "files",
-                URL: "$json:url$",
-                DeletionURL: "$json:deletionUrl$",
-            },
-            {
-                Name: `${hostname} ${user.username} URL service`,
-                RequestType: "POST",
-                RequestURL: `${urlBase}/links`,
-                Headers: {
-                    Authorization: token,
-                    "shorten-url": "$input$"
-                },
-                URL: "$json:url$"
+        try {
+            if (password) {
+                if (typeof password !== 'string' || password.length < 3) { // Add your password validation
+                    return res.status(400).json(errorGenerator(400, "Invalid new password."));
+                }
+                const hashedPassword = await hash(password, hashRounds);
+                await db.setPassword(targetUser.username, hashedPassword); // db.updateUserPassword(username, newHashedPassword)
+                return res.json({ success: true, message: "Password updated successfully." });
             }
-        ],
-    };
+
+            if (resetToken === true) {
+                const newToken = await generateToken();
+                await db.setToken(targetUser.username, newToken); // db.setToken(username, newToken)
+                return res.json({ success: true, message: "API token reset successfully.", newToken });
+            }
+
+            if (shortener) {
+                if (!shorteners.includes(shortener)) {
+                    return res.status(400).json(errorGenerator(400, "Invalid shortener type."));
+                }
+                await db.setShortener(targetUser.username, shortener); // db.updateUserShortener(username, newShortener)
+                return res.json({ success: true, message: "ID generator updated successfully." });
+            }
+
+            return res.status(400).json(errorGenerator(400, "No update action specified."));
+
+        } catch (error: any) {
+            console.error(`Error updating config for ${targetUser.username}:`, error);
+            return res.status(500).json(errorGenerator(500, error.message || "Failed to update configuration."));
+        }
+    } else {
+        res.setHeader('Allow', ['GET', 'POST']);
+        return res.status(405).json(errorGenerator(405, `Method ${req.method} Not Allowed`));
+    }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function generateSXCUConfig(user: any, token: string, isLink: boolean, urlBase: string) {
+function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string) {
     return isLink
         ? {
             Name: `${urlBase} ${user.username} URL service`,

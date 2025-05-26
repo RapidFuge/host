@@ -5,7 +5,7 @@ export interface User extends Document {
   username: string;
   token: string;
   password: string;
-  shortener: shorteners;
+  shortener: string;
   isAdmin: boolean;
 }
 

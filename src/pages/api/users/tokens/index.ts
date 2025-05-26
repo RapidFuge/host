@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const tokens = await db.getSignUpTokens();
             return res.json({ success: true, tokens });
         case "POST":
-            const expires = req.headers["expires"];
+            const { expires } = req.headers;
             if (!expires || isNaN(ms(expires))) return res.status(400).send(errorGenerator(400, "Invalid expiration date!"));
             const allowedGenerators = [
                 {

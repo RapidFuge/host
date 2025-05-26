@@ -16,8 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     switch (req.method) {
         case "DELETE":
-            if (!user.isAdmin) return res.status(403).json(errorGenerator(403, "Forbidden"));
-            if (id === process.env.ADMIN_USER && process.env.PREVENT_ROOT_DELETION === "true") return res.status(400).json(errorGenerator(400, "Admin user cannot be deleted."));
+            if (id !== user.username && !user.isAdmin) return res.status(403).json(errorGenerator(403, "Forbidden"));
+            if (id === 'root' && process.env.PREVENT_ROOT_DELETION === "true") return res.status(400).json(errorGenerator(400, "Admin user cannot be deleted."));
 
             await db.removeUser(id as string);
             return res.json({ success: true, message: "User deleted." });

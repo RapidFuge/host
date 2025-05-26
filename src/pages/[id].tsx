@@ -20,6 +20,7 @@ import { getBase } from "@lib";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
 
+// ... (interfaces and getLanguage, TEXT_BASED_EXTENSIONS remain the same) ...
 interface FileData {
   id: string;
   name: string;
@@ -169,7 +170,6 @@ export default function FileViewerPage({
     const embedDescription = `Size: ${
       size ? filesize(size) : "N/A"
     } | Type: ${mimetype}${owner ? ` | Uploaded by: ${owner}` : ""}`;
-
     seoConfig = {
       title: `${name || "View File"} - RapidHost`,
       description: `View file: ${name}. ${embedDescription}`,
@@ -193,34 +193,29 @@ export default function FileViewerPage({
   if (error) {
     return (
       <>
-        {" "}
-        <NextSeo {...seoConfig} /> <Header />{" "}
+        <NextSeo {...seoConfig} /> <Header />
         <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center p-4">
-          {" "}
-          <h1 className="text-2xl text-red-500">Error</h1>{" "}
-          <p className="text-zinc-300 mt-2">{error}</p>{" "}
+          <h1 className="text-2xl text-red-400">Error</h1>
+          <p className="text-zinc-300 mt-2">{error}</p>
           <button
             onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors" // neutral
           >
-            {" "}
-            Go Back{" "}
-          </button>{" "}
-        </div>{" "}
-        <Footer />{" "}
+            Go Back
+          </button>
+        </div>
+        <Footer />
       </>
     );
   }
   if (!fileData) {
     return (
       <>
-        {" "}
-        <NextSeo {...seoConfig} /> <Header />{" "}
+        <NextSeo {...seoConfig} /> <Header />
         <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center">
-          {" "}
-          File not found or not accessible.{" "}
-        </div>{" "}
-        <Footer />{" "}
+          File not found or not accessible.
+        </div>
+        <Footer />
       </>
     );
   }
@@ -233,6 +228,7 @@ export default function FileViewerPage({
   const isTextBased = extension
     ? TEXT_BASED_EXTENSIONS.has(extension.toLowerCase())
     : false;
+  const syntaxTheme = themes.vsDark; // Using oneDark theme
 
   const handleDelete = async () => {
     if (isOwner) {
@@ -260,9 +256,9 @@ export default function FileViewerPage({
 
   const renderFileContent = () => {
     const commonPreStyles =
-      "p-4 overflow-auto text-sm bg-gray-900 rounded w-full h-full";
+      "p-4 overflow-auto text-sm bg-neutral-900 rounded w-full h-full"; // neutral-900 for pre background
     const commonArticleStyles =
-      "prose prose-sm sm:prose-base lg:prose-lg prose-invert max-w-none mx-auto p-4 bg-gray-800 rounded w-full h-full overflow-y-auto";
+      "prose prose-sm sm:prose-base lg:prose-lg prose-invert max-w-none mx-auto p-4 bg-neutral-800 rounded w-full h-full overflow-y-auto"; // prose-invert with neutral-800
 
     if (isMarkdown) {
       if (renderMarkdown && processedMarkdownHtml) {
@@ -275,7 +271,7 @@ export default function FileViewerPage({
       } else {
         return (
           <Highlight
-            theme={themes.nightOwl}
+            theme={syntaxTheme}
             code={rawFileContent || ""}
             language={language}
           >
@@ -286,8 +282,14 @@ export default function FileViewerPage({
               getLineProps,
               getTokenProps,
             }: HighlightRenderProps) => (
-              <pre className={`${className} ${commonPreStyles}`} style={style}>
-                {" "}
+              <pre
+                className={`${className} ${commonPreStyles}`}
+                style={{
+                  ...style,
+                  backgroundColor:
+                    syntaxTheme.plain.backgroundColor || "#282c34",
+                }}
+              >
                 {tokens.map((line, i) => {
                   const lineProps = getLineProps({ line, key: i });
                   return (
@@ -299,7 +301,7 @@ export default function FileViewerPage({
                       })}{" "}
                     </div>
                   );
-                })}{" "}
+                })}
               </pre>
             )}
           </Highlight>
@@ -308,7 +310,7 @@ export default function FileViewerPage({
     } else if (isTextBased && rawFileContent) {
       return (
         <Highlight
-          theme={themes.nightOwl}
+          theme={syntaxTheme}
           code={rawFileContent}
           language={language}
         >
@@ -319,8 +321,13 @@ export default function FileViewerPage({
             getLineProps,
             getTokenProps,
           }: HighlightRenderProps) => (
-            <pre className={`${className} ${commonPreStyles}`} style={style}>
-              {" "}
+            <pre
+              className={`${className} ${commonPreStyles}`}
+              style={{
+                ...style,
+                backgroundColor: syntaxTheme.plain.backgroundColor || "#282c34",
+              }}
+            >
               {tokens.map((line, i) => {
                 const lineProps = getLineProps({ line, key: i });
                 return (
@@ -332,7 +339,7 @@ export default function FileViewerPage({
                     })}{" "}
                   </div>
                 );
-              })}{" "}
+              })}
             </pre>
           )}
         </Highlight>
@@ -342,14 +349,14 @@ export default function FileViewerPage({
         <img
           src={fileUrl}
           alt={name}
-          className="max-w-full max-h-full object-contain rounded shadow-lg"
+          className="max-w-full max-h-full object-contain rounded"
         />
       );
     } else if (mimetype?.startsWith("video/")) {
       return (
         <video
           controls
-          className="max-w-full max-h-full mx-auto rounded shadow-lg"
+          className="max-w-full max-h-full mx-auto rounded"
           src={fileUrl}
         >
           Your browser does not support the video tag.
@@ -363,31 +370,29 @@ export default function FileViewerPage({
       );
     } else {
       return (
-        <div className="p-6 bg-gray-800 rounded text-center">
+        <div className="p-6 bg-neutral-800 rounded text-center">
           {" "}
-          <p className="text-lg">
-            {" "}
-            This file type ({extension}) cannot be previewed directly.{" "}
-          </p>{" "}
-          <p className="text-sm text-gray-400 mt-1">MIME Type: {mimetype}</p>{" "}
+          {/* neutral-800 */}
+          <p className="text-lg text-zinc-200">
+            This file type ({extension}) cannot be previewed directly.
+          </p>
+          <p className="text-sm text-zinc-400 mt-1">MIME Type: {mimetype}</p>
+          {/* Colored download button for this fallback case */}
           <a
             href={fileUrl}
             download={name}
             className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             Download {name}
-          </a>{" "}
+          </a>
         </div>
       );
     }
   };
 
-  const headerHeightPx = 64; // Adjust to your actual fixed header's height
+  const headerHeightPx = 64;
   const mainContentPaddingTop = `pt-[${headerHeightPx}px]`;
-
-  // Estimate height for the top info/action bar for max-h calculation
-  // This is a rough estimate, adjust after inspecting the layout
-  const topBarApproxHeightPx = 100; // Increase if more items or wrapping occurs
+  const topBarApproxHeightPx = 100;
 
   return (
     <>
@@ -398,48 +403,44 @@ export default function FileViewerPage({
           className={`flex-grow flex flex-col items-center w-full px-2 py-6 sm:px-4 sm:py-8 ${mainContentPaddingTop}`}
         >
           <div className="w-full max-w-5xl">
-            {/* File Title, Info, and Actions Area */}
-            <div className="mb-4 p-3 sm:p-4 bg-gray-800 rounded-md shadow">
+            <div className="mb-4 p-3 sm:p-4 bg-neutral-800 rounded-md shadow-md">
+              {" "}
+              {/* neutral-800 */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
                 <h1
-                  className="text-xl sm:text-2xl lg:text-3xl font-bold truncate mr-4"
+                  className="text-xl sm:text-2xl lg:text-3xl font-bold truncate mr-4 text-white"
                   title={name}
                 >
-                  {" "}
-                  {name}{" "}
+                  {name}
                 </h1>
                 {isMarkdown && (
                   <button
                     onClick={() => setRenderMarkdown(!renderMarkdown)}
-                    className="mt-2 sm:mt-0 px-3 py-1.5 text-xs sm:text-sm bg-gray-600 hover:bg-gray-500 rounded transition-colors flex-shrink-0"
+                    className="mt-2 sm:mt-0 px-3 py-1.5 text-xs sm:text-sm bg-neutral-700 hover:bg-neutral-600 text-zinc-200 rounded transition-colors flex-shrink-0" // neutral button
                   >
-                    {" "}
-                    {renderMarkdown
-                      ? "View Raw Markdown"
-                      : "Render Markdown"}{" "}
+                    {renderMarkdown ? "View Raw Markdown" : "Render Markdown"}
                   </button>
                 )}
               </div>
-              {/* File Info */}
-              <div className="text-xs sm:text-sm text-gray-400 mb-3">
+              <div className="text-xs sm:text-sm text-zinc-400 mb-3">
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   <span>
                     ID:{" "}
-                    <span className="font-mono text-gray-300 select-all">
+                    <span className="font-mono text-zinc-300 select-all">
                       {id}
                     </span>
                   </span>
                   <span>
                     Size:{" "}
-                    <span className="text-gray-300">
+                    <span className="text-zinc-300">
                       {size ? filesize(size) : "N/A"}
                     </span>
                   </span>
                   <span>
-                    Type: <span className="text-gray-300">{mimetype}</span>
+                    Type: <span className="text-zinc-300">{mimetype}</span>
                   </span>
                   <span>
-                    Owner: <span className="text-gray-300">{owner}</span>
+                    Owner: <span className="text-zinc-300">{owner}</span>
                   </span>
                   {isPrivate && (
                     <span className="text-yellow-400 font-semibold">
@@ -448,8 +449,10 @@ export default function FileViewerPage({
                   )}
                 </div>
               </div>
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm border-t border-gray-700 pt-3 mt-3">
+              {/* Action Buttons with distinct colors */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm border-t border-neutral-700 pt-3 mt-3">
+                {" "}
+                {/* neutral border */}
                 {isTextBased && rawFileContent && (
                   <a
                     href={`${fileUrl}?raw=true`}
@@ -481,10 +484,12 @@ export default function FileViewerPage({
               </div>
             </div>
 
-            {/* File Content Display Area */}
-            <div className="bg-gray-850 rounded-lg shadow-xl overflow-hidden">
+            <div className="bg-neutral-800 rounded-lg shadow-xl overflow-hidden">
+              {" "}
+              {/* neutral-800 */}
               <div
-                className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-gray-900 ${
+                className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-neutral-900 ${
+                  // neutral-900
                   isMarkdown || (isTextBased && rawFileContent)
                     ? "overflow-y-auto"
                     : "flex justify-center items-center p-1 sm:p-2"
@@ -498,8 +503,6 @@ export default function FileViewerPage({
                   </div>
                 )}
               </div>
-              {/* This bottom bar is now removed as actions are at the top */}
-              {/* <div className="bg-gray-800 p-3 sm:p-4 border-t border-gray-700 ..."> ... </div> */}
             </div>
           </div>
         </main>
@@ -509,7 +512,7 @@ export default function FileViewerPage({
   );
 }
 
-// getServerSideProps remains the same as the previous version
+// getServerSideProps remains the same
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { params, req, res, query, resolvedUrl } = context;
   const session = await getSession({ req });

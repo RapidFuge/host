@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const authHeader = req.headers.authorization;
     if (!token && !authHeader) return res.status(401).json(errorGenerator(401, "Unauthorized"));
 
-    const userToken = authHeader ? authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader : token?.token;
+    const userToken = authHeader ? authHeader : token?.token;
     if (!userToken) return res.status(401).json(errorGenerator(401, "Unauthorized: Token is invalid or missing."));
 
     const user = await db.getUserByToken(userToken);
