@@ -3,7 +3,7 @@ import * as generators from '@lib/generators';
 import { errorGenerator } from "@lib";
 import { getDatabase } from '@lib/db';
 import { getToken } from "next-auth/jwt";
-import ms from 'ms';
+import { ms } from 'humanize-ms';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
