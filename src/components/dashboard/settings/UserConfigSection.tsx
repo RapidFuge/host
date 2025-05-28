@@ -155,7 +155,7 @@ export default function UserConfigSection({
           text: data.message || "Token reset successfully!",
         });
         if (data.newToken && userDetails) {
-          signOut({ callbackUrl: `${window.location.origin}/` });
+          signOut();
           setUserDetails((prev) =>
             prev ? { ...prev, token: data.newToken } : null
           );
@@ -231,8 +231,7 @@ export default function UserConfigSection({
               data.error || data.message || "Failed to delete user."
             );
           alert(data.message || `User ${selectedUser} deleted.`);
-          if (loggedInUser.username === selectedUser)
-            signOut({ callbackUrl: `${window.location.origin}/` });
+          if (loggedInUser.username === selectedUser) signOut();
           else router.reload(); // Reload to update user list
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {

@@ -18,7 +18,7 @@ export default function Header() {
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
-      signOut({ callbackUrl: `${window.location.origin}/` });
+      signOut();
     }
   };
   const mobileMenuStackedItemClasses = "flex flex-col items-center mt-4 w-full";

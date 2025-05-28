@@ -51,7 +51,6 @@ export default NextAuth({
                 }
 
                 const user = await db.getUser(username);
-                console.log(user, username)
                 if (!user) throw new Error("Invalid username.");
 
                 const correct = await compare(password, user.password);

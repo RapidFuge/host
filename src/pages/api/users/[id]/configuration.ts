@@ -37,14 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'GET') {
-        // This GET might also be a place to return user settings like 'shortener' if needed
-        // For example:
-        // if (req.query.getSettings === 'true') {
-        //    return res.json({ success: true, user: { username: targetUser.username, shortener: targetUser.shortener, token: targetUser.token } });
-        // }
-        // ... (rest of your GET logic) ...
         const isLink = Boolean(req.query.link);
-        const urlBase = `${getBase(req)}/api`;
+        const urlBase = `${getBase(req)}`;
         let userTokenForConfig = targetUser.token; // Use target user's token for config
 
         if (!userTokenForConfig) {
