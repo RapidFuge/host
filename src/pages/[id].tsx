@@ -1,13 +1,19 @@
-// pages/[id].tsx
 import { GetServerSidePropsContext } from "next";
 import { getSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
-import { useState, useEffect } from "react";
-import { remark } from "remark";
-import html from "remark-html";
+import React, { useState, useEffect } from "react";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+import remarkRehype from "remark-rehype";
+import rehypeRaw from "rehype-raw";
+import rehypeSlug from "rehype-slug";
+import rehypeReact from "rehype-react";
+import rehypePrismPlus from "rehype-prism-plus";
+
 import {
-  Highlight,
+  Highlight as SyntaxHighlighter,
   themes,
   Language,
   LineInputProps,
@@ -19,8 +25,9 @@ import mime from "mime-types";
 import { getBase } from "@lib";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
+import Link from "next/link";
+import { jsx, jsxs } from "react/jsx-runtime";
 
-// ... (interfaces and getLanguage, TEXT_BASED_EXTENSIONS remain the same) ...
 interface FileData {
   id: string;
   name: string;
@@ -41,7 +48,7 @@ interface FilePageProps {
   error?: string;
 }
 
-interface HighlightRenderProps {
+interface SyntaxHighlightRenderProps {
   className: string;
   style: React.CSSProperties;
   tokens: Array<Array<{ content: string; types: string[] }>>;
@@ -117,6 +124,30 @@ const TEXT_BASED_EXTENSIONS = new Set([
   "ex",
 ]);
 
+const markdownComponents = {
+  a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    const { href, children, ...rest } = props;
+    if (href && (href.startsWith("/") || href.startsWith("#"))) {
+      return (
+        <Link href={href} {...rest} className="text-blue-400 hover:underline">
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        {...rest}
+        className="text-blue-400 hover:underline"
+      >
+        {children}
+      </a>
+    );
+  },
+};
+
 export default function FileViewerPage({
   fileData,
   rawFileContent,
@@ -128,25 +159,41 @@ export default function FileViewerPage({
 }: FilePageProps) {
   const router = useRouter();
   const [renderMarkdown, setRenderMarkdown] = useState(true);
-  const [processedMarkdownHtml, setProcessedMarkdownHtml] = useState<
-    string | null
-  >(null);
+  const [markdownContent, setMarkdownContent] =
+    useState<React.ReactElement | null>(null);
 
   useEffect(() => {
-    if (
-      fileData?.extension?.toLowerCase() === "md" &&
-      rawFileContent &&
-      renderMarkdown
-    ) {
-      remark()
-        .use(html)
-        .process(rawFileContent)
-        .then((file) => setProcessedMarkdownHtml(file.toString()))
-        .catch(() =>
-          setProcessedMarkdownHtml("<p>Error rendering Markdown.</p>")
-        );
+    if (fileData?.extension?.toLowerCase() === "md" && rawFileContent) {
+      (async () => {
+        try {
+          const processor = unified()
+            .use(remarkParse)
+            .use(remarkGfm)
+            .use(remarkRehype, { allowDangerousHtml: true })
+            .use(rehypeRaw)
+            .use(rehypeSlug)
+            .use(rehypePrismPlus, {
+              ignoreMissing: true,
+              showLineNumbers: false,
+            })
+            .use(rehypeReact, {
+              createElement: React.createElement,
+              Fragment: React.Fragment,
+              components: markdownComponents,
+              jsx: jsx, // Pass jsx for production
+              jsxs: jsxs, // Pass jsxs for production
+            });
+          const file = await processor.process(rawFileContent);
+          setMarkdownContent(file.result as React.ReactElement);
+        } catch (e) {
+          console.error("Error processing Markdown:", e);
+          setMarkdownContent(
+            React.createElement("p", null, "Error rendering Markdown.")
+          );
+        }
+      })();
     }
-  }, [fileData, rawFileContent, renderMarkdown]);
+  }, [fileData, rawFileContent]);
 
   let seoConfig = {};
   if (error) {
@@ -164,15 +211,16 @@ export default function FileViewerPage({
       nofollow: true,
     };
   } else {
-    const { id, name, mimetype, size, owner, isPrivate } = fileData;
+    const { id, mimetype, size, owner, isPrivate, extension } = fileData;
+    const fileName = extension ? `${id}.${extension}` : id;
     const isImage = mimetype?.startsWith("image/");
     const pageFullUrl = `${baseUrl}/${id}`;
     const embedDescription = `Size: ${
       size ? filesize(size) : "N/A"
     } | Type: ${mimetype}${owner ? ` | Uploaded by: ${owner}` : ""}`;
     seoConfig = {
-      title: `${id || "View File"} - RapidHost`,
-      description: `View file: ${id}. ${embedDescription}`,
+      title: `${fileName} - RapidHost`,
+      description: `View file: ${fileName}. ${embedDescription}`,
       canonical: pageFullUrl,
       noindex: isPrivate,
       nofollow: isPrivate,
@@ -180,10 +228,10 @@ export default function FileViewerPage({
         url: pageFullUrl,
         site_name: "RapidHost",
         type: isImage ? "image.png" : "article",
-        title: id || "View File",
+        title: fileName,
         description: embedDescription,
         images: isImage
-          ? [{ url: fileUrl, alt: id, type: mimetype }]
+          ? [{ url: fileUrl, alt: fileName, type: mimetype }]
           : undefined,
       },
       twitter: { cardType: isImage ? "summary_large_image" : "summary" },
@@ -199,7 +247,7 @@ export default function FileViewerPage({
           <p className="text-zinc-300 mt-2">{error}</p>
           <button
             onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors" // neutral
+            className="mt-4 px-4 py-2 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors"
           >
             Go Back
           </button>
@@ -209,11 +257,12 @@ export default function FileViewerPage({
     );
   }
   if (!fileData) {
+    // Fallback if somehow getServerSideProps allowed pass-through without error or fileData
     return (
       <>
-        <NextSeo {...seoConfig} /> <Header />
+        <NextSeo title="File Not Found" noindex nofollow /> <Header />
         <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center">
-          File not found or not accessible.
+          File data is missing or not found.
         </div>
         <Footer />
       </>
@@ -222,13 +271,13 @@ export default function FileViewerPage({
 
   const { id, name, extension, mimetype, size, isPrivate, owner } = fileData;
   const language = getLanguage(extension);
-  const isMarkdown =
+  const isMarkdownFile =
     extension?.toLowerCase() === "md" ||
     extension?.toLowerCase() === "markdown";
   const isTextBased = extension
     ? TEXT_BASED_EXTENSIONS.has(extension.toLowerCase())
     : false;
-  const syntaxTheme = themes.vsDark; // Using oneDark theme
+  const syntaxThemeForRawView = themes.oneDark;
 
   const handleDelete = async () => {
     if (isOwner) {
@@ -247,6 +296,7 @@ export default function FileViewerPage({
           }
           alert("File deleted successfully.");
           router.push("/dashboard");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
           alert(`Failed to delete the file: ${err.message}`);
         }
@@ -256,24 +306,19 @@ export default function FileViewerPage({
 
   const renderFileContent = () => {
     const commonPreStyles =
-      "p-4 overflow-auto text-sm bg-neutral-900 rounded w-full h-full"; // neutral-900 for pre background
-    const commonArticleStyles =
-      "prose prose-sm sm:prose-base lg:prose-lg prose-invert max-w-none mx-auto p-4 bg-neutral-800 rounded w-full h-full overflow-y-auto"; // prose-invert with neutral-800
+      "p-4 overflow-auto text-sm bg-neutral-900 rounded w-full h-full";
+    const markdownDisplayStyles =
+      "prose prose-sm sm:prose-base lg:prose-lg prose-invert prose-neutral max-w-none p-4 sm:p-6 bg-neutral-800 rounded w-full h-full overflow-y-auto";
 
-    if (isMarkdown) {
-      if (renderMarkdown && processedMarkdownHtml) {
-        return (
-          <article
-            className={commonArticleStyles}
-            dangerouslySetInnerHTML={{ __html: processedMarkdownHtml }}
-          />
-        );
+    if (isMarkdownFile) {
+      if (renderMarkdown && markdownContent) {
+        return <div className={markdownDisplayStyles}>{markdownContent}</div>;
       } else {
         return (
-          <Highlight
-            theme={syntaxTheme}
+          <SyntaxHighlighter
+            theme={syntaxThemeForRawView}
             code={rawFileContent || ""}
-            language={language}
+            language={"markdown" as Language}
           >
             {({
               className,
@@ -281,36 +326,41 @@ export default function FileViewerPage({
               tokens,
               getLineProps,
               getTokenProps,
-            }: HighlightRenderProps) => (
+            }: SyntaxHighlightRenderProps) => (
               <pre
                 className={`${className} ${commonPreStyles}`}
                 style={{
                   ...style,
                   backgroundColor:
-                    syntaxTheme.plain.backgroundColor || "#282c34",
+                    syntaxThemeForRawView.plain.backgroundColor || "#282c34",
                 }}
               >
                 {tokens.map((line, i) => {
-                  const lineProps = getLineProps({ line, key: i });
+                  const { key: lineKey, ...lineRestProps } = getLineProps({
+                    line,
+                    key: i,
+                  });
                   return (
-                    <div key={i} {...lineProps}>
-                      {" "}
-                      {line.map((token, key) => {
-                        const tokenProps = getTokenProps({ token, key });
-                        return <span key={key} {...tokenProps} />;
-                      })}{" "}
+                    <div key={lineKey as string} {...lineRestProps}>
+                      {line.map((token, k) => {
+                        const { key: tokenKey, ...tokenRestProps } =
+                          getTokenProps({ token, key: k });
+                        return (
+                          <span key={tokenKey as string} {...tokenRestProps} />
+                        );
+                      })}
                     </div>
                   );
                 })}
               </pre>
             )}
-          </Highlight>
+          </SyntaxHighlighter>
         );
       }
     } else if (isTextBased && rawFileContent) {
       return (
-        <Highlight
-          theme={syntaxTheme}
+        <SyntaxHighlighter
+          theme={syntaxThemeForRawView}
           code={rawFileContent}
           language={language}
         >
@@ -320,35 +370,42 @@ export default function FileViewerPage({
             tokens,
             getLineProps,
             getTokenProps,
-          }: HighlightRenderProps) => (
+          }: SyntaxHighlightRenderProps) => (
             <pre
               className={`${className} ${commonPreStyles}`}
               style={{
                 ...style,
-                backgroundColor: syntaxTheme.plain.backgroundColor || "#282c34",
+                backgroundColor:
+                  syntaxThemeForRawView.plain.backgroundColor || "#282c34",
               }}
             >
               {tokens.map((line, i) => {
-                const lineProps = getLineProps({ line, key: i });
+                const { key: lineKey, ...lineRestProps } = getLineProps({
+                  line,
+                  key: i,
+                });
                 return (
-                  <div key={i} {...lineProps}>
-                    {" "}
-                    {line.map((token, key) => {
-                      const tokenProps = getTokenProps({ token, key });
-                      return <span key={key} {...tokenProps} />;
-                    })}{" "}
+                  <div key={lineKey as string} {...lineRestProps}>
+                    {line.map((token, k) => {
+                      const { key: tokenKey, ...tokenRestProps } =
+                        getTokenProps({ token, key: k });
+                      return (
+                        <span key={tokenKey as string} {...tokenRestProps} />
+                      );
+                    })}
                   </div>
                 );
               })}
             </pre>
           )}
-        </Highlight>
+        </SyntaxHighlighter>
       );
     } else if (mimetype?.startsWith("image/")) {
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={fileUrl}
-          alt={id}
+          alt={name}
           className="max-w-full max-h-full object-contain rounded"
         />
       );
@@ -371,19 +428,16 @@ export default function FileViewerPage({
     } else {
       return (
         <div className="p-6 bg-neutral-800 rounded text-center">
-          {" "}
-          {/* neutral-800 */}
           <p className="text-lg text-zinc-200">
             This file type ({extension}) cannot be previewed directly.
           </p>
           <p className="text-sm text-zinc-400 mt-1">MIME Type: {mimetype}</p>
-          {/* Colored download button for this fallback case */}
           <a
             href={fileUrl}
-            download={id}
+            download={name}
             className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
-            Download {id}
+            Download {name}
           </a>
         </div>
       );
@@ -404,19 +458,17 @@ export default function FileViewerPage({
         >
           <div className="w-full max-w-5xl">
             <div className="mb-4 p-3 sm:p-4 bg-neutral-800 rounded-md shadow-md">
-              {" "}
-              {/* neutral-800 */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
                 <h1
                   className="text-xl sm:text-2xl lg:text-3xl font-bold truncate mr-4 text-white"
-                  title={id}
+                  title={name}
                 >
-                  {id}
+                  {name}
                 </h1>
-                {isMarkdown && (
+                {isMarkdownFile && (
                   <button
                     onClick={() => setRenderMarkdown(!renderMarkdown)}
-                    className="mt-2 sm:mt-0 px-3 py-1.5 text-xs sm:text-sm bg-neutral-700 hover:bg-neutral-600 text-zinc-200 rounded transition-colors flex-shrink-0" // neutral button
+                    className="mt-2 sm:mt-0 px-3 py-1.5 text-xs sm:text-sm bg-neutral-700 hover:bg-neutral-600 text-zinc-200 rounded transition-colors flex-shrink-0"
                   >
                     {renderMarkdown ? "View Raw Markdown" : "Render Markdown"}
                   </button>
@@ -449,13 +501,10 @@ export default function FileViewerPage({
                   )}
                 </div>
               </div>
-              {/* Action Buttons with distinct colors */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm border-t border-neutral-700 pt-3 mt-3">
-                {" "}
-                {/* neutral border */}
                 {isTextBased && rawFileContent && (
                   <a
-                    href={`${fileUrl}?raw=true`}
+                    href={`/${fileData.id}?raw=true`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
@@ -466,7 +515,7 @@ export default function FileViewerPage({
                 )}
                 <a
                   href={fileUrl}
-                  download={id}
+                  download={name}
                   className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   title="Download File"
                 >
@@ -483,19 +532,15 @@ export default function FileViewerPage({
                 )}
               </div>
             </div>
-
             <div className="bg-neutral-800 rounded-lg shadow-xl overflow-hidden">
-              {" "}
-              {/* neutral-800 */}
               <div
                 className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-neutral-900 ${
-                  // neutral-900
-                  isMarkdown || (isTextBased && rawFileContent)
-                    ? "overflow-y-auto"
+                  isMarkdownFile || (isTextBased && rawFileContent)
+                    ? ""
                     : "flex justify-center items-center p-1 sm:p-2"
                 }`}
               >
-                {isMarkdown || (isTextBased && rawFileContent) ? (
+                {isMarkdownFile || (isTextBased && rawFileContent) ? (
                   renderFileContent()
                 ) : (
                   <div className="w-full h-full flex justify-center items-center">
@@ -512,7 +557,6 @@ export default function FileViewerPage({
   );
 }
 
-// getServerSideProps remains the same
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { params, req, res, query, resolvedUrl } = context;
   const session = await getSession({ req });
@@ -588,7 +632,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (
     !rawApiFileData?.id ||
-    !rawApiFileData.id ||
+    !rawApiFileData.fileName ||
     typeof rawApiFileData.size !== "number"
   ) {
     const errorMsg = "Invalid or incomplete file data received from API.";
@@ -606,10 +650,14 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
 
   const derivedMimetype =
-    mime.lookup(rawApiFileData.fileName) || "application/octet-stream";
+    rawApiFileData.extension === "ts"
+      ? "text/typescript"
+      : mime.lookup(rawApiFileData.fileName) || "application/octet-stream";
   const fileData: FileData = {
     id: rawApiFileData.id,
-    name: rawApiFileData.fileName,
+    name: rawApiFileData.extension
+      ? `${rawApiFileData.id}.${rawApiFileData.extension}`
+      : rawApiFileData.id,
     extension: rawApiFileData.extension,
     mimetype: derivedMimetype,
     size: rawApiFileData.size,
@@ -636,7 +684,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       "Content-Type": fileData.mimetype,
       "Content-Disposition": `${
         download || d ? "attachment" : "inline"
-      }; filename="${fileData.id}.${fileData.extension}"`,
+      }; filename="${fileData.name}"`,
     });
     try {
       for await (const chunk of rawFileResponse.body as unknown as AsyncIterable<Uint8Array>) {

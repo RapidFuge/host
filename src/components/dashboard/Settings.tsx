@@ -31,14 +31,12 @@ export default function SettingsComponent({
       </div>
       {loggedInUser.isAdmin && isViewingOwnSettings && (
         <div className="p-4">
-          <div className="flex flex-wrap gap-4 items-start p-4 border border-neutral-700 rounded-lg bg-neutral-850">
-            {" "}
-            {/* neutral */}
+          <div className="flex flex-wrap gap-4 items-start p-4 border border-neutral-700 rounded-md bg-neutral-850">
             <h3 className="text-lg font-semibold text-white w-full mb-2">
               Admin Tools
             </h3>{" "}
             {/* Added mb-2 */}
-            <CreateUserForm token={loggedInUser.token} />
+            <CreateUserForm />
             <button
               onClick={() => setIsSignUpTokenModalOpen(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded transition-colors"

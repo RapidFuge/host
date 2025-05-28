@@ -2,11 +2,7 @@
 import { useRouter } from "next/router";
 import { useState } from "react";
 
-interface CreateUserFormProps {
-  token: string;
-}
-
-export default function CreateUserForm({ token }: CreateUserFormProps) {
+export default function CreateUserForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +34,7 @@ export default function CreateUserForm({ token }: CreateUserFormProps) {
       // setUsername("");
       // setPassword("");
       router.reload();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.log(err, 1);
       setMessage({ type: "error", text: err.message });
@@ -56,9 +53,7 @@ export default function CreateUserForm({ token }: CreateUserFormProps) {
       </button>
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
-          <div className="bg-neutral-800 p-6 rounded-lg shadow-xl w-full max-w-md">
-            {" "}
-            {/* neutral */}
+          <div className="bg-neutral-800 p-6 rounded-md shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-white">
                 Create New User

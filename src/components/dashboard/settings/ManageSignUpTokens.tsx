@@ -18,7 +18,6 @@ const isTokenExpired = (expiresDate: Date): boolean => {
 };
 
 export default function SignUpTokensManagerModal({
-  adminAuthToken,
   isOpen,
   onClose,
 }: SignUpTokensManagerProps) {
@@ -44,7 +43,7 @@ export default function SignUpTokensManagerModal({
         );
       if (data.success && Array.isArray(data.tokens)) {
         const processedTokens: ClientSignUpToken[] = data.tokens.map(
-          (t: any) => ({
+          (t: ClientSignUpToken) => ({
             token: t.token,
             created: new Date(t.created),
             expires: new Date(t.expires),
@@ -54,13 +53,14 @@ export default function SignUpTokensManagerModal({
       } else {
         setTokens([]);
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
       setTokens([]);
     } finally {
       setIsLoading(false);
     }
-  }, [adminAuthToken, isOpen]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -92,6 +92,7 @@ export default function SignUpTokensManagerModal({
       });
       setNewExpiration("");
       fetchTokens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {
@@ -113,6 +114,7 @@ export default function SignUpTokensManagerModal({
         );
       setMessage({ type: "success", text: `Token ${tokenValue} deleted.` });
       fetchTokens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     }
@@ -129,7 +131,7 @@ export default function SignUpTokensManagerModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-neutral-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col text-zinc-100">
+      <div className="bg-neutral-800 p-4 sm:p-6 rounded-md shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col text-zinc-100">
         {" "}
         {/* neutral */}
         <div className="flex justify-between items-center mb-4">
@@ -203,8 +205,8 @@ export default function SignUpTokensManagerModal({
             )}{" "}
           {/* neutral */}
           {tokens.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-neutral-700">
+            <div className="overflow-x-auto rounded-md">
+              <table className="min-w-full divide-y divide-neutral-700 rounded-md">
                 {" "}
                 {/* neutral */}
                 <thead className="bg-neutral-700 sticky top-0 z-10">

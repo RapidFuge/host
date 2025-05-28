@@ -1,23 +1,9 @@
-// pages/api/users/[id]/files.ts
-// Or if your file is literally named [id].ts, that's fine,
-// just remember 'id' here means 'id'
 import { NextApiRequest, NextApiResponse } from "next";
-import { getDatabase } from '@lib/db'; // Assuming File is exported from @lib/db
+import { getDatabase } from '@lib/db';
 import type { File as DBFileType } from "@lib/models/file";
 import { errorGenerator } from "@lib";
 import { getToken } from "next-auth/jwt";
-import mime from 'mime-types'; // Import mime-types
-
-// Your File interface from @lib/db
-// export interface File extends Document { // Assuming Document is from Mongoose or similar
-//   created: Date;
-//   extension?: string;
-//   id: string;         // This is the actual file ID for /api/files/[id]
-//   fileName: string;   // e.g., "image.png", "document.pdf"
-//   videoThumbnail?: string;
-//   owner: string;
-//   isPrivate: boolean;
-// }
+import mime from 'mime-types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { id } = req.query;
@@ -54,14 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { files: dbFiles, totalPages } = await db.getUserFiles(id as string, page);
 
         const processedFiles = dbFiles.map((file: DBFileType) => {
-            const determinedMimeType = mime.lookup(file.fileName);
+            const determinedMimeType = file.extension === "ts" ? 'text/typescript' : mime.lookup(file.fileName);
             return {
                 id: file.id,
                 filename: file.fileName,
+                extension: file.extension,
                 mimetype: determinedMimeType || 'application/octet-stream',
-                isPrivate: file.isPrivate, // <-- ADDED
-                created: file.created,     // <-- ADDED (useful for display)
-                // url is constructed client-side by GalleryComponent
+                isPrivate: file.isPrivate,
+                created: file.created,
             };
         });
 

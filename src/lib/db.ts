@@ -10,38 +10,28 @@ import MinIOClient, { FileStat } from './minio';
 
 const PAGE_SIZE = 20;
 let databaseInstance: Database | null = null;
-let isConnected = false;
 
 class Database {
 	public userBase = userBase;
 	public linkBase = linkBase;
 	public fileBase = fileBase;
 	public upTokens = upTokens;
-	// public imageDrive: OwnCloud;
 	public imageDrive: MinIOClient;
 	private initialized = false;
 
 	constructor() {
 		if (!process.env.MONGO_URI) throw new Error("Missing MONGO_URI environment variable.");
-		if (!process.env.OWNCLOUD_FOLDER) throw new Error("Missing OWNCLOUD_FOLDER environment variable.");
-		if (!process.env.OWNCLOUD_URL) throw new Error("Missing OWNCLOUD_URL environment variable.");
-		if (!process.env.OWNCLOUD_USERNAME) throw new Error("Missing OWNCLOUD_USERNAME environment variable.");
-		if (!process.env.OWNCLOUD_PASSWORD) throw new Error("Missing OWNCLOUD_PASSWORD environment variable.");
-
-		// Initialize OwnCloud
-		// this.imageDrive = new OwnCloud(
-		// 	process.env.OWNCLOUD_URL,
-		// 	process.env.OWNCLOUD_FOLDER,
-		// 	process.env.OWNCLOUD_USERNAME,
-		// 	process.env.OWNCLOUD_PASSWORD
-		// );
+		if (!process.env.MINIO_ENDPOINT) throw new Error("Missing MINIO_ENDPOINT environment variable.");
+		if (!process.env.MINIO_BUCKET) throw new Error("Missing MINIO_BUCKET environment variable.");
+		if (!process.env.MINIO_USERNAME) throw new Error("Missing MINIO_USERNAME environment variable.");
+		if (!process.env.MINIO_PASSWORD) throw new Error("Missing MINIO_PASSWORD environment variable.");
 
 		this.imageDrive = new MinIOClient(
-			process.env.S3_ENDPOINT!,
-			process.env.S3_BUCKET!,
+			process.env.MINIO_ENDPOINT!,
+			process.env.MINIO_BUCKET!,
 			'uploads',
-			process.env.S3_ACCESS_KEY!,
-			process.env.S3_SECRET_KEY!
+			process.env.MINIO_USERNAME!,
+			process.env.MINIO_PASSWORD!
 		)
 	}
 
@@ -101,7 +91,7 @@ class Database {
 				if (file.basename.includes(".thumbnail.jpeg")) {
 					exists = await this.getFileByVideoThumbnail(file.basename);
 					if (!exists) {
-						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from owncloud.`);
+						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from MinIO.`);
 						if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
 						continue; // Skip to the next file, no need to check further
 					}
@@ -110,7 +100,7 @@ class Database {
 				if (!exists) {
 					exists = await this.getFileByName(file.basename);
 					if (!exists) {
-						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from owncloud.`);
+						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from MinIO.`);
 						if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
 					}
 				}

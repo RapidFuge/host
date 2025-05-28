@@ -48,7 +48,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (req.headers.getinfo === "true") return res.json(file.toJSON());
 
                 const Path = path.join(os.tmpdir(), file.fileName);
-                const Mime = mime.lookup(file.fileName) || "application/octet-stream";
+                const ext = path.extname(file.fileName);
+                const Mime = ext === '.ts' ? 'text/typescript' : mime.lookup(file.fileName) || 'application/octet-stream';
                 res.setHeader("Content-Type", Mime);
                 let buf: Buffer;
                 if (!fs.existsSync(Path)) {

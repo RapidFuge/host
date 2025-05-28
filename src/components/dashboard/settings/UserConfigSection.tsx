@@ -19,7 +19,6 @@ interface SelectedUserDetails extends DashboardUser {
 export default function UserConfigSection({
   loggedInUser,
   selectedUser,
-  token,
   baseUrl,
 }: UserConfigSectionProps) {
   const isDeletable = loggedInUser.isAdmin
@@ -67,6 +66,7 @@ export default function UserConfigSection({
       } else {
         throw new Error(data.message || "User data not found in response.");
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setErrorUserDetails(err.message);
       setUserDetails(null);
@@ -112,6 +112,7 @@ export default function UserConfigSection({
       alert(data.message || "Password updated successfully!");
       setNewPassword("");
       setConfirmPassword("");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
@@ -159,6 +160,7 @@ export default function UserConfigSection({
             prev ? { ...prev, token: data.newToken } : null
           );
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setTokenManagementMessage({ type: "error", text: err.message });
       } finally {
@@ -206,6 +208,7 @@ export default function UserConfigSection({
           prev ? { ...prev, shortener: selectedGenerator } : null
         );
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
@@ -231,6 +234,7 @@ export default function UserConfigSection({
           if (loggedInUser.username === selectedUser)
             signOut({ callbackUrl: `${window.location.origin}/` });
           else router.reload(); // Reload to update user list
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
           alert(`Error: ${err.message}`);
         }
@@ -265,7 +269,7 @@ export default function UserConfigSection({
 
   return (
     <div className="p-4 space-y-8">
-      <div className="p-4 border border-neutral-700 rounded-lg bg-neutral-850">
+      <div className="p-4 border border-neutral-700 rounded-md bg-neutral-850">
         {" "}
         {/* neutral */}
         <h3 className="text-lg font-semibold text-white mb-3">
@@ -287,7 +291,7 @@ export default function UserConfigSection({
         </div>
       </div>
       {canEditSelectedUser && (
-        <div className="p-4 border border-neutral-700 rounded-lg bg-neutral-850">
+        <div className="p-4 border border-neutral-700 rounded-md bg-neutral-850">
           {" "}
           {/* neutral */}
           <h3 className="text-lg font-semibold text-white mb-4">
@@ -381,7 +385,7 @@ export default function UserConfigSection({
         </div>
       )}
       {loggedInUser.isAdmin && loggedInUser.username !== selectedUser && (
-        <div className="p-4 border border-red-700 rounded-lg bg-red-900 bg-opacity-30 mt-8">
+        <div className="p-4 border border-red-700 rounded-md bg-red-900 bg-opacity-30 mt-8">
           <h3 className="text-lg font-semibold text-red-300 mb-3">
             Delete User Account: {selectedUser}
           </h3>
@@ -398,7 +402,7 @@ export default function UserConfigSection({
       )}
       {loggedInUser.username === selectedUser &&
         isDeletable && ( // Self-delete option always available if not prevented by other logic
-          <div className="p-4 border border-red-700 rounded-lg bg-red-900 bg-opacity-30 mt-8">
+          <div className="p-4 border border-red-700 rounded-md bg-red-900 bg-opacity-30 mt-8">
             <h3 className="text-lg font-semibold text-red-300 mb-3">
               Delete Your Account
             </h3>
@@ -420,7 +424,7 @@ export default function UserConfigSection({
             if (e.target === e.currentTarget) closeTokenModal();
           }}
         >
-          <div className="bg-neutral-800 p-6 rounded-lg shadow-xl w-full max-w-lg text-white">
+          <div className="bg-neutral-800 p-6 rounded-md shadow-xl w-full max-w-lg text-white">
             {" "}
             {/* neutral */}
             <div className="flex justify-between items-center mb-4">

@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import type { shorteners } from '../generators';
 
 export interface User extends Document {
   username: string;

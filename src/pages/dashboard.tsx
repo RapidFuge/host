@@ -118,7 +118,7 @@ export default function Dashboard({
           )}
         </button>
         <aside
-          className={`fixed lg:sticky top-16 lg:top-[calc(theme(spacing.16)+1.5rem)] left-0 z-20 h-[calc(100vh-4rem)] lg:h-auto w-3/4 sm:w-1/2 lg:w-64 xl:w-1/5 bg-neutral-900 border border-neutral-700 p-4 rounded-lg shadow-lg space-y-4 transition-transform duration-300 ease-in-out ${
+          className={`fixed lg:sticky top-16 lg:top-[calc(theme(spacing.16)+1.5rem)] left-0 z-20 h-[calc(100vh-4rem)] lg:h-auto w-3/4 sm:w-1/2 lg:w-64 xl:w-1/5 bg-neutral-900 border border-neutral-700 p-4 rounded-md shadow-lg space-y-4 transition-transform duration-300 ease-in-out ${
             isSidebarOpen
               ? "translate-x-0"
               : "-translate-x-full lg:translate-x-0"
@@ -186,9 +186,7 @@ export default function Dashboard({
             </div>
           )}
         </aside>
-        <main className="flex-grow bg-neutral-900 rounded-lg shadow-lg lg:ml-0 w-full overflow-hidden">
-          {" "}
-          {/* neutral */}
+        <main className="flex-grow bg-neutral-900 rounded-md shadow-lg lg:ml-0 w-full overflow-hidden">
           <div
             className={`h-full ${
               isSidebarOpen && window.innerWidth < 1024

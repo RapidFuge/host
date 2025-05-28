@@ -59,6 +59,7 @@ export default class MinIOClient {
                 } else {
                     console.log("Bucket exists!");
                 }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 if (err.code === 'BucketAlreadyOwnedByYou') {
                     console.warn(`Bucket '${this.bucketName}' already exists and is owned by you. Continuing.`);
@@ -77,6 +78,7 @@ export default class MinIOClient {
 
     async list(): Promise<Array<FileStat>> {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const objects: any[] = [];
             const prefix = this.rootFolder ? `${this.rootFolder}/` : '';
 
@@ -168,7 +170,7 @@ export default class MinIOClient {
             const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
             await this.client.statObject(this.bucketName, objectName);
             return true;
-        } catch (error) {
+        } catch (_) {
             return false;
         }
     }

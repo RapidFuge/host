@@ -5,6 +5,7 @@ import FileModal, { ModalFileItem } from "./FileModal";
 interface FileItem {
   id: string;
   filename: string;
+  extension: string;
   mimetype: string;
   url: string;
   openURL: string;
@@ -14,7 +15,6 @@ interface FileItem {
 
 interface GalleryProps {
   username: string | null;
-  // Removed token from props, assuming API called from dashboard.tsx's getServerSideProps or Gallery's own API is public/uses session
 }
 
 const ITEMS_PER_PAGE_GALLERY = 10;
@@ -25,7 +25,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAllFileTypes, setShowAllFileTypes] = useState(false); // Changed default to false (show only images)
+  const [showAllFileTypes, setShowAllFileTypes] = useState(false);
   const [selectedFileForModal, setSelectedFileForModal] =
     useState<ModalFileItem | null>(null);
 
@@ -41,7 +41,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
       setError(null);
       try {
         const apiUrl = `/api/users/${username}/files?page=${page}&limit=${ITEMS_PER_PAGE_GALLERY}`;
-        const response = await fetch(apiUrl); // Assuming this API handles auth via session/cookie
+        const response = await fetch(apiUrl);
         if (!response.ok) {
           const errorData = await response
             .json()
@@ -50,10 +50,10 @@ export default function GalleryComponent({ username }: GalleryProps) {
         }
         const data = await response.json();
         if (data.success) {
-          const processedApiFiles = data.files.map((file: any) => ({
+          const processedApiFiles = data.files.map((file: FileItem) => ({
             id: file.id,
-            filename: file.id,
-            mimetype: file.mimetype, // Use actual filename from API
+            filename: file.extension ? `${file.id}.${file.extension}` : file.id,
+            mimetype: file.mimetype,
             isPrivate: file.isPrivate,
             created: file.created ? new Date(file.created) : undefined,
             url: `/api/files/${file.id}`,
@@ -65,6 +65,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
         } else {
           throw new Error(data.message || "API returned success=false");
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.message);
         setFiles([]);
@@ -129,6 +130,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
       ) {
         setCurrentPage((prev) => prev - 1);
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(`Delete failed: ${err.message}`);
     } finally {
@@ -206,8 +208,8 @@ export default function GalleryComponent({ username }: GalleryProps) {
               file.mimetype.startsWith("audio/");
             return (
               <div
-                key={file.id}
-                className={`relative border border-neutral-700 rounded-lg overflow-hidden shadow-lg bg-neutral-800 flex flex-col group ${
+                key={file.filename}
+                className={`relative border border-neutral-700 rounded-sm overflow-hidden shadow-lg bg-neutral-800 flex flex-col group ${
                   isPreviewableInModal
                     ? "cursor-pointer hover:border-blue-500 transition-all"
                     : "cursor-default"
@@ -226,14 +228,15 @@ export default function GalleryComponent({ username }: GalleryProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute inset-0 z-10"
-                    aria-label={`Open file ${file.id}`}
+                    aria-label={`Open file ${file.filename}`}
                     onClick={(e) => e.stopPropagation()}
                   ></a>
                 ) : null}
                 {file.mimetype.startsWith("image/") ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={file.url}
-                    alt={file.id}
+                    alt={file.filename}
                     className="w-full h-40 sm:h-48 object-cover bg-neutral-700"
                     loading="lazy"
                     onError={(e) => {
@@ -261,11 +264,11 @@ export default function GalleryComponent({ username }: GalleryProps) {
                     </svg>
                     <p
                       className="mt-2 text-xs text-zinc-300 break-all text-center"
-                      title={file.id}
+                      title={file.filename}
                     >
-                      {file.id.length > 20
-                        ? `${file.id.substring(0, 18)}...`
-                        : file.id}
+                      {file.filename.length > 20
+                        ? `${file.filename.substring(0, 18)}...`
+                        : file.filename}
                     </p>
                     {!isPreviewableInModal && (
                       <p className="text-xs mt-1 text-blue-400 underline">
@@ -279,9 +282,9 @@ export default function GalleryComponent({ username }: GalleryProps) {
                   {/* neutral */}
                   <p
                     className="text-sm font-medium truncate text-zinc-200"
-                    title={file.id}
+                    title={file.filename}
                   >
-                    {file.id}
+                    {file.filename}
                   </p>
                   <p
                     className="text-xs text-neutral-400 truncate"

@@ -5,6 +5,7 @@ import React, { useEffect } from "react";
 export interface ModalFileItem {
   id: string;
   filename: string;
+  extension: string;
   mimetype: string;
   url: string;
   openURL: string;
@@ -72,12 +73,8 @@ export default function FileModal({
       aria-modal="true"
       aria-labelledby="file-modal-title"
     >
-      <div className="bg-neutral-800 text-zinc-100 rounded-lg shadow-xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-        {" "}
-        {/* neutral */}
+      <div className="bg-neutral-800 text-zinc-100 rounded-md shadow-xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex justify-between items-center p-3 sm:p-4 border-b border-neutral-700 min-h-[60px]">
-          {" "}
-          {/* neutral border */}
           <Link
             id="file-modal-title"
             className="text-lg sm:text-xl font-semibold truncate text-blue-400 hover:underline"
@@ -86,10 +83,9 @@ export default function FileModal({
           >
             {file.filename}
           </Link>{" "}
-          {/* Link color kept for primary action feel */}
           <button
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1 rounded-full hover:bg-neutral-700 transition-colors"
+            className="text-neutral-400 hover:text-white p-1 rounded-md hover:bg-neutral-700 transition-colors"
             aria-label="Close modal"
           >
             {" "}
@@ -114,6 +110,7 @@ export default function FileModal({
           {" "}
           {/* neutral */}
           {file.mimetype.startsWith("image/") && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={file.url}
               alt={file.filename}

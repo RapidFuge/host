@@ -8,7 +8,7 @@ export default function Footer() {
           <ul className="flex flex-col space-y-2 lg:mb-0 sm:space-y-0 sm:space-x-5 sm:flex-row">
             <li>
               <Link
-                href="/home"
+                href="/"
                 className="text-md text-gray-200 hover:text-white transition-colors duration-300 hover:text-deep-purple-accent-400 font-semibold"
               >
                 Home

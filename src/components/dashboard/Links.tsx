@@ -17,7 +17,6 @@ interface LinksComponentProps {
 
 export default function LinksComponent({
   username,
-  token,
   baseUrl,
 }: LinksComponentProps) {
   const [links, setLinks] = useState<ShortenedLink[]>([]);
@@ -48,13 +47,14 @@ export default function LinksComponent({
           data.message || "API returned success=false while fetching links"
         );
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
       setLinks([]);
     } finally {
       setIsLoading(false);
     }
-  }, [username, token]);
+  }, [username]);
 
   useEffect(() => {
     fetchLinks();
@@ -94,6 +94,7 @@ export default function LinksComponent({
       }
       fetchLinks();
       alert(responseData.message || "Link deleted successfully!");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Delete failed:", err);
       setError(`Delete failed: ${err.message}`);
@@ -107,7 +108,7 @@ export default function LinksComponent({
     navigator.clipboard
       .writeText(text)
       .then(() => alert("Short URL copied to clipboard!"))
-      .catch((err) => alert("Failed to copy URL."));
+      .catch(() => alert("Failed to copy URL."));
   };
 
   if (!username && !isLoading) {
@@ -144,23 +145,15 @@ export default function LinksComponent({
           Loading links...
         </div>
       )}{" "}
-      {/* neutral */}
       {!isLoading && !error && links.length === 0 && username && (
         <div className="text-center py-10 text-neutral-400">
           No links found for this user.
         </div>
       )}{" "}
-      {/* neutral */}
       {links.length > 0 && (
-        <div className="overflow-x-auto flex-grow scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-800">
-          {" "}
-          {/* neutral scrollbar */}
-          <table className="min-w-full divide-y divide-neutral-700 bg-neutral-800 rounded-lg shadow">
-            {" "}
-            {/* neutral */}
+        <div className="overflow-x-auto flex-grow scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-800 rounded-md">
+          <table className="min-w-full divide-y divide-neutral-700 bg-neutral-800 rounded-md shadow">
             <thead className="bg-neutral-700">
-              {" "}
-              {/* neutral */}
               <tr>
                 <th
                   scope="col"

@@ -66,10 +66,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (!file) continue; // Should not happen if filesToProcess is constructed correctly
 
             try {
-                await removeGPS(file.filepath).catch((gpsError) => {
-                    console.warn(`GPS removal failed for ${file.originalFilename}: ${gpsError.message}`);
-                    // Decide if this is a critical error or if you want to continue
-                });
+
+                await removeGPS(file.filepath)
+                    .then(result => {
+                        console.log(`GPS removal successful for ${file.filepath}: ${result}`);
+                    })
+                    .catch(error => {
+                        console.error(`GPS removal failed for ${file.filepath}:`, error);
+                    });
 
                 const fileContent = await fs.readFile(file.filepath);
                 const fileSizeInBytes = fileContent.length; // <--- GET FILE SIZE HERE
@@ -93,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     deletionUrl: `${base}/dashboard`,
                 });
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (uploadError: any) {
                 console.error(`Error processing file ${file.originalFilename}:`, uploadError);
                 if (results.length === 0 && filesToProcess.indexOf(file) === filesToProcess.length - 1) {

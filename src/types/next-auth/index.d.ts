@@ -23,15 +23,3 @@ declare module 'next-auth/jwt' {
         isAdmin?: boolean;
     }
 }
-
-declare module '@xoi/gps-metadata-remover' {
-    type ReadFunction = (size: number, offset: number) => Promise<Buffer>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type WriteFunction = (val: string, offset: number, enc: any) => Promise<void>
-    type Options = {
-        skipXMPRemoval?: boolean
-    }
-    async function removeLocation(path: string, read: ReadFunction, write: WriteFunction, options: Options = {}): Promise<boolean>;
-
-    export { removeLocation };
-}

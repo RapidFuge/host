@@ -85,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             return res.status(400).json(errorGenerator(400, "No update action specified."));
-
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(`Error updating config for ${targetUser.username}:`, error);
             return res.status(500).json(errorGenerator(500, error.message || "Failed to update configuration."));
