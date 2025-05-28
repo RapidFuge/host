@@ -29,8 +29,8 @@ export default function SettingsComponent({
             : `(Viewing: ${selectedUser})`}
         </h2>
       </div>
-      {loggedInUser.isAdmin && (
-        <div className="mb-8">
+      {loggedInUser.isAdmin && isViewingOwnSettings && (
+        <div className="p-4">
           <div className="flex flex-wrap gap-4 items-start p-4 border border-neutral-700 rounded-lg bg-neutral-850">
             {" "}
             {/* neutral */}

@@ -171,8 +171,8 @@ export default function FileViewerPage({
       size ? filesize(size) : "N/A"
     } | Type: ${mimetype}${owner ? ` | Uploaded by: ${owner}` : ""}`;
     seoConfig = {
-      title: `${name || "View File"} - RapidHost`,
-      description: `View file: ${name}. ${embedDescription}`,
+      title: `${id || "View File"} - RapidHost`,
+      description: `View file: ${id}. ${embedDescription}`,
       canonical: pageFullUrl,
       noindex: isPrivate,
       nofollow: isPrivate,
@@ -180,10 +180,10 @@ export default function FileViewerPage({
         url: pageFullUrl,
         site_name: "RapidHost",
         type: isImage ? "image.png" : "article",
-        title: name || "View File",
-        description: isImage ? name : embedDescription,
+        title: id || "View File",
+        description: embedDescription,
         images: isImage
-          ? [{ url: fileUrl, alt: name, type: mimetype }]
+          ? [{ url: fileUrl, alt: id, type: mimetype }]
           : undefined,
       },
       twitter: { cardType: isImage ? "summary_large_image" : "summary" },
@@ -348,7 +348,7 @@ export default function FileViewerPage({
       return (
         <img
           src={fileUrl}
-          alt={name}
+          alt={id}
           className="max-w-full max-h-full object-contain rounded"
         />
       );
@@ -380,10 +380,10 @@ export default function FileViewerPage({
           {/* Colored download button for this fallback case */}
           <a
             href={fileUrl}
-            download={name}
+            download={id}
             className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
-            Download {name}
+            Download {id}
           </a>
         </div>
       );
@@ -409,9 +409,9 @@ export default function FileViewerPage({
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
                 <h1
                   className="text-xl sm:text-2xl lg:text-3xl font-bold truncate mr-4 text-white"
-                  title={name}
+                  title={id}
                 >
-                  {name}
+                  {id}
                 </h1>
                 {isMarkdown && (
                   <button
@@ -466,7 +466,7 @@ export default function FileViewerPage({
                 )}
                 <a
                   href={fileUrl}
-                  download={name}
+                  download={id}
                   className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   title="Download File"
                 >
@@ -588,7 +588,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (
     !rawApiFileData?.id ||
-    !rawApiFileData.fileName ||
+    !rawApiFileData.id ||
     typeof rawApiFileData.size !== "number"
   ) {
     const errorMsg = "Invalid or incomplete file data received from API.";
@@ -636,7 +636,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       "Content-Type": fileData.mimetype,
       "Content-Disposition": `${
         download || d ? "attachment" : "inline"
-      }; filename="${fileData.name}"`,
+      }; filename="${fileData.id}.${fileData.extension}"`,
     });
     try {
       for await (const chunk of rawFileResponse.body as unknown as AsyncIterable<Uint8Array>) {

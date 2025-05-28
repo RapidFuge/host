@@ -1,4 +1,5 @@
 // components/dashboard/settings/CreateUserForm.tsx
+import { useRouter } from "next/router";
 import { useState } from "react";
 
 interface CreateUserFormProps {
@@ -14,6 +15,7 @@ export default function CreateUserForm({ token }: CreateUserFormProps) {
     text: string;
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +35,9 @@ export default function CreateUserForm({ token }: CreateUserFormProps) {
         type: "success",
         text: `User "${data.username}" created successfully!`,
       });
-      setUsername("");
-      setPassword("");
+      // setUsername("");
+      // setPassword("");
+      router.reload();
     } catch (err: any) {
       console.log(err, 1);
       setMessage({ type: "error", text: err.message });

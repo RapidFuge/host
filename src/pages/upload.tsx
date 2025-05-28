@@ -69,13 +69,12 @@ export default function UploadPage() {
       // Create FormData and append files under the "files" key
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
-      formData.append("isPrivate", isPrivate.toString()); // Append checkbox value
 
       // Send the request to the local Next.js API route
       const response = await fetch("/api/files", {
         method: "POST",
         headers: {
-          isPrivate,
+          isPrivate: isPrivate.toString(),
         },
         body: formData,
       });
@@ -160,8 +159,9 @@ export default function UploadPage() {
           onClick={() => fileInputRef.current?.click()}
         >
           <div
-            className={`absolute inset-0 bg-transparent flex items-center justify-center ${dragging ? "text-blue-500" : "text-gray-500"
-              }`}
+            className={`absolute inset-0 bg-transparent flex items-center justify-center ${
+              dragging ? "text-blue-500" : "text-gray-500"
+            }`}
           >
             {dragging ? (
               <p className="text-xl">Drop files here</p>
@@ -198,10 +198,11 @@ export default function UploadPage() {
         <button
           onClick={handleUpload}
           disabled={uploading}
-          className={`w-auto px-6 py-2 tr04 ${uploading
+          className={`w-auto px-6 py-2 tr04 ${
+            uploading
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
-            } text-white font-semibold rounded focus:outline-none flex items-center justify-center`}
+          } text-white font-semibold rounded focus:outline-none flex items-center justify-center`}
         >
           {uploading ? (
             <span className="flex items-center">

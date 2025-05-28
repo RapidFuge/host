@@ -80,7 +80,7 @@ export default function Dashboard({
       <Header />
       <div className="flex flex-col lg:flex-row flex-grow px-2 sm:px-4 pt-4 lg:pt-6 pb-4 gap-4">
         <button
-          className="lg:hidden fixed top-[calc(theme(spacing.16)+5rem)] right-4 z-30 bg-neutral-700 text-zinc-100 p-2 rounded hover:bg-neutral-600 shadow-lg" // neutral
+          className="lg:hidden fixed top-[calc(theme(spacing.16)+2.2rem)] right-4 z-30 bg-neutral-700 text-zinc-100 p-2 rounded hover:bg-neutral-600 shadow-lg" // neutral
           onClick={() => setSidebarOpen(!isSidebarOpen)}
           aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
           aria-expanded={isSidebarOpen}
@@ -223,7 +223,9 @@ export async function getServerSideProps(
   let fetchedUsers: { username: string }[] = [];
   if (user.isAdmin) {
     try {
-      const res = await fetch(`${getBase(context.req)}/api/users/`); // Ensure correct auth header if needed
+      const res = await fetch(`${getBase(context.req)}/api/users/`, {
+        headers: { Authorization: user.token },
+      }); // Ensure correct auth header if needed
       if (res.ok) {
         const data = await res.json();
         if (data.success) {

@@ -1,23 +1,24 @@
 import { adminUser, generateToken, hashRounds } from './index';
 import { hash } from 'bcrypt';
-import OwnCloud from './ownCloud';
 import mongoose from 'mongoose';
 import userBase from './models/user';
 import linkBase from './models/url';
 import fileBase from './models/file';
 import upTokens from './models/upTokens';
 import { shorteners } from './generators';
-import { FileStat } from '@asun01/webdav';
+import MinIOClient, { FileStat } from './minio';
 
 const PAGE_SIZE = 20;
 let databaseInstance: Database | null = null;
+let isConnected = false;
 
 class Database {
 	public userBase = userBase;
 	public linkBase = linkBase;
 	public fileBase = fileBase;
 	public upTokens = upTokens;
-	public imageDrive: OwnCloud;
+	// public imageDrive: OwnCloud;
+	public imageDrive: MinIOClient;
 	private initialized = false;
 
 	constructor() {
@@ -28,22 +29,31 @@ class Database {
 		if (!process.env.OWNCLOUD_PASSWORD) throw new Error("Missing OWNCLOUD_PASSWORD environment variable.");
 
 		// Initialize OwnCloud
-		this.imageDrive = new OwnCloud(
-			process.env.OWNCLOUD_URL,
-			process.env.OWNCLOUD_FOLDER,
-			process.env.OWNCLOUD_USERNAME,
-			process.env.OWNCLOUD_PASSWORD
-		);
+		// this.imageDrive = new OwnCloud(
+		// 	process.env.OWNCLOUD_URL,
+		// 	process.env.OWNCLOUD_FOLDER,
+		// 	process.env.OWNCLOUD_USERNAME,
+		// 	process.env.OWNCLOUD_PASSWORD
+		// );
+
+		this.imageDrive = new MinIOClient(
+			process.env.S3_ENDPOINT!,
+			process.env.S3_BUCKET!,
+			'uploads',
+			process.env.S3_ACCESS_KEY!,
+			process.env.S3_SECRET_KEY!
+		)
 	}
 
 	public async initialize() {
 		try {
 			if (this.initialized) return console.log("Already initialized!");
 
+			await this.imageDrive.login();
+			console.log("Connected to S3")
+
 			await mongoose.connect(process.env.MONGO_URI!);
 			console.log("Connected to MongoDB");
-
-			await this.imageDrive.login();
 
 			const root = await this.userBase.findOne({ username: adminUser });
 			if (!root) {
@@ -74,7 +84,9 @@ class Database {
 	// If a file doesn't exist, it is removed from the database.
 	private async checkFiles() {
 		const files = await this.getFiles();
+		// const dbList: Array<FileStat> = await this.imageDrive.list();
 		const dbList: Array<FileStat> = await this.imageDrive.list();
+
 		if (files) {
 			for (const file of files) {
 				if (!dbList.find((f) => f.basename === file.fileName || f.basename === file.videoThumbnail)) {
@@ -254,17 +266,11 @@ class Database {
 
 
 export async function getDatabase(): Promise<Database> {
-	if (databaseInstance && mongoose.connection.readyState === 1) {
-		return databaseInstance;
-	}
+	if (databaseInstance && mongoose.connection.readyState === 1) return databaseInstance;
 
-	if (!databaseInstance) {
-		databaseInstance = new Database();
-	}
+	if (!databaseInstance) databaseInstance = new Database();
 
-	if (mongoose.connection.readyState !== 1) {
-		await databaseInstance.initialize();
-	}
+	if (mongoose.connection.readyState !== 1) await databaseInstance.initialize();
 
 	return databaseInstance;
 }

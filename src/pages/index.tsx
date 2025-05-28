@@ -1,3 +1,4 @@
+// /index.tsx
 /* eslint-disable @next/next/no-img-element */
 import Header from "@components/Header";
 import Footer from "@components/Footer";
@@ -39,16 +40,17 @@ export default function Home() {
           <h2 className="text-2xl font-semibold lh-6 ld-04 pb-11 text-gray-300 text-center">
             Rapid Host. a network for ShareX. AKA a file/image host.
           </h2>
-          <div className="ml-6 text-center">
+
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Link
               href="/upload"
-              className="tr04 w-full ml-4 px-4 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none"
+              className="tr04 px-6 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none w-full sm:w-auto text-center"
             >
               Upload files
             </Link>
             <Link
               href="/shorten"
-              className="tr04 w-full ml-4 px-4 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none"
+              className="tr04 px-6 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none w-full sm:w-auto text-center"
             >
               Shorten URLs
             </Link>
@@ -61,7 +63,7 @@ export default function Home() {
               </h2>
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:space-x-8 space-y-8 lg:space-y-0">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:space-x-0 lg:gap-8 space-y-8 lg:space-y-0 pt-4">
               <div className="flex flex-col items-center">
                 <div className="text-sm text-gray-400">VERSION</div>
                 <div className="text-lg text-gray-300 font-bold">
@@ -74,12 +76,12 @@ export default function Home() {
                 <div
                   className={`text-lg font-bold ${
                     loading
-                      ? "animate-pulse text-gray-300 w-48 mx-auto h-6"
+                      ? "animate-pulse text-gray-300 w-48 mx-auto h-6 bg-gray-700 rounded"
                       : "text-gray-300"
                   }`}
                 >
                   {loading ? (
-                    "Loading..."
+                    ""
                   ) : (
                     <CountUp end={uptime}>
                       {({ countUpRef }) => (
@@ -97,11 +99,11 @@ export default function Home() {
                 <div
                   className={`text-lg font-bold ${
                     loading
-                      ? "animate-pulse text-gray-300 w-48 mx-auto h-6"
+                      ? "animate-pulse text-gray-300 w-48 mx-auto h-6 bg-gray-700 rounded"
                       : "text-gray-300"
                   }`}
                 >
-                  {loading ? "Loading..." : <CountUp end={uploads} />}
+                  {loading ? "" : <CountUp end={uploads} />}
                 </div>
               </div>
             </div>

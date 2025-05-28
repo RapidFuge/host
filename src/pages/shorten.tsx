@@ -166,7 +166,7 @@ export async function getServerSideProps(
       `${baseUrl}/api/users/${session.user.username}`,
       {
         headers: {
-          Authorization: session.user.token,
+          Authorization: session.user.token ?? "",
         },
       }
     );

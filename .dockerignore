@@ -34,3 +34,5 @@ Dockerfile
 # OS specific
 .DS_Store
 Thumbs.db
+
+.onedev-buildspec.yml

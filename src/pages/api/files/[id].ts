@@ -50,12 +50,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const Path = path.join(os.tmpdir(), file.fileName);
                 const Mime = mime.lookup(file.fileName) || "application/octet-stream";
                 res.setHeader("Content-Type", Mime);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let buf: any;
+                let buf: Buffer;
                 if (!fs.existsSync(Path)) {
-                    // Weird type error with writing with fs, forced to put any type.
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    buf = await db.imageDrive.get(file.fileName);
+                    buf = await db.imageDrive.get(file.fileName) as Buffer;
                     await fs.writeFile(Path, buf);
                 } else buf = await fs.readFile(Path);
 

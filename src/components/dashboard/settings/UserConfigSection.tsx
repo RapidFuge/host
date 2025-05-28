@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardUser } from "@pages/dashboard"; // Ensure this path is correct
 import { shorteners } from "@lib/generators"; // Assuming ShortenerType is exported along with shorteners array
 import { useRouter } from "next/router";
+import { signOut } from "next-auth/react";
 
 interface UserConfigSectionProps {
   loggedInUser: DashboardUser;
@@ -21,6 +22,9 @@ export default function UserConfigSection({
   token,
   baseUrl,
 }: UserConfigSectionProps) {
+  const isDeletable = loggedInUser.isAdmin
+    ? process.env.PREVENT_ROOT_DELETION === "true"
+    : true;
   const [userDetails, setUserDetails] = useState<SelectedUserDetails | null>(
     null
   );
@@ -126,7 +130,7 @@ export default function UserConfigSection({
     }
     if (
       confirm(
-        `Reset API token for ${selectedUser}? Current token will no longer work.`
+        `Reset API token for ${selectedUser}? Current token will no longer work. You will also be logged out.`
       )
     ) {
       setIsResettingToken(true);
@@ -150,6 +154,7 @@ export default function UserConfigSection({
           text: data.message || "Token reset successfully!",
         });
         if (data.newToken && userDetails) {
+          signOut({ callbackUrl: `${window.location.origin}/` });
           setUserDetails((prev) =>
             prev ? { ...prev, token: data.newToken } : null
           );
@@ -224,7 +229,7 @@ export default function UserConfigSection({
             );
           alert(data.message || `User ${selectedUser} deleted.`);
           if (loggedInUser.username === selectedUser)
-            router.push("/api/auth/signout");
+            signOut({ callbackUrl: `${window.location.origin}/` });
           else router.reload(); // Reload to update user list
         } catch (err: any) {
           alert(`Error: ${err.message}`);
@@ -259,7 +264,7 @@ export default function UserConfigSection({
   } // neutral
 
   return (
-    <div className="mt-6 p-4 space-y-8">
+    <div className="p-4 space-y-8">
       <div className="p-4 border border-neutral-700 rounded-lg bg-neutral-850">
         {" "}
         {/* neutral */}
@@ -391,22 +396,23 @@ export default function UserConfigSection({
           </button>
         </div>
       )}
-      {loggedInUser.username === selectedUser && ( // Self-delete option always available if not prevented by other logic
-        <div className="p-4 border border-red-700 rounded-lg bg-red-900 bg-opacity-30 mt-8">
-          <h3 className="text-lg font-semibold text-red-300 mb-3">
-            Delete Your Account
-          </h3>
-          <p className="text-sm text-red-200 mb-3">
-            This action is irreversible. All your data will be deleted.
-          </p>
-          <button
-            onClick={handleDeleteUser}
-            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded text-white font-semibold"
-          >
-            Delete My Account
-          </button>
-        </div>
-      )}
+      {loggedInUser.username === selectedUser &&
+        isDeletable && ( // Self-delete option always available if not prevented by other logic
+          <div className="p-4 border border-red-700 rounded-lg bg-red-900 bg-opacity-30 mt-8">
+            <h3 className="text-lg font-semibold text-red-300 mb-3">
+              Delete Your Account
+            </h3>
+            <p className="text-sm text-red-200 mb-3">
+              This action is irreversible. All your data will be deleted.
+            </p>
+            <button
+              onClick={handleDeleteUser}
+              className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded text-white font-semibold"
+            >
+              Delete My Account
+            </button>
+          </div>
+        )}
       {isTokenModalOpen && userDetails && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-75 p-4 transition-opacity"
