@@ -52,6 +52,7 @@ class Database {
 				await this.userBase.create({
 					username: adminUser,
 					password: await hash(process.env.ROOT_PASSWORD!, hashRounds), // Adjust hashRounds as needed
+					isAdmin: true,
 					token,
 				});
 			} else {

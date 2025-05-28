@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'GET') {
-        const isLink = Boolean(req.query.link);
+        const isLink = req.query.link === "true";
         const urlBase = `${getBase(req)}`;
         let userTokenForConfig = targetUser.token; // Use target user's token for config
 
