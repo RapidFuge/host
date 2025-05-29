@@ -96,7 +96,7 @@ function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase:
             Name: `${urlBase} ${user.username} URL service`,
             DestinationType: "URLShortener, URLSharingService",
             RequestMethod: "POST",
-            RequestURL: `${urlBase}/links`,
+            RequestURL: `${urlBase}/api/links`,
             Headers: { Authorization: token, "shorten-url": "$input$" },
             URL: "$json:url$",
         }
@@ -104,7 +104,7 @@ function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase:
             Name: `${urlBase} ${user.username} Upload`,
             DestinationType: "ImageUploader, TextUploader, FileUploader",
             RequestMethod: "POST",
-            RequestURL: `${urlBase}/files`,
+            RequestURL: `${urlBase}/api/files`,
             Headers: { Authorization: token },
             Body: "MultipartFormData",
             FileFormName: "files",
