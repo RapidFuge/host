@@ -45,11 +45,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(200).json({ success: true, message: "File deleted." });
             case "GET":
                 if (file.isPrivate && (!user || file.owner !== user.username && !user.isAdmin)) return res.status(403).json(errorGenerator(403, "Forbidden."));
-                if (req.headers.getinfo === "true") return res.json(file.toJSON());
+                if (req.headers.getinfo === "true") {
+                    const owner = await db.getUser(file.owner);
+                    return res.json({
+                        ...file.toJSON(),
+                        ownerEmbedPreference: owner.embedImageDirectly,
+                        ownerCustomDescription: owner.customEmbedDescription
+                    });
+                };
 
                 const Path = path.join(os.tmpdir(), file.fileName);
-                const ext = path.extname(file.fileName);
-                const Mime = ext === '.ts' ? 'text/typescript' : mime.lookup(file.fileName) || 'application/octet-stream';
+                let Mime;
+                if (file.extension === 'ts') {
+                    Mime = 'text/typescript';
+                } else if (file.extension === 'mp4') {
+                    Mime = 'video/mp4';
+                } else {
+                    Mime = mime.lookup(file.fileName) || 'application/octet-stream';
+                }
                 res.setHeader("Content-Type", Mime);
                 let buf: Buffer;
                 if (!fs.existsSync(Path)) {

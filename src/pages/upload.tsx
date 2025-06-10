@@ -5,6 +5,7 @@ import { getSession, GetSessionParams } from "next-auth/react";
 import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
+import { filesize } from "filesize";
 
 export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -106,7 +107,7 @@ export default function UploadPage() {
             className="text-sm text-gray-500 flex justify-between items-center"
           >
             <span>
-              {file.name} - {file.size} bytes
+              {file.name} - {filesize(file.size)}
             </span>
             <button
               className="ml-4 text-red-500 hover:text-red-700"
@@ -136,7 +137,6 @@ export default function UploadPage() {
       <NextSeo
         title="RAPID HOST - Upload"
         description="Upload Files to Rapid Host"
-        canonical="https://i.rapidfuge.xyz/upload"
       />
 
       <Header />

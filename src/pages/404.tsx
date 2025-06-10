@@ -6,11 +6,7 @@ import Link from "next/link";
 export default function Contact() {
   return (
     <div className="flex flex-col min-h-screen text-black bg-black">
-      <NextSeo
-        title="RAPID HOST - 404"
-        description="Uh ohhhhh"
-        canonical="https://i.rapidfuge.xyz/404"
-      />
+      <NextSeo title="RAPID HOST - 404" description="Uh ohhhhh" />
 
       {/* Header */}
       <Header />

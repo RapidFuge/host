@@ -31,11 +31,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen text-white bg-black">
-      <NextSeo
-        title="RAPID HOST - Login"
-        description="Login to Rapid Host"
-        canonical="https://i.rapidfuge.xyz/login"
-      />
+      <NextSeo title="RAPID HOST - Login" description="Login to Rapid Host" />
 
       <Header />
 

@@ -37,7 +37,6 @@ export default function SignupPage() {
       <NextSeo
         title="RAPID HOST - Sign Up"
         description="Sign up to Rapid Host"
-        canonical="https://i.rapidfuge.xyz/signup"
       />
 
       <Header />

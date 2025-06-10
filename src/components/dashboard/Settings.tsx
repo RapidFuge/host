@@ -35,11 +35,10 @@ export default function SettingsComponent({
             <h3 className="text-lg font-semibold text-white w-full mb-2">
               Admin Tools
             </h3>{" "}
-            {/* Added mb-2 */}
             <CreateUserForm />
             <button
               onClick={() => setIsSignUpTokenModalOpen(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition-colors"
             >
               Manage Sign Up Tokens
             </button>
@@ -49,12 +48,10 @@ export default function SettingsComponent({
       <UserConfigSection
         loggedInUser={loggedInUser}
         selectedUser={selectedUser}
-        token={loggedInUser.token}
         baseUrl={baseUrl}
       />
       {loggedInUser.isAdmin && (
         <SignUpTokensManagerModal
-          adminAuthToken={loggedInUser.token}
           isOpen={isSignUpTokenModalOpen}
           onClose={() => setIsSignUpTokenModalOpen(false)}
         />

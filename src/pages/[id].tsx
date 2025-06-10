@@ -36,6 +36,8 @@ interface FileData {
   size: number;
   owner: string;
   isPrivate: boolean;
+  ownerEmbedPreference?: boolean;
+  ownerCustomDescription?: string | null;
 }
 
 interface FilePageProps {
@@ -211,31 +213,70 @@ export default function FileViewerPage({
       nofollow: true,
     };
   } else {
-    const { id, mimetype, size, owner, isPrivate, extension } = fileData;
-    const fileName = extension ? `${id}.${extension}` : id;
+    const {
+      id,
+      name,
+      mimetype,
+      size,
+      owner,
+      isPrivate,
+      ownerEmbedPreference,
+      ownerCustomDescription,
+    } = fileData;
     const isImage = mimetype?.startsWith("image/");
     const pageFullUrl = `${baseUrl}/${id}`;
-    const embedDescription = `Size: ${
-      size ? filesize(size) : "N/A"
-    } | Type: ${mimetype}${owner ? ` | Uploaded by: ${owner}` : ""}`;
-    seoConfig = {
-      title: `${fileName} - RapidHost`,
-      description: `View file: ${fileName}. ${embedDescription}`,
-      canonical: pageFullUrl,
-      noindex: isPrivate,
-      nofollow: isPrivate,
-      openGraph: {
-        url: pageFullUrl,
-        site_name: "RapidHost",
-        type: isImage ? "image.png" : "article",
-        title: fileName,
-        description: embedDescription,
-        images: isImage
-          ? [{ url: fileUrl, alt: fileName, type: mimetype }]
-          : undefined,
-      },
-      twitter: { cardType: isImage ? "summary_large_image" : "summary" },
-    };
+
+    if (isImage && ownerEmbedPreference) {
+      seoConfig = {
+        // title: name,
+        noindex: isPrivate,
+        nofollow: isPrivate,
+        canonical: pageFullUrl,
+        openGraph: {
+          // type: "image.png",
+          // url: pageFullUrl,
+          // title: name,
+          images: [
+            {
+              url: fileUrl,
+              type: mimetype,
+            },
+          ],
+        },
+        twitter: {
+          cardType: "summary_large_image",
+        },
+      };
+    } else {
+      let finalEmbedDescription = `Size: ${size ? filesize(size) : "N/A"
+        } | Type: ${mimetype}${owner ? ` | Uploaded by: ${owner}` : ""}`;
+      if (ownerCustomDescription && ownerCustomDescription.trim() !== "") {
+        finalEmbedDescription = ownerCustomDescription;
+      }
+
+      seoConfig = {
+        title: name,
+        description: finalEmbedDescription,
+        canonical: pageFullUrl,
+        noindex: isPrivate,
+        nofollow: isPrivate,
+        openGraph: {
+          url: pageFullUrl,
+          type: "article",
+          title: name || "View File",
+          description: finalEmbedDescription,
+          ...(isImage && {
+            images: [
+              {
+                url: fileUrl,
+                type: mimetype,
+              },
+            ],
+          }),
+        },
+        twitter: { cardType: isImage ? "summary_large_image" : "summary" },
+      };
+    }
   }
 
   if (error) {
@@ -534,11 +575,10 @@ export default function FileViewerPage({
             </div>
             <div className="bg-neutral-800 rounded-lg shadow-xl overflow-hidden">
               <div
-                className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-neutral-900 ${
-                  isMarkdownFile || (isTextBased && rawFileContent)
+                className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-neutral-900 ${isMarkdownFile || (isTextBased && rawFileContent)
                     ? ""
                     : "flex justify-center items-center p-1 sm:p-2"
-                }`}
+                  }`}
               >
                 {isMarkdownFile || (isTextBased && rawFileContent) ? (
                   renderFileContent()
@@ -627,9 +667,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     size: number;
     owner: string;
     isPrivate: boolean;
+    ownerEmbedPreference?: boolean;
+    ownerCustomDescription?: string | null;
   };
   const rawApiFileData: RawApiFileData = await fileInfoResponse.json();
-
   if (
     !rawApiFileData?.id ||
     !rawApiFileData.fileName ||
@@ -649,10 +690,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     };
   }
 
-  const derivedMimetype =
-    rawApiFileData.extension === "ts"
-      ? "text/typescript"
-      : mime.lookup(rawApiFileData.fileName) || "application/octet-stream";
+  let derivedMimetype;
+  if (rawApiFileData.extension === "ts") {
+    derivedMimetype = "text/typescript";
+  } else if (rawApiFileData.extension === "mp4") {
+    derivedMimetype = "video/mp4";
+  } else {
+    derivedMimetype =
+      mime.lookup(rawApiFileData.fileName) || "application/octet-stream";
+  }
   const fileData: FileData = {
     id: rawApiFileData.id,
     name: rawApiFileData.extension
@@ -663,6 +709,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     size: rawApiFileData.size,
     owner: rawApiFileData.owner,
     isPrivate: rawApiFileData.isPrivate,
+    ownerCustomDescription: rawApiFileData.ownerCustomDescription,
+    ownerEmbedPreference: rawApiFileData.ownerEmbedPreference,
   };
 
   const { raw, r, download, d } = query;
@@ -682,9 +730,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     }
     res.writeHead(200, {
       "Content-Type": fileData.mimetype,
-      "Content-Disposition": `${
-        download || d ? "attachment" : "inline"
-      }; filename="${fileData.name}"`,
+      "Content-Disposition": `${download || d ? "attachment" : "inline"
+        }; filename="${fileData.name}"`,
     });
     try {
       for await (const chunk of rawFileResponse.body as unknown as AsyncIterable<Uint8Array>) {

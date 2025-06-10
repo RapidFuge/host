@@ -249,6 +249,10 @@ class Database {
 		return this.userBase.updateOne({ username }, { $set: { shortener } });
 	}
 
+	public async setEmbedPreferences(username: string, opt: { embedImageDirectly?: boolean, customEmbedDescription?: string | null }) {
+		return this.userBase.updateOne({ username }, { $set: opt });
+	}
+
 	public async expireToken(username: string) {
 		return this.setToken(username, undefined);
 	}

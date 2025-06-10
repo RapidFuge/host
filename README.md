@@ -1,43 +1,76 @@
-# This is an experimental version of Rapid host mostly coded with ai.
-This will not likely be a public release anytime soon. This is still highly experimental with many bugs and issues. Many code will look like crap and is probably crap. Remember, this is only an experimental thing.
+# Rapid Host - File Hosting & URL Shortening Service
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+## Overview
 
-## Getting Started
+Rapid Host is a modern, full-stack application designed for seamless file hosting and URL shortening. It provides a user-friendly dashboard for managing uploaded files, shortened links, and user-specific settings. Administrators have access to extended controls, including user management, sign-up token generation, and application analytics.
 
-First, run the development server:
+The frontend is built with Next.js and React, styled with Tailwind CSS, offering a responsive and dynamic user experience. The backend is powered by Next.js API routes, handling authentication, database interactions, file processing, and configuration management.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Core Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+*   **File Uploads:**
+    *   Securely upload various file types.
+    *   View files directly on the platform (images, videos, audio, text, Markdown).
+    *   Download original files.
+    *   Generate ShareX (`.sxcu`) configuration files for quick uploads.
+*   **URL Shortening:**
+    *   Shorten long URLs to concise, shareable links.
+    *   Manage created short links.
+    *   Generate ShareX (`.sxcu`) configuration for URL shortening.
+*   **User Dashboard:**
+    *   **Gallery:** View, manage, and share uploaded files with pagination. Modal view for better image/video/audio preview, including download and delete options.
+    *   **Links:** Table view of all shortened URLs with original link, creation date, and management options (delete).
+    *   **Settings:**
+        *   **User Configuration:**
+            *   Change account password.
+            *   Reset API token (used for ShareX/API uploads).
+            *   Select preferred ID generator for file/link names (Random, Gfycat, Nanoid, ZWS, Timestamp).
+            *   Control image embed preferences (direct image embed vs. informational card for Discord/social media).
+            *   Set a custom description for embeds when direct image embed is off.
+        *   **Admin Tools (Admin Only):**
+            *   **Create User:** Directly create new user accounts.
+            *   **Manage Sign-Up Tokens:** Generate and delete tokens required for user registration, with configurable expiration times.
+            *   **Analytics Page:** View application statistics including total users, files, URLs, and storage usage (MongoDB & File Storage).
+*   **Authentication:**
+    *   User login and session management (presumably NextAuth.js).
+    *   Token-based authentication for API interactions (e.g., ShareX uploads).
+*   **File Previews & Sharing:**
+    *   Direct link access to files (`/[fileID]`).
+    *   GitHub Flavored Markdown (GFM) rendering for `.md` files, including syntax highlighting for code blocks.
+    *   Raw text view with syntax highlighting for various code/text file types.
+    *   Optimized Open Graph and Twitter Card meta tags for rich link previews on social media (Discord, Twitter, etc.), respecting user embed preferences for images.
+*   **Admin Capabilities:**
+    *   View and manage any user's files and links.
+    *   Comprehensive user and application settings management.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Tech Stack (Inferred)
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+*   **Frontend:** Next.js (React), Tailwind CSS
+*   **Backend:** Next.js API Routes (Node.js)
+*   **Authentication:** NextAuth.js (likely), bcrypt (for password hashing)
+*   **Database:** MongoDB (inferred from analytics section)
+*   **Markdown Processing:** `remark`, `remark-gfm`, `rehype-react`, `rehype-prism-plus`
+*   **Syntax Highlighting (Raw View):** `prism-react-renderer`
+*   **File Storage:** (Not specified, could be local filesystem or cloud storage like S3)
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Setup & Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+*   Standard Next.js project setup (`npm install`, `npm run dev`).
+*   Production builds via `npm run build` and `npm start`.
+*   Dockerfile provided for containerized deployments (both standalone and traditional Next.js builds).
+*   Requires environment variables for database connection, NextAuth secret, JWT secret, etc.
 
-## Learn More
+## Key API Endpoints (Examples)
 
-To learn more about Next.js, take a look at the following resources:
+*   `/api/files/[id]` (GET, DELETE) - Manage individual files
+*   `/api/url/[tag]` (GET, DELETE) - Manage individual short links
+*   `/api/users/[username]/files` (GET) - List user's files
+*   `/api/users/[username]/links` (GET) - List user's links
+*   `/api/users/[username]/configuration` (GET, POST) - Manage user-specific settings
+*   `/api/users/create` (POST) - Admin: Create user
+*   `/api/users/tokens` (GET, POST) - Admin: Manage sign-up tokens
+*   `/api/users/tokens/[tokenValue]` (DELETE) - Admin: Delete sign-up token
+<!-- *   `/api/admin/analytics/stats` (GET) - Admin: Get application stats
+*   `/api/admin/analytics/storage` (GET) - Admin: Get storage stats -->
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+This project offers a robust and feature-rich platform for personal or small-group file and link management.

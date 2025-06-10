@@ -141,7 +141,10 @@ export default function GalleryComponent({ username }: GalleryProps) {
   const displayedFiles = showAllFileTypes
     ? files
     : files.filter(
-        (file) => file.mimetype && file.mimetype.startsWith("image/")
+        (file) =>
+          file.mimetype &&
+          (file.mimetype.startsWith("image/") ||
+            file.mimetype.startsWith("video/"))
       );
 
   if (!username && !isLoading) {

@@ -5,6 +5,8 @@ export interface User extends Document {
   token: string;
   password: string;
   shortener: string;
+  customEmbedDescription?: string;
+  embedImageDirectly?: boolean;
   isAdmin: boolean;
 }
 
@@ -24,6 +26,15 @@ const UserSchema: Schema<User> = new Schema({
   shortener: {
     type: String,
     default: 'random',
+  },
+  embedImageDirectly: {
+    type: Boolean,
+    required: false,
+    default: false
+  },
+  customEmbedDescription: {
+    type: String,
+    required: false
   },
   isAdmin: {
     type: Boolean,

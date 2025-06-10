@@ -27,8 +27,7 @@ export default function Home() {
     <div className="text-black bg-black flex flex-col min-h-screen">
       <NextSeo
         title="RAPID HOST"
-        description="Rapid Host. a network for ShareX. AKA an image host."
-        canonical="https://i.rapidfuge.xyz"
+        description="Rapid Host. File Hosting & URL Shortening Service"
       />
       <Header />
 
@@ -38,7 +37,7 @@ export default function Home() {
             RAPID HOST
           </h1>
           <h2 className="text-2xl font-semibold lh-6 ld-04 pb-11 text-gray-300 text-center">
-            Rapid Host. a network for ShareX. AKA a file/image host.
+            Rapid Host. File Hosting & URL Shortening Service
           </h2>
 
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -74,16 +73,15 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <div className="text-sm text-gray-400">UPTIME</div>
                 <div
-                  className={`text-lg font-bold ${
-                    loading
-                      ? "animate-pulse text-gray-300 w-48 mx-auto h-6 bg-gray-700 rounded"
-                      : "text-gray-300"
-                  }`}
+                  className={`text-lg font-bold ${loading
+                    ? "animate-pulse text-gray-300 w-48 mx-auto h-6 bg-gray-700 rounded"
+                    : "text-gray-300"
+                    }`}
                 >
                   {loading ? (
                     ""
                   ) : (
-                    <CountUp end={uptime}>
+                    <CountUp end={uptime} delay={0}>
                       {({ countUpRef }) => (
                         <div>
                           <span ref={countUpRef} /> Hour(s)
@@ -97,13 +95,12 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <div className="text-sm text-gray-400">UPLOADS</div>
                 <div
-                  className={`text-lg font-bold ${
-                    loading
-                      ? "animate-pulse text-gray-300 w-48 mx-auto h-6 bg-gray-700 rounded"
-                      : "text-gray-300"
-                  }`}
+                  className={`text-lg font-bold ${loading
+                    ? "animate-pulse text-gray-300 w-48 mx-auto h-6 bg-gray-700 rounded"
+                    : "text-gray-300"
+                    }`}
                 >
-                  {loading ? "" : <CountUp end={uploads} />}
+                  {loading ? "" : <CountUp end={uploads} delay={0} />}
                 </div>
               </div>
             </div>

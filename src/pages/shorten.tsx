@@ -53,7 +53,6 @@ export default function ShortenerPage({
       <NextSeo
         title="URL Shortener"
         description="Shorten your URLs quickly and easily"
-        canonical="https://i.rapidfuge.xyz/shortener"
       />
 
       <Header />

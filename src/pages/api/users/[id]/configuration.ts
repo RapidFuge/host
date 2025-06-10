@@ -1,115 +1,154 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getDatabase } from '@lib/db';
-import { getBase, generateToken, errorGenerator } from "@lib";
+import { getDatabase } from '@lib/db'; // Assuming User type is from db
+import { getBase, generateToken, errorGenerator, hashRounds } from "@lib"; // Ensure shorteners array and ShortenerType are from @lib
 import { getToken } from "next-auth/jwt";
+import { hash } from "bcrypt";
 import { User } from "@lib/models/user";
-import { hash } from "bcrypt"; // For password hashing
-import { hashRounds } from "@lib"; // Your hashRounds constant
 import { shorteners } from "@lib/generators";
 
+// Assuming User interface includes:
+// username: string;
+// token: string; // API key
+// password?: string;
+// shortener: ShortenerType;
+// isAdmin: boolean;
+// embedImageDirectly?: boolean;
+// customEmbedDescription?: string | null;
+
+
+function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string) {
+    const apiBase = `${urlBase}/api`; // Assuming your API routes are under /api
+    return isLink
+        ? {
+            Name: `${user.username} URL Shortener (${urlBase})`,
+            DestinationType: "URLShortener, URLSharingService",
+            RequestMethod: "POST",
+            RequestURL: `${apiBase}/links`, // Use /api/links for consistency
+            Headers: { Authorization: token },
+            Body: "JSON", // Send URL in JSON body
+            Data: `{"url":"$input$"}`,
+            URL: "$json:url$",
+        }
+        : {
+            Name: `${user.username} File Upload (${urlBase})`,
+            DestinationType: "ImageUploader, TextUploader, FileUploader",
+            RequestMethod: "POST",
+            RequestURL: `${apiBase}/files`,
+            Headers: { Authorization: token },
+            Body: "MultipartFormData",
+            FileFormName: "file", // Assuming 'file' not 'files' if single upload per request
+            URL: "$json:url$",
+            DeletionURL: "$json:deleteUrl$", // Use deleteUrl if your API returns it
+        };
+}
+
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { id } = req.query; // This 'id' is the username of the target user for config changes
+    const { id: targetUsername } = req.query;
     const db = await getDatabase();
 
     const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const authHeader = req.headers.authorization;
-    const requestorTokenString = authHeader ? authHeader : jwtToken?.token;
+    const requestorTokenString = authHeader ? (authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader) : jwtToken?.token;
 
     if (!requestorTokenString) {
         return res.status(401).json(errorGenerator(401, "Unauthorized: Token missing."));
     }
-
     const requestorUser = await db.getUserByToken(requestorTokenString);
-
     if (!requestorUser) {
         return res.status(401).json(errorGenerator(401, "Unauthorized: Invalid requestor token."));
     }
 
-    // User whose configuration is being targeted
-    const targetUser = await db.getUser(id as string);
-    if (!targetUser) {
+    const targetUserFromDB = await db.getUser(targetUsername as string);
+    if (!targetUserFromDB) {
         return res.status(404).json(errorGenerator(404, "Target user not found."));
     }
 
-    // Authorization: Requestor must be admin OR must be the target user
-    if (requestorUser.username !== targetUser.username && !requestorUser.isAdmin) {
-        return res.status(403).json(errorGenerator(403, "Forbidden: You cannot modify this user's configuration."));
+    if (requestorUser.username !== targetUserFromDB.username && !requestorUser.isAdmin) {
+        return res.status(403).json(errorGenerator(403, "Forbidden: Cannot modify this configuration."));
     }
 
     if (req.method === 'GET') {
         const isLink = req.query.link === "true";
-        const urlBase = `${getBase(req)}`;
-        let userTokenForConfig = targetUser.token; // Use target user's token for config
+        const urlBase = getBase(req); // Get http(s)://host
+        let userTokenForConfig = targetUserFromDB.token;
 
         if (!userTokenForConfig) {
             userTokenForConfig = await generateToken();
-            await db.setToken(targetUser.username, userTokenForConfig); // Save new token for target user
+            await db.setToken(targetUserFromDB.username, userTokenForConfig);
         }
 
-        const config = generateSXCUConfig(targetUser, userTokenForConfig, isLink, urlBase);
-        res.setHeader("Content-Disposition", `attachment; filename="${targetUser.username} ${isLink ? "Link shorten" : "Upload"}.sxcu"`);
-        res.setHeader("Content-Type", "application/sxcu");
-        return res.send(config);
+        const config = generateSXCUConfig(targetUserFromDB, userTokenForConfig, isLink, urlBase);
+        res.setHeader("Content-Disposition", `attachment; filename="${targetUserFromDB.username} ${isLink ? "URL" : "File"} Config.sxcu"`);
+        res.setHeader("Content-Type", "application/json"); // SXCU are JSON files with a specific extension
+        return res.json(config); // Send as JSON
+
     } else if (req.method === 'POST') {
-        // Handle updates to user configuration
-        const { password, resetToken, shortener } = req.body;
+        const { password, resetToken, shortener, embedImageDirectly, customEmbedDescription } = req.body;
+        let updateApplied = false;
+        const messages: string[] = [];
+        const embedPreferencesToUpdate: { embedImageDirectly?: boolean; customEmbedDescription?: string | null } = {};
 
         try {
-            if (password) {
-                if (typeof password !== 'string' || password.length < 3) { // Add your password validation
-                    return res.status(400).json(errorGenerator(400, "Invalid new password."));
-                }
+            if (typeof password === 'string') {
+                if (password.length < 3) return res.status(400).json(errorGenerator(400, "New password too short."));
                 const hashedPassword = await hash(password, hashRounds);
-                await db.setPassword(targetUser.username, hashedPassword); // db.updateUserPassword(username, newHashedPassword)
-                return res.json({ success: true, message: "Password updated successfully." });
+                await db.setPassword(targetUserFromDB.username, hashedPassword);
+                updateApplied = true; messages.push("Password updated.");
             }
 
             if (resetToken === true) {
                 const newToken = await generateToken();
-                await db.setToken(targetUser.username, newToken); // db.setToken(username, newToken)
-                return res.json({ success: true, message: "API token reset successfully.", newToken });
+                await db.setToken(targetUserFromDB.username, newToken);
+                updateApplied = true; messages.push("API token reset.");
+                // Optionally return newToken if the client needs it immediately for self-resets,
+                // but be cautious. For admin resets, no need to return it in response.
+                // if (requestorUser.username === targetUserFromDB.username) {
+                //     return res.json({ success: true, message: "API token reset successfully.", newToken });
+                // }
             }
 
-            if (shortener) {
-                if (!shorteners.includes(shortener)) {
-                    return res.status(400).json(errorGenerator(400, "Invalid shortener type."));
+            if (typeof shortener === 'string') {
+                if (!shorteners.includes(shortener)) return res.status(400).json(errorGenerator(400, "Invalid shortener type."));
+                await db.setShortener(targetUserFromDB.username, shortener as shorteners);
+                updateApplied = true; messages.push("ID generator updated.");
+            }
+
+            let embedPrefsChanged = false;
+            if (typeof embedImageDirectly === 'boolean') {
+                embedPreferencesToUpdate.embedImageDirectly = embedImageDirectly;
+                embedPrefsChanged = true;
+            }
+
+            if (customEmbedDescription !== undefined) {
+                const descriptionToSet = (typeof customEmbedDescription === 'string' && customEmbedDescription.trim() === "") ? null : customEmbedDescription;
+                if (descriptionToSet !== null && (typeof descriptionToSet !== 'string' || descriptionToSet.length > 250)) {
+                    return res.status(400).json(errorGenerator(400, "Custom description is too long or invalid."));
                 }
-                await db.setShortener(targetUser.username, shortener); // db.updateUserShortener(username, newShortener)
-                return res.json({ success: true, message: "ID generator updated successfully." });
+                embedPreferencesToUpdate.customEmbedDescription = descriptionToSet;
+                embedPrefsChanged = true;
             }
 
-            return res.status(400).json(errorGenerator(400, "No update action specified."));
+            if (embedPrefsChanged && Object.keys(embedPreferencesToUpdate).length > 0) {
+                await db.setEmbedPreferences(targetUserFromDB.username, embedPreferencesToUpdate);
+                updateApplied = true;
+                if (embedPreferencesToUpdate.embedImageDirectly !== undefined) messages.push("Embed preference updated.");
+                if (embedPreferencesToUpdate.customEmbedDescription !== undefined) messages.push("Custom embed description updated.");
+            }
+
+            if (updateApplied) {
+                return res.json({ success: true, message: messages.join(" ") || "Configuration updated." });
+            } else {
+                return res.status(400).json(errorGenerator(400, "No valid update action specified or no changes detected."));
+            }
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            console.error(`Error updating config for ${targetUser.username}:`, error);
+            console.error(`Error updating config for ${targetUserFromDB.username}:`, error);
             return res.status(500).json(errorGenerator(500, error.message || "Failed to update configuration."));
         }
     } else {
         res.setHeader('Allow', ['GET', 'POST']);
         return res.status(405).json(errorGenerator(405, `Method ${req.method} Not Allowed`));
     }
-}
-
-function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string) {
-    return isLink
-        ? {
-            Name: `${urlBase} ${user.username} URL service`,
-            DestinationType: "URLShortener, URLSharingService",
-            RequestMethod: "POST",
-            RequestURL: `${urlBase}/api/links`,
-            Headers: { Authorization: token, "shorten-url": "$input$" },
-            URL: "$json:url$",
-        }
-        : {
-            Name: `${urlBase} ${user.username} Upload`,
-            DestinationType: "ImageUploader, TextUploader, FileUploader",
-            RequestMethod: "POST",
-            RequestURL: `${urlBase}/api/files`,
-            Headers: { Authorization: token },
-            Body: "MultipartFormData",
-            FileFormName: "files",
-            URL: "$json:url$",
-            ThumbnailURL: "$json:url$",
-            DeletionURL: "$json:deletionUrl$",
-        };
 }

@@ -40,12 +40,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { files: dbFiles, totalPages } = await db.getUserFiles(id as string, page);
 
         const processedFiles = dbFiles.map((file: DBFileType) => {
-            const determinedMimeType = file.extension === "ts" ? 'text/typescript' : mime.lookup(file.fileName);
+            let determinedMimeType;
+            if (file.extension === 'ts') {
+                determinedMimeType = 'text/typescript';
+            } else if (file.extension === 'mp4') {
+                determinedMimeType = 'video/mp4';
+            } else {
+                determinedMimeType = mime.lookup(file.fileName) || 'application/octet-stream';
+            }
             return {
                 id: file.id,
                 filename: file.fileName,
                 extension: file.extension,
-                mimetype: determinedMimeType || 'application/octet-stream',
+                mimetype: determinedMimeType,
                 isPrivate: file.isPrivate,
                 created: file.created,
             };
