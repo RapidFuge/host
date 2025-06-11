@@ -1,4 +1,3 @@
-// pages/[id].tsx
 import { GetServerSidePropsContext } from "next";
 import { getSession } from "next-auth/react";
 import { useRouter } from "next/router";
@@ -12,12 +11,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import rehypeReact from "rehype-react";
 import rehypePrismPlus from "rehype-prism-plus";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleNotch,
-  faDownload,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
+import { LoaderCircle, Download, Trash2 } from "lucide-react";
 import { jsx, jsxs } from "react/jsx-runtime";
 
 import {
@@ -576,10 +570,12 @@ export default function FileViewerPage({
                 <Link
                   href={fileUrl}
                   download={name}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
                   title="Download File"
                 >
-                  <FontAwesomeIcon icon={faDownload} className="mr-2 w-3 h-3" />{" "}
+                  <Download
+                    className="mr-2 w-3 h-3"
+                  />{" "}
                   Download
                 </Link>
                 {isAuthenticated && isOwner && (
@@ -592,16 +588,14 @@ export default function FileViewerPage({
                   >
                     {isDeleting ? (
                       <>
-                        <FontAwesomeIcon
-                          icon={faCircleNotch}
-                          className="animate-spin mr-2 w-3 h-3"
+                        <LoaderCircle
+                          className="animate-spin mr-2 w-4 h-4"
                         />{" "}
                         Deleting...
                       </>
                     ) : (
                       <>
-                        <FontAwesomeIcon
-                          icon={faTrashAlt}
+                        <Trash2
                           className="mr-2 w-3 h-3"
                         />{" "}
                         Delete

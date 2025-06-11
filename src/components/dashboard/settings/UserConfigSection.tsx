@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // components/dashboard/settings/UserConfigSection.tsx
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/free-regular-svg-icons";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { useState, useEffect, useCallback } from "react";
 import { DashboardUser } from "@pages/dashboard";
 import { shorteners } from "@lib/generators";
 import { useRouter } from "next/router";
 import { signOut } from "next-auth/react";
+import { Copy, CopyCheck, Download } from "lucide-react";
 
 interface UserConfigSectionProps {
   loggedInUser: DashboardUser;
@@ -87,7 +85,7 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
 
   const handleResetToken = async () => {
     if (!canEditSelectedUser) { alert("Not authorized."); return; }
-    if (confirm(`Reset API token for ${selectedUser}? Current token unusable. You'll be logged out if this is your account.`)) {
+    if (confirm(`Reset API token? Your Current token will be unusable and you will be logged out.`)) {
       setIsResettingToken(true); setTokenManagementMessage(null); setCopiedApiToken(false);
       try {
         const response = await fetch(`/api/users/${selectedUser}/configuration`, { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resetToken: true }) });
@@ -181,8 +179,8 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
       <div className="p-4 border border-neutral-800 rounded-md bg-black">
         <h3 className="text-lg font-semibold text-white mb-3">Download Configurations for {selectedUser}</h3>
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => handleDownloadConfig(false)} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">File Upload Config (.sxcu)</button>
-          <button onClick={() => handleDownloadConfig(true)} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">URL Shorten Config (.sxcu)</button>
+          <button onClick={() => handleDownloadConfig(false)} className="flex px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white"><Download className="mr-1 w-5 h-5" /> File Upload Config</button>
+          <button onClick={() => handleDownloadConfig(true)} className="flex px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white"><Download className="mr-1 w-5 h-5" /> URL Shorten Config</button>
         </div>
       </div>
 
@@ -222,14 +220,14 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
             <h4 className="text-md font-semibold text-zinc-200">Custom Embed Description</h4>
             <p className="text-xs text-neutral-400 mb-2">Used when &quot;Embed full image&quot; is off, or for non-images. Blank for default.</p>
             <div><textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="Max 250 chars or leave blank." maxLength={250} className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white h-24 resize-none focus:ring-blue-500 focus:border-blue-500" /></div>
-            <div className="mt-2 flex justify-end"><button type="submit" className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:opacity-50" disabled={customDescription === initialCustomDescription}>Save Description</button></div>
+            <div className="mt-2 flex justify-start"><button type="submit" className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:opacity-50" disabled={customDescription === initialCustomDescription}>Save Description</button></div>
           </form>
         </div>
       )}
 
       {isDeletable && ((loggedInUser.username === selectedUser && !loggedInUser.isAdmin) || (loggedInUser.isAdmin && loggedInUser.username !== selectedUser) || (loggedInUser.isAdmin && loggedInUser.username === selectedUser && selectedUser.toLowerCase() !== 'root' && process.env.NEXT_PUBLIC_PREVENT_ROOT_DELETION !== 'true')) && (
         <div className="p-4 border border-red-700 rounded-md bg-black mt-8">
-          <h3 className="text-lg font-semibold text-red-300 mb-3">Delete Account: {selectedUser}</h3>
+          <h3 className="text-lg font-semibold text-red-300 mb-3">Delete Account</h3>
           <p className="text-sm text-red-200 mb-3">This action is irreversible.</p>
           <button onClick={handleDeleteUser} className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded text-white font-semibold">Delete {loggedInUser.username === selectedUser ? "My Account" : selectedUser}</button>
         </div>
@@ -248,10 +246,9 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
                 {userDetails.token && (
                   <button onClick={() => handleCopyApiToken(userDetails.token)} title="Copy token" className="p-1 text-neutral-400 hover:text-zinc-100 transition-colors">
                     {copiedApiToken ? (
-                      <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-green-400" />
+                      <CopyCheck className="h-4 w-4 text-green-400" />
                     ) : (
-                      <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />
-
+                      <Copy className="h-4 w-4" />
                     )}
                   </button>
                 )}

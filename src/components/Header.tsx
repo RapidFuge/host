@@ -1,14 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faTimes,
-  faRightToBracket,
-  faSignOutAlt,
-} from "@fortawesome/free-solid-svg-icons";
-import { faUser } from "@fortawesome/free-regular-svg-icons";
-import { faGitAlt } from "@fortawesome/free-brands-svg-icons";
+import { AlignJustify, X, LogIn, LogOut, User, GitFork, Upload, Link as LinkIcon } from 'lucide-react';
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
@@ -31,17 +23,23 @@ export default function Header() {
             RAPID HOST
           </Link>
           <button
-            className="text-white cursor-pointer leading-none px-3 py-1 md:hidden outline-none focus:outline-none content-end min-w-[24px] min-h-[24px]"
-            type="button"
-            aria-label="button"
+            className="text-white cursor-pointer leading-none px-3 py-1 outline-none focus:outline-none relative md:hidden"
             onClick={() => setNavbarOpen(!navbarOpen)}
           >
-            <FontAwesomeIcon
-              icon={!navbarOpen ? faBars : faTimes}
-              className={`text-2xl transition-transform duration-300 ease-in-out transform ${
-                navbarOpen ? "rotate-90" : "rotate-0"
-              }`}
-            ></FontAwesomeIcon>
+            <div className="relative w-6 h-6">
+              <AlignJustify
+                className={`absolute inset-0 text-2xl transition-all duration-300 ease-in-out ${navbarOpen
+                  ? 'opacity-0 rotate-180'
+                  : 'opacity-100 rotate-0'
+                  }`}
+              />
+              <X
+                className={`absolute inset-0 text-2xl transition-all duration-300 ease-in-out ${navbarOpen
+                  ? 'opacity-100 rotate-0'
+                  : 'opacity-0 rotate-180'
+                  }`}
+              />
+            </div>
           </button>
         </div>
 
@@ -56,14 +54,16 @@ export default function Header() {
           <div className="flex flex-col items-center md:flex-row md:space-x-8 space-y-4 md:space-y-0 text-base">
             <Link
               href="/upload"
-              className="cursor-pointer text-gray-300 hover:text-white font-semibold tr04"
+              className="cursor-pointer text-gray-300 hover:text-white font-semibold tr04 flex items-center justify-center"
             >
+              <Upload className="mr-2 w-4 h-4" strokeWidth={2.5} />{" "}
               Upload
             </Link>
             <Link
               href="/shorten"
-              className="cursor-pointer text-gray-300 hover:text-white font-semibold tr04"
+              className="cursor-pointer text-gray-300 hover:text-white font-semibold tr04 flex items-center justify-center"
             >
+              <LinkIcon className="mr-2 w-4 h-4" strokeWidth={2.5} />{" "}
               Shorten
             </Link>
           </div>
@@ -80,10 +80,11 @@ export default function Header() {
               href={session ? "/dashboard" : "/login"}
               className="p-1 px-2 text-gray-300 text-center min-w-[24px] min-h-[24px] hover:text-white tr04"
             >
-              <FontAwesomeIcon
-                icon={session ? faUser : faRightToBracket}
-                className="text-2xl"
-              ></FontAwesomeIcon>
+              {(session ? (
+                <User className="text-2xl" />
+              ) : (
+                <LogIn className="text-2xl" />
+              ))}
             </Link>
             {session && (
               <button
@@ -92,7 +93,7 @@ export default function Header() {
                 aria-label="button"
                 className="p-1 px-2 text-gray-300 text-center min-w-[24px] min-h-[24px] hover:text-red-500 tr04"
               >
-                <FontAwesomeIcon icon={faSignOutAlt} className="text-2xl" />
+                <LogOut className="text-2xl" />
               </button>
             )}
             <Link
@@ -101,10 +102,7 @@ export default function Header() {
               target="_blank"
               className="p-1 px-2 text-gray-300 min-w-[24px] min-h-[24px] hover:text-white tr04" // Consistent padding
             >
-              <FontAwesomeIcon
-                icon={faGitAlt}
-                className="text-2xl"
-              ></FontAwesomeIcon>
+              <GitFork className="text-2xl" />
             </Link>
           </div>
         </div>

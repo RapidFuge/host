@@ -6,8 +6,7 @@ import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { filesize } from "filesize";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
+import { LoaderCircle, Upload } from "lucide-react";
 
 export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -206,11 +205,14 @@ export default function UploadPage() {
         >
           {uploading ? (
             <span className="flex items-center">
-              <FontAwesomeIcon icon={faCircleNotch} className="animate-spin mr-2 w-5 h-5 text-white" />
+              <LoaderCircle className="animate-spin mr-2 w-5 h-5 text-white" />
               Uploading...
             </span>
           ) : (
-            "Upload Files"
+            <span className="flex items-center">
+              <Upload className="mr-2 w-5 h-5 text-white" />
+              Upload Files
+            </span>
           )}
         </button>
         <p className="mt-4 text-gray-500">

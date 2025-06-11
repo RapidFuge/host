@@ -4,6 +4,7 @@ import type { DashboardUser } from "@pages/dashboard";
 import CreateUserForm from "@components/dashboard/settings/CreateUser";
 import SignUpTokensManagerModal from "@components/dashboard/settings/ManageSignUpTokens";
 import UserConfigSection from "./settings/UserConfigSection";
+import { Bolt } from "lucide-react";
 
 interface SettingsComponentProps {
   loggedInUser: DashboardUser;
@@ -23,10 +24,7 @@ export default function SettingsComponent({
     <div className="p-4 h-full flex flex-col text-zinc-100">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-white">
-          Settings{" "}
-          {isViewingOwnSettings
-            ? "(Your Account)"
-            : `(Viewing: ${selectedUser})`}
+          Settings
         </h2>
       </div>
       {loggedInUser.isAdmin && isViewingOwnSettings && (
@@ -38,8 +36,9 @@ export default function SettingsComponent({
             <CreateUserForm />
             <button
               onClick={() => setIsSignUpTokenModalOpen(true)}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+              className="flex bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition-colors"
             >
+              <Bolt className="mr-2 w-5 h-5" strokeWidth={2.5} />
               Manage Sign Up Tokens
             </button>
           </div>

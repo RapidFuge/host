@@ -5,8 +5,7 @@ import Header from "@components/Header";
 import Footer from "@components/Footer";
 import { NextSeo } from "next-seo";
 import Link from "next/link";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
+import { LoaderCircle } from "lucide-react";
 
 export default function SignupPage() {
   const [username, setUsername] = useState("");
@@ -91,7 +90,7 @@ export default function SignupPage() {
           >
             {isLoading ? (
               <span className="flex items-center">
-                <FontAwesomeIcon icon={faCircleNotch} className="animate-spin mr-2 w-5 h-5" />
+                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
                 Signing up...
               </span>
             ) : (

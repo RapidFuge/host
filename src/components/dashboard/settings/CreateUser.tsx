@@ -1,4 +1,5 @@
 // components/dashboard/settings/CreateUser.tsx
+import { UserRoundPlus } from "lucide-react";
 import { useState, useEffect } from "react"; // Added useEffect for ESC key
 
 export default function CreateUserForm() {
@@ -68,8 +69,9 @@ export default function CreateUserForm() {
     <>
       <button
         onClick={openModal}
-        className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+        className="flex bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition-colors"
       >
+        <UserRoundPlus className="mr-2 w-5 h-5" strokeWidth={2.5} />
         Create New User
       </button>
 

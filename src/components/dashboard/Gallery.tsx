@@ -1,9 +1,7 @@
 // components/dashboard/Gallery.tsx
 import { useState, useEffect, useCallback } from "react";
 import FileModal, { ModalFileItem } from "./FileModal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFile, faFileAudio, faFileVideo } from "@fortawesome/free-regular-svg-icons";
-import { faMagnifyingGlassPlus } from "@fortawesome/free-solid-svg-icons";
+import { File, FileAudio, FileVideo2, ZoomIn } from "lucide-react";
 
 interface FileItem {
   id: string;
@@ -242,7 +240,13 @@ export default function GalleryComponent({ username }: GalleryProps) {
                   />
                 ) : (
                   <div className="w-full h-40 sm:h-48 flex flex-col items-center justify-center bg-neutral-700 p-2 text-neutral-400">
-                    <FontAwesomeIcon icon={file.mimetype.startsWith('video/') ? faFileVideo : file.mimetype.startsWith('audio/') ? faFileAudio : faFile} className="h-16 w-16" />
+                    {file.mimetype.startsWith('video/') ? (
+                      <FileVideo2 className="h-16 w-16" strokeWidth={1} />
+                    ) : file.mimetype.startsWith('audio/') ? (
+                      <FileAudio className="h-16 w-16" strokeWidth={1} />
+                    ) : (
+                      <File className="h-16 w-16" strokeWidth={1} />
+                    )}
                     <p
                       className="mt-2 text-xs text-zinc-300 break-all text-center"
                       title={file.filename}
@@ -277,7 +281,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
                 </div>
                 {isPreviewableInModal && (
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
-                    <FontAwesomeIcon icon={faMagnifyingGlassPlus} className="h-10 w-10 text-white opacity-0 group-hover:opacity-80" />
+                    <ZoomIn className="h-10 w-10 text-white opacity-0 group-hover:opacity-80" strokeWidth={1.5} />
                   </div>
                 )}
               </div>

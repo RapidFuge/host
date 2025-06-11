@@ -1,4 +1,3 @@
-// pages/dashboard.tsx
 import { useState, useEffect } from "react";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
@@ -6,9 +5,7 @@ import { NextSeo } from "next-seo";
 import { getSession, GetSessionParams } from "next-auth/react";
 import { GetServerSidePropsContext } from "next";
 import { getBase } from "@lib";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBarsStaggered, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { X, AlignLeft, Images, Link as LinkIcon, Settings, User } from "lucide-react";
 
 import GalleryComponent from "@components/dashboard/Gallery";
 import LinksComponent from "@components/dashboard/Links";
@@ -91,16 +88,16 @@ export default function Dashboard({
       <Header />
       <div className="flex flex-col lg:flex-row flex-grow px-2 sm:px-4 pt-4 lg:pt-6 pb-4 gap-4">
         <button
-          className="lg:hidden fixed top-[calc(theme(spacing.16)+1rem)] right-4 z-30 bg-neutral-800 text-zinc-100 pb-1 pt-2 pr-2 pl-2 rounded hover:bg-neutral-700 shadow-lg"
+          className="lg:hidden fixed top-[calc(theme(spacing.16)+1rem)] right-4 z-30 bg-neutral-800 text-zinc-100 p-2 rounded hover:bg-neutral-700 shadow-lg"
           onClick={() => setSidebarOpen(!isSidebarOpen)}
           aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
           aria-expanded={isSidebarOpen}
         >
           {isSidebarOpen ? (
-            <FontAwesomeIcon icon={faXmark} className="h-6 w-6" />
+            <X className="h-6 w-6" />
 
           ) : (
-            <FontAwesomeIcon icon={faBarsStaggered} className="h-6 w-6" />
+            <AlignLeft className="h-6 w-6" />
           )}
         </button>
         <aside
@@ -123,7 +120,7 @@ export default function Dashboard({
             {(["Gallery", "Links", "Settings"] as const).map((pageName) => (
               <button
                 key={pageName}
-                className={`w-full px-4 py-2.5 rounded text-left transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activePage === pageName
+                className={`flex w-full px-4 py-2.5 rounded text-left transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activePage === pageName
                   ? "bg-blue-600 border border-blue-500 text-white shadow-md"
                   : "bg-neutral-800 hover:bg-neutral-700 border border-transparent hover:border-neutral-700 text-zinc-200"
                   }`}
@@ -133,6 +130,21 @@ export default function Dashboard({
                     setSidebarOpen(false);
                 }}
               >
+                {pageName === "Gallery" && (
+                  <Images className="mr-2 w-5 h-5" />
+                )}
+
+                {pageName === "Links" && (
+                  <LinkIcon className="mr-2 w-5 h-5" />
+                )}
+
+                {pageName === "Settings" && (
+                  <Settings className="mr-2 w-5 h-5" />
+                )}
+
+                {/* {pageName === "Analytics" && (
+                  <Images className="mr-2 w-5 h-5" />
+                )} */}
                 {pageName}
               </button>
             ))}
@@ -166,12 +178,13 @@ export default function Dashboard({
                 ].map((userOption) => (
                   <li key={userOption.username}>
                     <button
-                      className={`w-full px-3 py-2 rounded text-left text-sm transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-blue-400 ${selectedUser === userOption.username
+                      className={`flex w-full px-3 py-2 rounded text-left text-sm transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-blue-400 ${selectedUser === userOption.username
                         ? "bg-blue-500 border border-blue-400 text-white font-medium"
                         : "bg-neutral-800 hover:bg-neutral-700 border border-transparent hover:border-neutral-700 text-zinc-200"
                         }`}
                       onClick={() => handleSelectUser(userOption.username)}
                     >
+                      <User className="mr-2 w-5 h-5" />
                       {userOption.username}
                       {userOption.username === loggedInUser.username &&
                         " (You)"}

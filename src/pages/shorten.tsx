@@ -6,9 +6,8 @@ import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { getBase } from "@lib";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
 import { shorteners as validShorteners } from "@lib/generators"; // Assuming shorteners array is from here
+import { LoaderCircle, Link as LinkIcon } from "lucide-react";
 
 export default function ShortenerPage({ userShortener }: { userShortener: string }) {
   const [url, setUrl] = useState("");
@@ -109,11 +108,14 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
           >
             {isLoading ? (
               <span className="flex items-center">
-                <FontAwesomeIcon icon={faCircleNotch} className="animate-spin mr-2 w-5 h-5" />
+                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
                 Shortening URL...
               </span>
             ) : (
-              "Shorten URL"
+              <span className="flex items-center">
+                <LinkIcon className="mr-2 w-5 h-5" />
+                Shorten URL
+              </span>
             )}
           </button>
         </form>

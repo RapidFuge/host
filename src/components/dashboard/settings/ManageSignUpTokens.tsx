@@ -1,8 +1,5 @@
-// components/dashboard/settings/SignUpTokensManagerModal.tsx
 import { useState, useEffect, useCallback } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/free-regular-svg-icons";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
+import { Copy, CopyCheck } from "lucide-react";
 
 interface ClientSignUpToken {
   token: string;
@@ -167,9 +164,9 @@ export default function SignUpTokensManagerModal({
                             <span className="truncate max-w-[150px] sm:max-w-[200px]" title={t.token}>{t.token}</span>
                             <button onClick={() => handleCopyToClipboard(t.token)} title="Copy token" className="p-1 text-neutral-400 hover:text-zinc-100 transition-colors">
                               {copiedTokenValue === t.token ? (
-                                <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-green-400" />
+                                <CopyCheck className="h-4 w-4 text-green-400" />
                               ) : (
-                                <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />
+                                <Copy className="h-4 w-4" />
                               )}
                             </button>
                           </div>

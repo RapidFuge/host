@@ -1,7 +1,5 @@
-// components/dashboard/LinksComponent.tsx
 import { useState, useEffect, useCallback } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/free-regular-svg-icons";
+import { Copy } from "lucide-react";
 import Link from "next/link";
 
 interface ShortenedLink {
@@ -212,7 +210,7 @@ export default function LinksComponent({
                         className="ml-2 p-1 text-neutral-400 hover:text-zinc-200"
                         title="Copy short URL"
                       >
-                        <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />
+                        <Copy className="h-4 w-4" />
                       </button>
                     </td>
                     <td

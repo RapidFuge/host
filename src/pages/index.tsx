@@ -6,6 +6,7 @@ import Link from "next/link";
 import { NextSeo } from "next-seo";
 import { useState, useEffect } from "react";
 import CountUp from "react-countup";
+import { Upload, Link as LinkIcon } from "lucide-react";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -43,14 +44,16 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Link
               href="/upload"
-              className="tr04 px-6 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none w-full sm:w-auto text-center"
+              className="flex items-center justify-center tr04 px-6 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none w-auto text-center"
             >
+              <Upload className="mr-2 w-5 h-5" strokeWidth={2.5} />{" "}
               Upload files
             </Link>
             <Link
               href="/shorten"
-              className="tr04 px-6 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none w-full sm:w-auto text-center"
+              className="flex items-center justify-center tr04 px-6 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none w-auto text-center"
             >
+              <LinkIcon className="mr-2 w-5 h-5" strokeWidth={2.5} />{" "}
               Shorten URLs
             </Link>
           </div>

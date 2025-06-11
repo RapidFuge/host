@@ -36,7 +36,7 @@ function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase:
             RequestURL: `${apiBase}/files`,
             Headers: { Authorization: token },
             Body: "MultipartFormData",
-            FileFormName: "file", // Assuming 'file' not 'files' if single upload per request
+            FileFormName: "files",
             URL: "$json:url$",
             DeletionURL: "$json:deleteUrl$", // Use deleteUrl if your API returns it
         };

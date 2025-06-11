@@ -1,8 +1,6 @@
-// components/dashboard/FileModal.tsx
 import Link from "next/link";
 import React, { useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faDownload, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { X, Download, Trash2 } from "lucide-react";
 
 export interface ModalFileItem {
   id: string;
@@ -90,7 +88,7 @@ export default function FileModal({
             className="text-neutral-400 hover:text-white p-1 transition-colors"
             aria-label="Close modal"
           >
-            <FontAwesomeIcon icon={faXmark} className="h-6 w-6 pr-1 pt-1 pl-1" />
+            <X className="h-7 w-7 pr-1 pt-1 pl-1" />
           </button>
         </div>
         <div className="p-2 sm:p-4 flex-grow overflow-y-auto flex justify-center items-center bg-neutral-900 min-h-[200px]">
@@ -149,14 +147,14 @@ export default function FileModal({
               onClick={handleDownload}
               className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm flex items-center gap-1.5 sm:gap-2"
             >
-              <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
+              <Download className="h-4 w-4" />
               Download
             </button>
             <button
               onClick={handleDeleteClick}
               className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm flex items-center gap-1.5 sm:gap-2"
             >
-              <FontAwesomeIcon icon={faTrashAlt} className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               Delete
             </button>
           </div>
