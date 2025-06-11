@@ -51,7 +51,7 @@ The frontend is built with Next.js and React, styled with Tailwind CSS, offering
 *   **Database:** MongoDB (inferred from analytics section)
 *   **Markdown Processing:** `remark`, `remark-gfm`, `rehype-react`, `rehype-prism-plus`
 *   **Syntax Highlighting (Raw View):** `prism-react-renderer`
-*   **File Storage:** (Not specified, could be local filesystem or cloud storage like S3)
+*   **File Storage:** MinIO
 
 ## Setup & Deployment
 

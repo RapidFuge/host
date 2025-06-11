@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // components/dashboard/settings/UserConfigSection.tsx
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-regular-svg-icons";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { useState, useEffect, useCallback } from "react";
 import { DashboardUser } from "@pages/dashboard";
 import { shorteners } from "@lib/generators";
@@ -234,7 +237,7 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
 
       {isTokenModalOpen && userDetails && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-80 p-4 transition-opacity" onClick={(e) => { if (e.target === e.currentTarget) closeTokenModal(); }}>
-          <div className="bg-black border border-neutral-800 p-6 rounded-md shadow-xl w-full max-w-lg text-white">
+          <div className="bg-neutral-800 border border-neutral-800 p-6 rounded-md shadow-xl w-full max-w-lg text-white">
             <div className="flex justify-between items-center mb-4"><h4 className="text-xl font-semibold">API Token for {userDetails.username}</h4><button onClick={closeTokenModal} className="text-neutral-400 hover:text-white text-2xl leading-none p-1">×</button></div>
             {tokenManagementMessage && (<div className={`p-3 mb-4 rounded text-sm ${tokenManagementMessage.type === "success" ? "bg-green-700 text-green-100" : "bg-red-700 text-red-100"}`}>{tokenManagementMessage.text}</div>)}
             <div className="mb-4"><p className="text-sm text-neutral-400 mb-1">Current API Token:</p>
@@ -245,9 +248,10 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
                 {userDetails.token && (
                   <button onClick={() => handleCopyApiToken(userDetails.token)} title="Copy token" className="p-1 text-neutral-400 hover:text-zinc-100 transition-colors">
                     {copiedApiToken ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-green-400" />
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />
+
                     )}
                   </button>
                 )}

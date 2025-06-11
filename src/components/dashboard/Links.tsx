@@ -1,5 +1,7 @@
 // components/dashboard/LinksComponent.tsx
 import { useState, useEffect, useCallback } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-regular-svg-icons";
 import Link from "next/link";
 
 interface ShortenedLink {
@@ -130,8 +132,6 @@ export default function LinksComponent({
           disabled={isLoading || !username}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-neutral-500 disabled:cursor-not-allowed transition-colors text-sm"
         >
-          {" "}
-          {/* neutral for disabled */}
           {isLoading ? "Refreshing..." : "Refresh Links"}
         </button>
       </div>
@@ -144,12 +144,12 @@ export default function LinksComponent({
         <div className="text-center py-10 text-neutral-400">
           Loading links...
         </div>
-      )}{" "}
+      )}
       {!isLoading && !error && links.length === 0 && username && (
         <div className="text-center py-10 text-neutral-400">
           No links found for this user.
         </div>
-      )}{" "}
+      )}
       {links.length > 0 && (
         <div className="overflow-x-auto flex-grow scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-800 rounded-md">
           <table className="min-w-full divide-y divide-neutral-700 bg-neutral-800 rounded-md shadow">
@@ -188,8 +188,6 @@ export default function LinksComponent({
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-700">
-              {" "}
-              {/* neutral */}
               {links.map((link) => {
                 const shortUrl = `${baseUrl}/${link.id}`;
                 return (
@@ -197,8 +195,6 @@ export default function LinksComponent({
                     key={link.id}
                     className="hover:bg-neutral-700 transition-colors duration-150"
                   >
-                    {" "}
-                    {/* neutral hover */}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-200 font-mono">
                       {link.id}
                     </td>
@@ -216,22 +212,7 @@ export default function LinksComponent({
                         className="ml-2 p-1 text-neutral-400 hover:text-zinc-200"
                         title="Copy short URL"
                       >
-                        {" "}
-                        {/* neutral */}
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          />
-                        </svg>
+                        <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />
                       </button>
                     </td>
                     <td
@@ -249,8 +230,7 @@ export default function LinksComponent({
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-400">
                       {new Date(link.created).toLocaleDateString()}
-                    </td>{" "}
-                    {/* neutral */}
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
                         onClick={() => handleDeleteLink(link.id)}

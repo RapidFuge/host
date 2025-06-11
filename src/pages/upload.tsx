@@ -6,6 +6,8 @@ import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { filesize } from "filesize";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
 
 export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -159,9 +161,8 @@ export default function UploadPage() {
           onClick={() => fileInputRef.current?.click()}
         >
           <div
-            className={`absolute inset-0 bg-transparent flex items-center justify-center ${
-              dragging ? "text-blue-500" : "text-gray-500"
-            }`}
+            className={`absolute inset-0 bg-transparent flex items-center justify-center ${dragging ? "text-blue-500" : "text-gray-500"
+              }`}
           >
             {dragging ? (
               <p className="text-xl">Drop files here</p>
@@ -198,28 +199,14 @@ export default function UploadPage() {
         <button
           onClick={handleUpload}
           disabled={uploading}
-          className={`w-auto px-6 py-2 tr04 ${
-            uploading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          } text-white font-semibold rounded focus:outline-none flex items-center justify-center`}
+          className={`w-auto px-6 py-2 tr04 ${uploading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+            } text-white font-semibold rounded focus:outline-none flex items-center justify-center`}
         >
           {uploading ? (
             <span className="flex items-center">
-              <svg
-                className="animate-spin mr-2 w-5 h-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  d="M12 2A10 10 0 1 1 2 12"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faCircleNotch} className="animate-spin mr-2 w-5 h-5 text-white" />
               Uploading...
             </span>
           ) : (

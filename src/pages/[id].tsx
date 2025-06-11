@@ -1,3 +1,4 @@
+// pages/[id].tsx
 import { GetServerSidePropsContext } from "next";
 import { getSession } from "next-auth/react";
 import { useRouter } from "next/router";
@@ -11,6 +12,13 @@ import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import rehypeReact from "rehype-react";
 import rehypePrismPlus from "rehype-prism-plus";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCircleNotch,
+  faDownload,
+  faTrashAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import { jsx, jsxs } from "react/jsx-runtime";
 
 import {
   Highlight as SyntaxHighlighter,
@@ -26,7 +34,7 @@ import { getBase } from "@lib";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
 import Link from "next/link";
-import { jsx, jsxs } from "react/jsx-runtime";
+import Head from "next/head";
 
 interface FileData {
   id: string;
@@ -163,6 +171,7 @@ export default function FileViewerPage({
   const [renderMarkdown, setRenderMarkdown] = useState(true);
   const [markdownContent, setMarkdownContent] =
     useState<React.ReactElement | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (fileData?.extension?.toLowerCase() === "md" && rawFileContent) {
@@ -182,8 +191,8 @@ export default function FileViewerPage({
               createElement: React.createElement,
               Fragment: React.Fragment,
               components: markdownComponents,
-              jsx: jsx, // Pass jsx for production
-              jsxs: jsxs, // Pass jsxs for production
+              jsx: jsx,
+              jsxs: jsxs,
             });
           const file = await processor.process(rawFileContent);
           setMarkdownContent(file.result as React.ReactElement);
@@ -282,30 +291,32 @@ export default function FileViewerPage({
   if (error) {
     return (
       <>
-        <NextSeo {...seoConfig} /> <Header />
+        {" "}
+        <NextSeo {...seoConfig} /> <Header />{" "}
         <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center p-4">
-          <h1 className="text-2xl text-red-400">Error</h1>
-          <p className="text-zinc-300 mt-2">{error}</p>
+          {" "}
+          <h1 className="text-2xl text-red-400">Error</h1>{" "}
+          <p className="text-zinc-300 mt-2">{error}</p>{" "}
           <button
             onClick={() => router.back()}
             className="mt-4 px-4 py-2 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors"
           >
             Go Back
-          </button>
-        </div>
-        <Footer />
+          </button>{" "}
+        </div>{" "}
+        <Footer />{" "}
       </>
     );
   }
   if (!fileData) {
-    // Fallback if somehow getServerSideProps allowed pass-through without error or fileData
     return (
       <>
-        <NextSeo title="File Not Found" noindex nofollow /> <Header />
+        {" "}
+        <NextSeo title="File Not Found" noindex nofollow /> <Header />{" "}
         <div className="flex flex-col flex-grow bg-black text-zinc-100 items-center justify-center">
-          File data is missing or not found.
-        </div>
-        <Footer />
+          File data is missing.
+        </div>{" "}
+        <Footer />{" "}
       </>
     );
   }
@@ -322,24 +333,23 @@ export default function FileViewerPage({
 
   const handleDelete = async () => {
     if (isOwner) {
-      if (
-        confirm(
-          "Are you sure you want to delete this file? This action cannot be undone."
-        )
-      ) {
+      if (confirm("Delete this file? This cannot be undone.")) {
+        setIsDeleting(true);
         try {
           const res = await fetch(`/api/files/${id}`, { method: "DELETE" });
           if (!res.ok) {
             const errData = await res
               .json()
-              .catch(() => ({ message: "Failed to delete file." }));
+              .catch(() => ({ message: "Delete failed." }));
             throw new Error(errData.message);
           }
-          alert("File deleted successfully.");
+          // alert("File deleted.");
           router.push("/dashboard");
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-          alert(`Failed to delete the file: ${err.message}`);
+          alert(`Delete failed: ${err.message}`);
+        } finally {
+          setIsDeleting(false);
         }
       }
     }
@@ -382,14 +392,18 @@ export default function FileViewerPage({
                     key: i,
                   });
                   return (
-                    <div key={lineKey as string} {...lineRestProps}>
+                    <div key={lineKey as React.Key} {...lineRestProps}>
+                      {" "}
                       {line.map((token, k) => {
                         const { key: tokenKey, ...tokenRestProps } =
                           getTokenProps({ token, key: k });
                         return (
-                          <span key={tokenKey as string} {...tokenRestProps} />
+                          <span
+                            key={tokenKey as React.Key}
+                            {...tokenRestProps}
+                          />
                         );
-                      })}
+                      })}{" "}
                     </div>
                   );
                 })}
@@ -426,14 +440,15 @@ export default function FileViewerPage({
                   key: i,
                 });
                 return (
-                  <div key={lineKey as string} {...lineRestProps}>
+                  <div key={lineKey as React.Key} {...lineRestProps}>
+                    {" "}
                     {line.map((token, k) => {
                       const { key: tokenKey, ...tokenRestProps } =
                         getTokenProps({ token, key: k });
                       return (
-                        <span key={tokenKey as string} {...tokenRestProps} />
+                        <span key={tokenKey as React.Key} {...tokenRestProps} />
                       );
-                    })}
+                    })}{" "}
                   </div>
                 );
               })}
@@ -469,17 +484,18 @@ export default function FileViewerPage({
     } else {
       return (
         <div className="p-6 bg-neutral-800 rounded text-center">
+          {" "}
           <p className="text-lg text-zinc-200">
-            This file type ({extension}) cannot be previewed directly.
-          </p>
-          <p className="text-sm text-zinc-400 mt-1">MIME Type: {mimetype}</p>
+            This file type ({extension}) cannot be previewed.
+          </p>{" "}
+          <p className="text-sm text-zinc-400 mt-1">MIME Type: {mimetype}</p>{" "}
           <a
             href={fileUrl}
             download={name}
             className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             Download {name}
-          </a>
+          </a>{" "}
         </div>
       );
     }
@@ -492,6 +508,9 @@ export default function FileViewerPage({
   return (
     <>
       <NextSeo {...seoConfig} />
+      <Head>
+        <title>{name}</title>
+      </Head>
       <div className="flex flex-col min-h-screen bg-black text-zinc-100">
         <Header />
         <main
@@ -544,31 +563,50 @@ export default function FileViewerPage({
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm border-t border-neutral-700 pt-3 mt-3">
                 {isTextBased && rawFileContent && (
-                  <a
-                    href={`/${fileData.id}?raw=true`}
+                  <Link
+                    href={`/${id}?raw=true`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                     title="View Raw File"
                   >
                     Raw
-                  </a>
+                  </Link>
                 )}
-                <a
+                <Link
                   href={fileUrl}
                   download={name}
                   className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   title="Download File"
                 >
+                  <FontAwesomeIcon icon={faDownload} className="mr-2 w-3 h-3" />{" "}
                   Download
-                </a>
+                </Link>
                 {isAuthenticated && isOwner && (
                   <button
                     onClick={handleDelete}
-                    className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    disabled={isDeleting}
+                    className={`px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center ${isDeleting ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     title="Delete File"
                   >
-                    Delete
+                    {isDeleting ? (
+                      <>
+                        <FontAwesomeIcon
+                          icon={faCircleNotch}
+                          className="animate-spin mr-2 w-3 h-3"
+                        />{" "}
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon
+                          icon={faTrashAlt}
+                          className="mr-2 w-3 h-3"
+                        />{" "}
+                        Delete
+                      </>
+                    )}
                   </button>
                 )}
               </div>
@@ -576,8 +614,8 @@ export default function FileViewerPage({
             <div className="bg-neutral-800 rounded-lg shadow-xl overflow-hidden">
               <div
                 className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-neutral-900 ${isMarkdownFile || (isTextBased && rawFileContent)
-                    ? ""
-                    : "flex justify-center items-center p-1 sm:p-2"
+                  ? ""
+                  : "flex justify-center items-center p-1 sm:p-2"
                   }`}
               >
                 {isMarkdownFile || (isTextBased && rawFileContent) ? (
@@ -643,8 +681,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           },
         };
       }
-      const errorMsg =
-        "Access Denied: You may not have permission to view this file.";
+      const errorMsg = "Access Denied.";
       return {
         props: {
           error: errorMsg,
@@ -671,12 +708,13 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     ownerCustomDescription?: string | null;
   };
   const rawApiFileData: RawApiFileData = await fileInfoResponse.json();
+
   if (
     !rawApiFileData?.id ||
     !rawApiFileData.fileName ||
     typeof rawApiFileData.size !== "number"
   ) {
-    const errorMsg = "Invalid or incomplete file data received from API.";
+    const errorMsg = "Invalid API data.";
     return {
       props: {
         error: errorMsg,
@@ -691,14 +729,14 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
 
   let derivedMimetype;
-  if (rawApiFileData.extension === "ts") {
+  if (rawApiFileData.extension === "ts" || rawApiFileData.extension === "tsx")
     derivedMimetype = "text/typescript";
-  } else if (rawApiFileData.extension === "mp4") {
-    derivedMimetype = "video/mp4";
-  } else {
+  if (rawApiFileData.extension === "mp4") derivedMimetype = "video/mp4";
+  else if (rawApiFileData.extension === "md") derivedMimetype = "text/markdown";
+  else
     derivedMimetype =
       mime.lookup(rawApiFileData.fileName) || "application/octet-stream";
-  }
+
   const fileData: FileData = {
     id: rawApiFileData.id,
     name: rawApiFileData.extension
@@ -709,8 +747,11 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     size: rawApiFileData.size,
     owner: rawApiFileData.owner,
     isPrivate: rawApiFileData.isPrivate,
+    ownerEmbedPreference:
+      rawApiFileData.ownerEmbedPreference === undefined
+        ? false
+        : rawApiFileData.ownerEmbedPreference,
     ownerCustomDescription: rawApiFileData.ownerCustomDescription,
-    ownerEmbedPreference: rawApiFileData.ownerEmbedPreference,
   };
 
   const { raw, r, download, d } = query;
@@ -725,7 +766,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     );
     if (!rawFileResponse.ok || !rawFileResponse.body) {
       res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end("File not found or unable to stream.");
+      res.end("Not found.");
       return { props: {} };
     }
     res.writeHead(200, {
@@ -739,7 +780,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }
       res.end();
     } catch (streamError) {
-      console.error("Streaming error:", streamError);
+      console.error("Stream error:", streamError);
       if (!res.writableEnded) {
         res.end();
       }
@@ -764,7 +805,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       rawFileContent = await fileContentResponse.text();
     } else {
       console.warn(
-        `Could not fetch text content for ${fileData.id} for preview. Status: ${fileContentResponse.status}`
+        `Could not fetch content for ${fileData.id}. Status: ${fileContentResponse.status}`
       );
     }
   }

@@ -1,5 +1,8 @@
 // components/dashboard/settings/SignUpTokensManagerModal.tsx
 import { useState, useEffect, useCallback } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-regular-svg-icons";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 interface ClientSignUpToken {
   token: string;
@@ -164,9 +167,9 @@ export default function SignUpTokensManagerModal({
                             <span className="truncate max-w-[150px] sm:max-w-[200px]" title={t.token}>{t.token}</span>
                             <button onClick={() => handleCopyToClipboard(t.token)} title="Copy token" className="p-1 text-neutral-400 hover:text-zinc-100 transition-colors">
                               {copiedTokenValue === t.token ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-green-400" />
                               ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />
                               )}
                             </button>
                           </div>

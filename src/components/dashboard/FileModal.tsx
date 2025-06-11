@@ -1,6 +1,8 @@
 // components/dashboard/FileModal.tsx
 import Link from "next/link";
 import React, { useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faXmark, faDownload, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 export interface ModalFileItem {
   id: string;
@@ -85,30 +87,13 @@ export default function FileModal({
           </Link>{" "}
           <button
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1 rounded-md hover:bg-neutral-700 transition-colors"
+            className="text-neutral-400 hover:text-white p-1 transition-colors"
             aria-label="Close modal"
           >
-            {" "}
-            {/* neutral */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faXmark} className="h-6 w-6 pr-1 pt-1 pl-1" />
           </button>
         </div>
         <div className="p-2 sm:p-4 flex-grow overflow-y-auto flex justify-center items-center bg-neutral-900 min-h-[200px]">
-          {" "}
-          {/* neutral */}
           {file.mimetype.startsWith("image/") && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -136,11 +121,7 @@ export default function FileModal({
           )}
         </div>
         <div className="p-3 sm:p-4 border-t border-neutral-700 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 min-h-[70px]">
-          {" "}
-          {/* neutral border */}
           <div className="text-xs sm:text-sm text-neutral-400 space-y-0.5">
-            {" "}
-            {/* neutral */}
             <p>
               Type:{" "}
               <span className="text-zinc-200 font-medium">{file.mimetype}</span>
@@ -168,40 +149,14 @@ export default function FileModal({
               onClick={handleDownload}
               className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm flex items-center gap-1.5 sm:gap-2"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
               Download
             </button>
             <button
               onClick={handleDeleteClick}
               className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm flex items-center gap-1.5 sm:gap-2"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faTrashAlt} className="h-4 w-4" />
               Delete
             </button>
           </div>
