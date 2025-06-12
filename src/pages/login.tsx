@@ -77,7 +77,7 @@ export default function LoginPage() {
             {isLoading ? (
               <span className="flex items-center">
                 <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                Logging in...
+                Logging in
               </span>
             ) : (
               "Login"

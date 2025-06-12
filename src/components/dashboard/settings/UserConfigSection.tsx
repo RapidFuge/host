@@ -5,7 +5,7 @@ import { DashboardUser } from "@pages/dashboard";
 import { shorteners } from "@lib/generators";
 import { useRouter } from "next/router";
 import { signOut } from "next-auth/react";
-import { Copy, CopyCheck, Download } from "lucide-react";
+import { Copy, CopyCheck, Download, LoaderCircle } from "lucide-react";
 
 interface UserConfigSectionProps {
   loggedInUser: DashboardUser;
@@ -106,10 +106,8 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
     navigator.clipboard.writeText(tokenToCopy)
       .then(() => {
         setCopiedApiToken(true);
-        setTokenManagementMessage({ type: "success", text: "API Token copied!" });
         setTimeout(() => {
           setCopiedApiToken(false);
-          if (tokenManagementMessage?.text.includes("copied")) setTokenManagementMessage(null);
         }, 2000);
       })
       .catch(() => setTokenManagementMessage({ type: "error", text: "Copy failed." }));
@@ -162,7 +160,7 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
           const response = await fetch(`/api/users/${selectedUser}`, { method: "DELETE" });
           const data = await response.json();
           if (!response.ok) throw new Error(data.error || data.message || "Delete failed.");
-          alert(data.message || `User ${selectedUser} deleted.`);
+          // alert(data.message || `User ${selectedUser} deleted.`);
           if (loggedInUser.username === selectedUser) signOut({ callbackUrl: '/login' }); else router.reload();
         } catch (err: any) { alert(`Error: ${err.message}`); }
       }
@@ -255,7 +253,14 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
               </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end items-center gap-3 mt-6 pt-4 border-t border-neutral-800">
-              <button onClick={handleResetToken} className="w-full sm:w-auto px-4 py-2 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white font-semibold disabled:bg-neutral-700 disabled:text-neutral-400" disabled={isResettingToken}>{isResettingToken ? "Resetting..." : "Reset Token"}</button>
+              <button onClick={handleResetToken} disabled={isResettingToken} className="w-full sm:w-auto px-4 py-2 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white font-semibold disabled:bg-neutral-700 disabled:text-neutral-400">
+                {isResettingToken ? (
+                  <span className="flex items-center">
+                    <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+                    Resetting
+                  </span>
+                ) : ("Reset Token")}
+              </button>
               <button type="button" onClick={closeTokenModal} className="w-full sm:w-auto px-4 py-2 text-sm bg-neutral-700 hover:bg-neutral-600 rounded text-white">Close</button>
             </div>
           </div>

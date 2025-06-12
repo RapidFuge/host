@@ -91,7 +91,7 @@ export default function SignupPage() {
             {isLoading ? (
               <span className="flex items-center">
                 <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                Signing up...
+                Signing up
               </span>
             ) : (
               "Sign Up"

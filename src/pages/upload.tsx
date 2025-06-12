@@ -206,7 +206,7 @@ export default function UploadPage() {
           {uploading ? (
             <span className="flex items-center">
               <LoaderCircle className="animate-spin mr-2 w-5 h-5 text-white" />
-              Uploading...
+              Uploading
             </span>
           ) : (
             <span className="flex items-center">

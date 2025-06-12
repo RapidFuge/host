@@ -1,5 +1,5 @@
 // components/dashboard/settings/CreateUser.tsx
-import { UserRoundPlus } from "lucide-react";
+import { LoaderCircle, UserRoundPlus } from "lucide-react";
 import { useState, useEffect } from "react"; // Added useEffect for ESC key
 
 export default function CreateUserForm() {
@@ -154,7 +154,12 @@ export default function CreateUserForm() {
                   className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:bg-neutral-700 disabled:text-neutral-400"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating..." : "Create User"}
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+                      Creating
+                    </span>
+                  ) : ("Create User")}
                 </button>
               </div>
             </form>

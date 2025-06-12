@@ -109,7 +109,7 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
             {isLoading ? (
               <span className="flex items-center">
                 <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                Shortening URL...
+                Shortening URL
               </span>
             ) : (
               <span className="flex items-center">

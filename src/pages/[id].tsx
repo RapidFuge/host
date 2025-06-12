@@ -582,8 +582,7 @@ export default function FileViewerPage({
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className={`px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center ${isDeleting ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                    className={`px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center ${isDeleting ? "opacity-50 cursor-not-allowed" : ""}`}
                     title="Delete File"
                   >
                     {isDeleting ? (
@@ -591,7 +590,7 @@ export default function FileViewerPage({
                         <LoaderCircle
                           className="animate-spin mr-2 w-4 h-4"
                         />{" "}
-                        Deleting...
+                        Deleting
                       </>
                     ) : (
                       <>

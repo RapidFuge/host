@@ -24,7 +24,7 @@ export default function SettingsComponent({
     <div className="p-4 h-full flex flex-col text-zinc-100">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-white">
-          Settings
+          {isViewingOwnSettings ? ("Settings") : (`Settings: ${selectedUser}`)}
         </h2>
       </div>
       {loggedInUser.isAdmin && isViewingOwnSettings && (

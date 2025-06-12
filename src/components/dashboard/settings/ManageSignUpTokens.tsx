@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy, CopyCheck } from "lucide-react";
+import { Copy, CopyCheck, LoaderCircle } from "lucide-react";
 
 interface ClientSignUpToken {
   token: string;
@@ -100,10 +100,8 @@ export default function SignUpTokensManagerModal({
     navigator.clipboard.writeText(tokenToCopy)
       .then(() => {
         setCopiedTokenValue(tokenToCopy);
-        setMessage({ type: "success", text: "Token copied to clipboard!" });
         setTimeout(() => {
           setCopiedTokenValue(null);
-          if (message?.text.includes("copied")) setMessage(null);
         }, 2000);
       })
       .catch(() => {
@@ -130,8 +128,13 @@ export default function SignUpTokensManagerModal({
             <label htmlFor="modal-token-expiration" className="block text-sm font-medium text-zinc-300 mb-1">New Token Expiration</label>
             <input type="text" id="modal-token-expiration" value={newExpiration} onChange={(e) => setNewExpiration(e.target.value)} placeholder='e.g., "1h", "7d"' className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:ring-blue-500 focus:border-blue-500" />
           </div>
-          <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:bg-neutral-700 disabled:text-neutral-400 h-[42px]" disabled={isCreating}>
-            {isCreating ? "Creating..." : "Create Token"}
+          <button type="submit" disabled={isCreating} className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:bg-neutral-700 disabled:text-neutral-400 h-[42px]">
+            {isCreating ? (
+              <span className="flex items-center">
+                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+                Creating
+              </span>
+            ) : ("Create Token")}
           </button>
         </form>
         {message && (

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy } from "lucide-react";
+import { Copy, CopyCheck, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 
 interface ShortenedLink {
@@ -22,6 +22,7 @@ export default function LinksComponent({
   const [links, setLinks] = useState<ShortenedLink[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedURLValue, setCopiedURLValue] = useState<string | null>(null);
 
   const fetchLinks = useCallback(async () => {
     if (!username) {
@@ -107,7 +108,12 @@ export default function LinksComponent({
   const copyToClipboard = (text: string) => {
     navigator.clipboard
       .writeText(text)
-      .then(() => alert("Short URL copied to clipboard!"))
+      .then(() => {
+        setCopiedURLValue(text);
+        setTimeout(() => {
+          setCopiedURLValue(null);
+        }, 2000);
+      })
       .catch(() => alert("Failed to copy URL."));
   };
 
@@ -128,9 +134,14 @@ export default function LinksComponent({
         <button
           onClick={handleRefresh}
           disabled={isLoading || !username}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-neutral-500 disabled:cursor-not-allowed transition-colors text-sm"
+          className="flex px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-neutral-500 disabled:cursor-not-allowed transition-colors text-sm"
         >
-          {isLoading ? "Refreshing..." : "Refresh Links"}
+          {isLoading ? (
+            <span className="flex items-center">
+              <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+              Refreshing
+            </span>
+          ) : ("Refresh")}
         </button>
       </div>
       {error && (
@@ -140,7 +151,7 @@ export default function LinksComponent({
       )}
       {isLoading && links.length === 0 && (
         <div className="text-center py-10 text-neutral-400">
-          Loading links...
+          Loading links
         </div>
       )}
       {!isLoading && !error && links.length === 0 && username && (
@@ -210,7 +221,11 @@ export default function LinksComponent({
                         className="ml-2 p-1 text-neutral-400 hover:text-zinc-200"
                         title="Copy short URL"
                       >
-                        <Copy className="h-4 w-4" />
+                        {copiedURLValue === shortUrl ? (
+                          <CopyCheck className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </button>
                     </td>
                     <td

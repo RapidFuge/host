@@ -1,7 +1,7 @@
 // components/dashboard/Gallery.tsx
 import { useState, useEffect, useCallback } from "react";
 import FileModal, { ModalFileItem } from "./FileModal";
-import { File, FileAudio, FileVideo2, ZoomIn } from "lucide-react";
+import { File, FileAudio, FileVideo2, LoaderCircle, ZoomIn } from "lucide-react";
 
 interface FileItem {
   id: string;
@@ -177,7 +177,12 @@ export default function GalleryComponent({ username }: GalleryProps) {
             disabled={isLoading || !username}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-neutral-500 disabled:cursor-not-allowed transition-colors text-sm"
           >
-            {isLoading ? "Refreshing..." : "Refresh"}
+            {isLoading ? (
+              <span className="flex items-center">
+                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+                Refreshing
+              </span>
+            ) : ("Refresh")}
           </button>
         </div>
       </div>
