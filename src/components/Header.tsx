@@ -97,7 +97,7 @@ export default function Header() {
               </button>
             )}
             <Link
-              href="https://git.fuge.dev/rapid/host"
+              href="https://github.com/rapidfuge/host"
               rel="noopener noreferrer"
               target="_blank"
               className="p-1 px-2 text-gray-300 min-w-[24px] min-h-[24px] hover:text-white tr04" // Consistent padding
