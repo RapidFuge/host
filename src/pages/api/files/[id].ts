@@ -55,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 };
 
                 const Path = path.join(os.tmpdir(), file.fileName);
+                const downloadFilename = file.publicFileName || `${file.id}${file.extension ? `.${file.extension}` : ''}`;
                 let Mime;
                 if (file.extension === 'ts') {
                     Mime = 'text/typescript';
@@ -64,6 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     Mime = mime.lookup(file.fileName) || 'application/octet-stream';
                 }
                 res.setHeader("Content-Type", Mime);
+                res.setHeader('Content-Disposition', `inline; filename="${downloadFilename}"`);
                 let buf: Buffer;
                 if (!fs.existsSync(Path)) {
                     buf = await db.imageDrive.get(file.fileName) as Buffer;

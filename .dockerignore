@@ -3,6 +3,7 @@
 # Git
 .git
 .gitignore
+.github
 
 # Node modules
 node_modules
@@ -36,3 +37,4 @@ Dockerfile
 Thumbs.db
 
 .onedev-buildspec.yml
+LICENSE

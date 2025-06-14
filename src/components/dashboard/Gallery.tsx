@@ -6,6 +6,7 @@ import { File, FileAudio, FileVideo2, LoaderCircle, ZoomIn } from "lucide-react"
 interface FileItem {
   id: string;
   filename: string;
+  publicFileName?: string;
   extension: string;
   mimetype: string;
   url: string;
@@ -53,7 +54,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
         if (data.success) {
           const processedApiFiles = data.files.map((file: FileItem) => ({
             id: file.id,
-            filename: file.extension ? `${file.id}.${file.extension}` : file.id,
+            filename: file.publicFileName ? file.publicFileName : file.extension ? `${file.id}.${file.extension}` : file.id,
             mimetype: file.mimetype,
             isPrivate: file.isPrivate,
             created: file.created ? new Date(file.created) : undefined,

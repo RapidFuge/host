@@ -33,7 +33,8 @@ import Head from "next/head";
 interface FileData {
   id: string;
   name: string;
-  extension: string;
+  publicFileName?: string;
+  extension?: string | null;
   mimetype: string;
   size: number;
   owner: string;
@@ -60,7 +61,7 @@ interface SyntaxHighlightRenderProps {
   getTokenProps: (input: TokenInputProps) => Record<string, unknown>;
 }
 
-const getLanguage = (extension: string): Language => {
+const getLanguage = (extension?: string | null): Language => {
   const langMap: { [key: string]: string } = {
     js: "javascript",
     jsx: "jsx",
@@ -126,6 +127,7 @@ const TEXT_BASED_EXTENSIONS = new Set([
   "haml",
   "hs",
   "ex",
+  "desktop"
 ]);
 
 const markdownComponents = {
@@ -693,7 +695,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   type RawApiFileData = {
     id: string;
     fileName: string;
-    extension: string;
+    publicFileName?: string;
+    extension?: string;
     size: number;
     owner: string;
     isPrivate: boolean;
@@ -725,6 +728,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   if (rawApiFileData.extension === "ts" || rawApiFileData.extension === "tsx")
     derivedMimetype = "text/typescript";
   if (rawApiFileData.extension === "mp4") derivedMimetype = "video/mp4";
+  if (rawApiFileData.extension === "desktop") derivedMimetype = "text/plain";
   else if (rawApiFileData.extension === "md") derivedMimetype = "text/markdown";
   else
     derivedMimetype =
@@ -732,10 +736,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   const fileData: FileData = {
     id: rawApiFileData.id,
-    name: rawApiFileData.extension
+    name: rawApiFileData.publicFileName ? rawApiFileData.publicFileName : rawApiFileData.extension
       ? `${rawApiFileData.id}.${rawApiFileData.extension}`
       : rawApiFileData.id,
-    extension: rawApiFileData.extension,
+    extension: rawApiFileData.extension || null,
     mimetype: derivedMimetype,
     size: rawApiFileData.size,
     owner: rawApiFileData.owner,

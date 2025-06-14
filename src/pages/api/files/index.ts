@@ -19,7 +19,7 @@ const genFileName = async (originalname: string | null): Promise<string> => {
     const split = originalname?.split('.') || [];
     if (split.length > 1) {
         const ext = split.pop();
-        return (ext?.length || 0) > 5 ? tok : `${tok}.${ext}`;
+        return (ext?.length || 0) > 10 ? tok : `${tok}.${ext}`;
     }
     return tok;
 };
@@ -39,7 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
 
     const form = formidable({ multiples: true });
-    const isPrivate = Boolean(req.headers.isprivate === 'true' || req.headers.isPrivate === "true"); // More robust check
+    const isPrivate = req.headers.isprivate === 'true' || req.headers.isPrivate === "true"; // More robust check
+    const keepOriginalName = req.headers.keeporiginalname === 'true' || req.headers.keepOriginalName === 'true';
 
     // formidable v2/v3 types: files is an object, not an array directly
     // files.files will be an array if multiple files are uploaded with the same field name "files"
@@ -88,8 +89,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     ext = 'jpg'
                 }
 
+                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename : (ext ? `${id}.${ext}` : id);
+
                 await db.imageDrive.put(filename, fileContent);
-                await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate);
+                await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName);
 
                 const base = getBase(req);
                 results.push({

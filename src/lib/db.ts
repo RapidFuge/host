@@ -187,8 +187,8 @@ class Database {
 	}
 
 	// Adds file
-	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false) {
-		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate });
+	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false, publicFileName?: string) {
+		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate, publicFileName });
 	}
 
 	public async addUser(username: string, passwordHash: string, token: string) {

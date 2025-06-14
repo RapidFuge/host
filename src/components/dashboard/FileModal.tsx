@@ -5,6 +5,7 @@ import { X, Download, Trash2 } from "lucide-react";
 export interface ModalFileItem {
   id: string;
   filename: string;
+  publicFileName?: string;
   extension: string;
   mimetype: string;
   url: string;

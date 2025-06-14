@@ -6,6 +6,7 @@ export interface File extends Document {
   id: string;
   size: number;
   fileName: string;
+  publicFileName?: string;
   videoThumbnail?: string;
   owner: string;
   isPrivate: boolean;
@@ -33,6 +34,10 @@ const FileSchema: Schema<File> = new Schema({
   fileName: {
     type: String,
     required: true,
+  },
+  publicFileName: {
+    type: String,
+    required: false
   },
   videoThumbnail: {
     type: String,

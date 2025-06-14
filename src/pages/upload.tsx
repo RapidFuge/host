@@ -15,6 +15,7 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false); // State for the checkbox
+  const [isKeepingOrig, setKeepOrig] = useState(false); // State for the checkbox
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +78,7 @@ export default function UploadPage() {
         method: "POST",
         headers: {
           isPrivate: isPrivate.toString(),
+          keepOriginalName: isKeepingOrig.toString()
         },
         body: formData,
       });
@@ -192,6 +194,19 @@ export default function UploadPage() {
           />
           <label htmlFor="private-checkbox" className="text-sm text-gray-300">
             Make files private
+          </label>
+        </div>
+
+        <div className="flex items-center space-x-2 mb-2">
+          <input
+            type="checkbox"
+            id="keepname-checkbox"
+            checked={isKeepingOrig}
+            onChange={(e) => setKeepOrig(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="keepname-checkbox" className="text-sm text-gray-300">
+            Keep File's Original Name
           </label>
         </div>
 
