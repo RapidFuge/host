@@ -206,7 +206,7 @@ export default function UploadPage() {
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <label htmlFor="keepname-checkbox" className="text-sm text-gray-300">
-            Keep File's Original Name
+            Keep the original name of the file(s)
           </label>
         </div>
 
