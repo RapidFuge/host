@@ -727,8 +727,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   let derivedMimetype;
   if (rawApiFileData.extension === "ts" || rawApiFileData.extension === "tsx")
     derivedMimetype = "text/typescript";
-  if (rawApiFileData.extension === "mp4") derivedMimetype = "video/mp4";
-  if (rawApiFileData.extension === "desktop") derivedMimetype = "text/plain";
+  else if (rawApiFileData.extension === "mp4") derivedMimetype = "video/mp4";
+  else if (rawApiFileData.extension === "desktop") derivedMimetype = "text/plain";
   else if (rawApiFileData.extension === "md") derivedMimetype = "text/markdown";
   else
     derivedMimetype =
