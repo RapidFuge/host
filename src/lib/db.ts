@@ -241,6 +241,10 @@ class Database {
 		return this.fileBase.updateMany({ owner: oldOwner }, { $set: { owner: newOwner } });
 	}
 
+	public async setFilePrivacy(id: string, isPrivate: boolean) {
+		return this.fileBase.updateOne({ id }, { $set: { isPrivate } });
+	}
+
 	public async setToken(username: string, token: string | undefined) {
 		return this.userBase.updateOne({ username }, { $set: { token } });
 	}

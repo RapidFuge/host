@@ -43,6 +43,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await db.removeFile(file.id);
                 await db.imageDrive.remove(file.fileName);
                 return res.status(200).json({ success: true, message: "File deleted." });
+            case "POST":
+                if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
+                if (file.owner !== user.username && !user.isAdmin) return res.status(403).json(errorGenerator(403, "Forbidden."));
+
+                const { isPrivate } = req.body;
+
+                if (typeof isPrivate !== 'boolean') {
+                    return res.status(400).json(errorGenerator(400, "Invalid 'isPrivate' value. Must be a boolean."));
+                }
+
+                await db.setFilePrivacy(fileId, isPrivate);
+                return res.status(200).json({ success: true, message: "File privacy updated." });
             case "GET":
                 if (file.isPrivate && (!user || file.owner !== user.username && !user.isAdmin)) return res.status(403).json(errorGenerator(403, "Forbidden."));
                 if (req.headers.getinfo === "true") {

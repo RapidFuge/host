@@ -168,6 +168,8 @@ export default function FileViewerPage({
   const [markdownContent, setMarkdownContent] =
     useState<React.ReactElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(fileData?.isPrivate || false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
   useEffect(() => {
     if (fileData?.extension?.toLowerCase() === "md" && rawFileContent) {
@@ -317,7 +319,7 @@ export default function FileViewerPage({
     );
   }
 
-  const { id, name, extension, mimetype, size, isPrivate, owner } = fileData;
+  const { id, name, extension, mimetype, size, owner } = fileData;
   const language = getLanguage(extension);
   const isMarkdownFile =
     extension?.toLowerCase() === "md" ||
@@ -348,6 +350,37 @@ export default function FileViewerPage({
           setIsDeleting(false);
         }
       }
+    }
+  };
+
+
+  const handlePrivacyChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newIsPrivate = e.target.checked;
+    if (isUpdatingPrivacy) return;
+
+    setIsUpdatingPrivacy(true);
+    setIsPrivate(newIsPrivate);
+
+    try {
+      const res = await fetch(`/api/files/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPrivate: newIsPrivate }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ message: "Failed to update privacy." }));
+        throw new Error(errData.message);
+      }
+
+      alert(`Successfully set file to ${newIsPrivate ? "private" : "public"}!`)
+    } catch (err: any) {
+      setIsPrivate(!newIsPrivate);
+      alert(`Failed to update privacy: ${err.message}`);
+    } finally {
+      setIsUpdatingPrivacy(false);
     }
   };
 
@@ -581,28 +614,37 @@ export default function FileViewerPage({
                   Download
                 </Link>
                 {isAuthenticated && isOwner && (
-                  <button
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className={`px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center ${isDeleting ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title="Delete File"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <LoaderCircle
-                          className="animate-spin mr-2 w-4 h-4"
-                        />{" "}
-                        Deleting
-                      </>
-                    ) : (
-                      <>
-                        <Trash2
-                          className="mr-2 w-3 h-3"
-                        />{" "}
-                        Delete
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className={`px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center ${isDeleting ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title="Delete File"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <LoaderCircle
+                            className="animate-spin mr-2 w-4 h-4"
+                          />{" "}
+                          Deleting
+                        </>
+                      ) : (
+                        <>
+                          <Trash2
+                            className="mr-2 w-3 h-3"
+                          />{" "}
+                          Delete
+                        </>
+                      )}
+                    </button>
+                    <label htmlFor="privacyToggle" className="flex items-center cursor-pointer relative ml-auto" title="Toggle file privacy">
+                      <input type="checkbox" id="privacyToggle" className="sr-only peer" checked={isPrivate} onChange={handlePrivacyChange} disabled={isUpdatingPrivacy} />
+                      <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <span className="ml-3 text-sm font-medium text-zinc-300">
+                        Private
+                      </span>
+                    </label>
+                  </>
                 )}
               </div>
             </div>
