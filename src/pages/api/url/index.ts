@@ -29,7 +29,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
         const isValid = validTag(providedTag);
         const inUse = await db.getLink(providedTag);
 
-        const tag = (isValid && !inUse) ? providedTag : generators[generator](6);
+        const tag = (isValid && !inUse) ? providedTag : generators[generator](generator === 'gfycat' ? 2 : 6);
         await db.addLink(tag, trim(url), user.username);
 
         return res.status(200).json({ success: true, url: `${getBase(req)}/${tag}` });
