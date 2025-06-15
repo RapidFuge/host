@@ -376,6 +376,7 @@ export default function FileViewerPage({
       }
 
       alert(`Successfully set file to ${newIsPrivate ? "private" : "public"}!`)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setIsPrivate(!newIsPrivate);
       alert(`Failed to update privacy: ${err.message}`);
