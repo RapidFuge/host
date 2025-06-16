@@ -126,36 +126,16 @@ export default class MinIOClient {
     async get(fileName: string) {
         try {
             const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
-
-            const stream = await this.client.getObject(this.bucketName, objectName);
-
-            // Convert stream to buffer
-            return new Promise<Buffer>((resolve, reject) => {
-                const chunks: Buffer[] = [];
-
-                stream.on('data', (chunk) => {
-                    chunks.push(chunk);
-                });
-
-                stream.on('error', (error) => {
-                    console.error('Failed to get object:', error);
-                    reject(false);
-                });
-
-                stream.on('end', () => {
-                    resolve(Buffer.concat(chunks));
-                });
-            });
+            return await this.client.getObject(this.bucketName, objectName);
         } catch (error) {
-            console.error('Failed to get object:', error);
-            return false;
+            console.error(`Failed to get object stream for: ${fileName}`, error);
+            throw error; // Re-throw the error for the caller to handle
         }
     }
 
     async remove(fileName: string) {
         try {
             const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
-
             await this.client.removeObject(this.bucketName, objectName);
             return true;
         } catch (error) {
@@ -182,16 +162,6 @@ export default class MinIOClient {
         } catch (error) {
             console.error('Failed to get metadata:', error);
             return null;
-        }
-    }
-
-    async generatePresignedUrl(fileName: string, expiry: number = 24 * 60 * 60): Promise<string> {
-        try {
-            const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
-            return await this.client.presignedGetObject(this.bucketName, objectName, expiry);
-        } catch (error) {
-            console.error('Failed to generate presigned URL:', error);
-            throw error;
         }
     }
 }

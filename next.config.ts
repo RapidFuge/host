@@ -4,6 +4,7 @@ import { version } from './package.json';
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
+  output: 'standalone',
   env: {
     APP_VERSION: version
   },

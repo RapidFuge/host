@@ -76,17 +76,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 } else {
                     Mime = mime.lookup(file.fileName) || 'application/octet-stream';
                 }
+
                 res.setHeader("Content-Type", Mime);
                 res.setHeader('Content-Disposition', `inline; filename="${downloadFilename}"`);
-                let buf: Buffer;
-                if (!fs.existsSync(Path)) {
-                    buf = await db.imageDrive.get(file.fileName) as Buffer;
-                    await fs.writeFile(Path, buf);
-                } else buf = await fs.readFile(Path);
 
-                return res.send(buf);
+                if (fs.existsSync(Path)) {
+                    // console.log(`CACHE HIT: Serving ${file.fileName} from local cache.`);
+                    const cacheStream = fs.createReadStream(Path);
+                    cacheStream.pipe(res);
+                    return;
+                }
+
+                try {
+                    const minioStream = await db.imageDrive.get(file.fileName);
+                    const cacheWriteStream = fs.createWriteStream(Path);
+
+                    minioStream.pipe(res);
+                    minioStream.pipe(cacheWriteStream);
+
+                    cacheWriteStream.on('error', err => {
+                        console.error('Error writing to cache:', err);
+                        fs.unlink(Path, () => { });
+                    });
+
+                } catch (error) {
+                    console.error("Could not get file stream from storage:", error);
+                    return res.status(500).json(errorGenerator(500, 'Could not retrieve file from storage.'));
+                }
+
+                return;
             default:
-                return res.setHeader('Allow', ['DELETE', 'GET']).status(405).json({ error: 'Method Not Allowed' });
+                return res.setHeader('Allow', ['DELETE', 'GET', 'POST']).status(405).json({ error: 'Method Not Allowed' });
         }
 
 
