@@ -47,8 +47,8 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
     { value: "6h", label: "6 Hours" },
     { value: "1d", label: "1 Day" },
     { value: "1w", label: "1 Week" },
-    { value: "1M", label: "1 Month" },
-    { value: "3M", label: "3 Months" },
+    { value: "30d", label: "1 Month" },
+    { value: "90d", label: "3 Months" },
     { value: "1y", label: "1 Year" },
   ];
 

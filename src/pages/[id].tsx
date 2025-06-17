@@ -172,6 +172,8 @@ export default function FileViewerPage({
   const [isPrivate, setIsPrivate] = useState(fileData?.isPrivate || false);
   const [showRelativeTime, setShowRelativeTime] = useState(true);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  const [isExpiring, setIsExpiring] = useState(!!fileData?.expiresAt);
+  const [isRemovingExpiry, setIsRemovingPrivacy] = useState(false);
 
   useEffect(() => {
     if (fileData?.extension?.toLowerCase() === "md" && rawFileContent) {
@@ -386,35 +388,64 @@ export default function FileViewerPage({
     }
   };
 
+  const handleRemoveExpiry = async () => {
+    if (isOwner) {
+      if (isRemovingExpiry) return;
+      if (confirm("Delete remove expiry? This cannot be undone.")) {
+        setIsRemovingPrivacy(true);
+
+        try {
+          const res = await fetch(`/api/files/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ removeExpiry: true }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({ message: "Failed to update expiration." }));
+            throw new Error(errData.message);
+          }
+          setIsExpiring(false);
+          alert(`Successfully removed file expiry!`);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+          alert(`Delete failed: ${err.message}`);
+        } finally {
+          setIsRemovingPrivacy(false);
+        }
+      }
+    }
+  }
 
   const handlePrivacyChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const newIsPrivate = e.target.checked;
-    if (isUpdatingPrivacy) return;
+    if (isOwner) {
+      const newIsPrivate = e.target.checked;
+      if (isUpdatingPrivacy) return;
 
-    setIsUpdatingPrivacy(true);
-    setIsPrivate(newIsPrivate);
+      setIsUpdatingPrivacy(true);
+      setIsPrivate(newIsPrivate);
 
-    try {
-      const res = await fetch(`/api/files/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPrivate: newIsPrivate }),
-      });
+      try {
+        const res = await fetch(`/api/files/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPrivate: newIsPrivate }),
+        });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({ message: "Failed to update privacy." }));
-        throw new Error(errData.message);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ message: "Failed to update privacy." }));
+          throw new Error(errData.message);
+        }
+
+        alert(`Successfully set file to ${newIsPrivate ? "private" : "public"}!`)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        setIsPrivate(!newIsPrivate);
+        alert(`Failed to update privacy: ${err.message}`);
+      } finally {
+        setIsUpdatingPrivacy(false);
       }
-
-      alert(`Successfully set file to ${newIsPrivate ? "private" : "public"}!`)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setIsPrivate(!newIsPrivate);
-      alert(`Failed to update privacy: ${err.message}`);
-    } finally {
-      setIsUpdatingPrivacy(false);
     }
   };
 
@@ -617,14 +648,14 @@ export default function FileViewerPage({
                   <span>
                     Owner: <span className="text-zinc-300">{owner}</span>
                   </span>
-                  {fileData.expiresAt && (
+                  {isExpiring && (
                     <span>
                       Expires:{" "}
                       <span className="text-zinc-300">
                         <button className="hover:underline focus:outline-none" onClick={() => setShowRelativeTime(p => !p)}>
                           {showRelativeTime
-                            ? formatTimeRemaining(fileData.expiresAt)
-                            : new Date(fileData.expiresAt).toLocaleString()
+                            ? formatTimeRemaining(fileData.expiresAt ?? "")
+                            : new Date(fileData.expiresAt ?? 0).toLocaleString()
                           }
                         </button>
                       </span>
@@ -684,13 +715,34 @@ export default function FileViewerPage({
                         </>
                       )}
                     </button>
+
                     <label htmlFor="privacyToggle" className="flex items-center cursor-pointer relative ml-auto" title="Toggle file privacy">
                       <input type="checkbox" id="privacyToggle" className="sr-only peer" checked={isPrivate} onChange={handlePrivacyChange} disabled={isUpdatingPrivacy} />
                       <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      <span className="ml-3 text-sm font-medium text-zinc-300">
+                      <span className="ml-2 text-sm font-medium text-zinc-300">
                         Private
                       </span>
                     </label>
+
+                    {isExpiring && (
+                      <button
+                        onClick={handleRemoveExpiry}
+                        disabled={isRemovingExpiry}
+                        className={`px-3 py-1.5 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors flex ${isRemovingExpiry ? "opacity-50 cursor-not-allowed" : ""}`}
+                        title="Remove Expiry"
+                      >
+                        {isRemovingExpiry ? (
+                          <>
+                            <LoaderCircle
+                              className="animate-spin mr-2 w-4 h-4"
+                            />{" "}
+                            Removing Expiry
+                          </>
+                        ) : (
+                          "Remove Expiry"
+                        )}
+                      </button>
+                    )}
                   </>
                 )}
               </div>

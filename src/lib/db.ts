@@ -248,6 +248,10 @@ class Database {
 		return this.fileBase.updateOne({ id }, { $set: { isPrivate } });
 	}
 
+	public async setFileExpiry(id: string, expiresAt: Date | null) {
+		return this.fileBase.updateOne({ id }, { $set: { expiresAt } });
+	}
+
 	public async setToken(username: string, token: string | undefined) {
 		return this.userBase.updateOne({ username }, { $set: { token } });
 	}

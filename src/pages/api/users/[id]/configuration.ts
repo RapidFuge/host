@@ -21,8 +21,8 @@ const expirationOptions = [
     "6h",
     "1d",
     "1w",
-    "1M",
-    "3M",
+    "30d",
+    "90d",
     "1y",
 ];
 

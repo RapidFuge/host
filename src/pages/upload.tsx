@@ -19,15 +19,14 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
   const [isKeepingOrig, setKeepOrig] = useState(false); // State for the checkbox
   const [expiration, setExpiration] = useState(expireDate || "never");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const expirationOptions = [
     { value: "never", label: "Expires in: Never" },
     { value: "1h", label: "Expires in: 1 Hour" },
     { value: "6h", label: "Expires in: 6 Hours" },
     { value: "1d", label: "Expires in: 1 Day" },
     { value: "1w", label: "Expires in: 1 Week" },
-    { value: "1M", label: "Expires in: 1 Month" },
-    { value: "3M", label: "Expires in: 3 Months" },
+    { value: "30d", label: "Expires in: 1 Month" },
+    { value: "90d", label: "Expires in: 3 Months" },
     { value: "1y", label: "Expires in: 1 Year" },
   ];
 
@@ -288,7 +287,6 @@ export async function getServerSideProps(context: GetSessionParams & GetServerSi
     });
     if (userResponse.ok) {
       const userData = await userResponse.json();
-      console.log(userData)
       if (userData.success && userData.user && userData.user.defaultFileExpiration) {
         expireDate = userData.user.defaultFileExpiration;
       }
