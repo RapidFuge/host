@@ -1,6 +1,7 @@
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Download, Trash2 } from "lucide-react";
+import { formatTimeRemaining } from "@lib";
 
 export interface ModalFileItem {
   id: string;
@@ -12,6 +13,7 @@ export interface ModalFileItem {
   openURL: string;
   isPrivate: boolean;
   created?: Date;
+  expiresAt?: Date;
 }
 
 interface FileModalProps {
@@ -27,6 +29,8 @@ export default function FileModal({
   onClose,
   onDelete,
 }: FileModalProps) {
+  const [showRelativeTime, setShowRelativeTime] = useState(true);
+
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -49,10 +53,12 @@ export default function FileModal({
     return null;
   }
 
+  const expiresAt = file.expiresAt ? new Date(file.expiresAt).toISOString() : null;
+
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = file.url;
-    link.setAttribute("download", file.filename);
+    link.setAttribute("download", file.publicFileName ?? file.filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -79,10 +85,9 @@ export default function FileModal({
           <Link
             id="file-modal-title"
             className="text-lg sm:text-xl font-semibold truncate text-blue-400 hover:underline"
-            title={file.filename}
             href={file.openURL}
           >
-            {file.filename}
+            {file.publicFileName ?? file.filename}
           </Link>{" "}
           <button
             onClick={onClose}
@@ -97,7 +102,7 @@ export default function FileModal({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={file.url}
-              alt={file.filename}
+              alt={file.publicFileName ?? file.filename}
               className="max-w-full max-h-[calc(90vh-200px)] object-contain rounded"
             />
           )}
@@ -122,9 +127,34 @@ export default function FileModal({
         <div className="p-3 sm:p-4 border-t border-neutral-700 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 min-h-[70px]">
           <div className="text-xs sm:text-sm text-neutral-400 space-y-0.5">
             <p>
+              ID:{" "}
+              <span className="text-zinc-200 font-medium">{file.id}</span>
+            </p>
+            <p>
               Type:{" "}
               <span className="text-zinc-200 font-medium">{file.mimetype}</span>
             </p>
+            {file.created && (
+              <p>
+                Uploaded:{" "}
+                <span className="text-zinc-200">
+                  {new Date(file.created).toLocaleString()}
+                </span>
+              </p>
+            )}
+            {expiresAt && (
+              <p>
+                Expires:{" "}
+                <span className="text-zinc-200">
+                  <button className="hover:underline focus:outline-none" onClick={() => setShowRelativeTime(p => !p)}>
+                    {showRelativeTime
+                      ? formatTimeRemaining(expiresAt)
+                      : new Date(expiresAt).toLocaleString()
+                    }
+                  </button>
+                </span>
+              </p>
+            )}
             {file.isPrivate ? (
               <p className="text-yellow-400 font-semibold">
                 Status: Private File
@@ -132,14 +162,6 @@ export default function FileModal({
             ) : (
               <p className="text-green-400 font-semibold">
                 Status: Public File
-              </p>
-            )}
-            {file.created && (
-              <p>
-                Uploaded:{" "}
-                <span className="text-zinc-200">
-                  {new Date(file.created).toLocaleDateString()}
-                </span>
               </p>
             )}
           </div>

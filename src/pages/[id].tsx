@@ -24,7 +24,7 @@ import {
 import { filesize } from "filesize";
 import mime from "mime-types";
 
-import { getBase } from "@lib";
+import { formatTimeRemaining, getBase } from "@lib";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
 import Link from "next/link";
@@ -39,6 +39,7 @@ interface FileData {
   size: number;
   owner: string;
   isPrivate: boolean;
+  expiresAt?: string | null;
   ownerEmbedPreference?: boolean;
   ownerCustomDescription?: string | null;
 }
@@ -169,6 +170,7 @@ export default function FileViewerPage({
     useState<React.ReactElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPrivate, setIsPrivate] = useState(fileData?.isPrivate || false);
+  const [showRelativeTime, setShowRelativeTime] = useState(true);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
   useEffect(() => {
@@ -615,6 +617,19 @@ export default function FileViewerPage({
                   <span>
                     Owner: <span className="text-zinc-300">{owner}</span>
                   </span>
+                  {fileData.expiresAt && (
+                    <span>
+                      Expires:{" "}
+                      <span className="text-zinc-300">
+                        <button className="hover:underline focus:outline-none" onClick={() => setShowRelativeTime(p => !p)}>
+                          {showRelativeTime
+                            ? formatTimeRemaining(fileData.expiresAt)
+                            : new Date(fileData.expiresAt).toLocaleString()
+                          }
+                        </button>
+                      </span>
+                    </span>
+                  )}
                   {isPrivate && (
                     <span className="text-yellow-400 font-semibold">
                       (Private File)
@@ -774,6 +789,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     size: number;
     owner: string;
     isPrivate: boolean;
+    expiresAt?: Date;
     ownerEmbedPreference?: boolean;
     ownerCustomDescription?: string | null;
   };
@@ -818,6 +834,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     size: rawApiFileData.size,
     owner: rawApiFileData.owner,
     isPrivate: rawApiFileData.isPrivate,
+    expiresAt: rawApiFileData.expiresAt ? new Date(rawApiFileData.expiresAt).toISOString() : null,
     ownerEmbedPreference:
       rawApiFileData.ownerEmbedPreference === undefined
         ? false

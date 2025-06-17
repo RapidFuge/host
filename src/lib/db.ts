@@ -3,7 +3,7 @@ import { hash } from 'bcrypt';
 import mongoose from 'mongoose';
 import userBase from './models/user';
 import linkBase from './models/url';
-import fileBase from './models/file';
+import fileBase, { File } from './models/file';
 import upTokens from './models/upTokens';
 import { shorteners } from './generators';
 import MinIOClient, { FileStat } from './minio';
@@ -62,8 +62,10 @@ class Database {
 			// Start periodic tasks
 			setInterval(() => this.checkFiles(), 1800000); // Check files every 30 minutes
 			setInterval(() => this.checkForExpiredTokens(), 600000); // Check expired tokens every 10 minutes
+			setInterval(() => this.checkForExpiredFiles(), 600000); // Check expired files every 10 minutes
 			this.checkFiles();
 			this.checkForExpiredTokens();
+			this.checkForExpiredFiles();
 			this.initialized = true;
 		} catch (err) {
 			console.error("Initialization failed:", err);
@@ -80,30 +82,17 @@ class Database {
 
 		if (files) {
 			for (const file of files) {
-				if (!dbList.find((f) => f.basename === file.fileName || f.basename === file.videoThumbnail)) {
+				if (!dbList.find((f) => f.basename === file.fileName)) {
 					if (process.env.ISPRODUCTION === "true") await this.removeFile(file.id);
 					console.log(`DATABASE-CLEANUP --> Removed DB Entry ${file.id}.${file.extension} from file database.`);
 				}
 			}
 
 			for (const file of dbList) {
-				let exists;
-
-				if (file.basename.includes(".thumbnail.jpeg")) {
-					exists = await this.getFileByVideoThumbnail(file.basename);
-					if (!exists) {
-						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from MinIO.`);
-						if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
-						continue; // Skip to the next file, no need to check further
-					}
-				}
-
+				const exists = await this.getFileByName(file.basename);
 				if (!exists) {
-					exists = await this.getFileByName(file.basename);
-					if (!exists) {
-						console.log(`FILE-CLEANUP --> Removed file ${file.basename} from MinIO.`);
-						if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
-					}
+					console.log(`FILE-CLEANUP --> Removed file ${file.basename} from MinIO.`);
+					if (process.env.ISPRODUCTION === "true") await this.imageDrive.remove(file.basename);
 				}
 			}
 		}
@@ -120,6 +109,23 @@ class Database {
 		}
 	}
 
+	private async checkForExpiredFiles() {
+		const files = await this.getFiles();
+
+		for (const file of files) {
+			if (file.expiresAt && Date.now() >= file.expiresAt.getTime()) {
+				// Remove from storage
+				if (process.env.ISPRODUCTION === "true") {
+					await this.imageDrive.remove(file.fileName);
+					await this.removeFile(file.id);
+				}
+
+				// Remove from database
+				console.log(`FILE-EXPIRATION --> Deleted expired file: ${file.id}.${file.extension}. Expired at ${(new Date(file.expiresAt)).toLocaleString()}`);
+			}
+		}
+	}
+
 	// Gets
 	public async getFile(id: string) {
 		return this.fileBase.findOne({ id });
@@ -127,16 +133,13 @@ class Database {
 	public async getFileByName(fileName: string) {
 		return this.fileBase.findOne({ fileName });
 	}
-	public async getFileByVideoThumbnail(videoThumbnail: string) {
-		return this.fileBase.findOne({ videoThumbnail });
-	}
 	public async getLink(id: string) {
 		return this.linkBase.findOne({ id });
 	}
 	public async getSignUpToken(token: string) {
 		return this.upTokens.findOne({ token });
 	}
-	public async getFiles() {
+	public async getFiles(): Promise<File[]> {
 		const query = await this.fileBase.find();
 		return query.map(i => i.toJSON());
 	}
@@ -187,8 +190,8 @@ class Database {
 	}
 
 	// Adds file
-	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false, publicFileName?: string) {
-		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate, publicFileName });
+	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false, publicFileName?: string, expiresAt?: Date) {
+		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate, publicFileName, expiresAt });
 	}
 
 	public async addUser(username: string, passwordHash: string, token: string) {
@@ -255,6 +258,10 @@ class Database {
 
 	public async setEmbedPreferences(username: string, opt: { embedImageDirectly?: boolean, customEmbedDescription?: string | null }) {
 		return this.userBase.updateOne({ username }, { $set: opt });
+	}
+
+	public async setDefaultExpiration(username: string, defaultFileExpiration: string = "never") {
+		return this.userBase.updateOne({ username }, { $set: { defaultFileExpiration } })
 	}
 
 	public async expireToken(username: string) {

@@ -7,8 +7,9 @@ import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { filesize } from "filesize";
 import { LoaderCircle, Upload } from "lucide-react";
+import { getBase } from "@lib";
 
-export default function UploadPage() {
+export default function UploadPage({ expireDate }: { expireDate: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
@@ -16,7 +17,19 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false); // State for the checkbox
   const [isKeepingOrig, setKeepOrig] = useState(false); // State for the checkbox
+  const [expiration, setExpiration] = useState(expireDate || "never");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const expirationOptions = [
+    { value: "never", label: "Expires in: Never" },
+    { value: "1h", label: "Expires in: 1 Hour" },
+    { value: "6h", label: "Expires in: 6 Hours" },
+    { value: "1d", label: "Expires in: 1 Day" },
+    { value: "1w", label: "Expires in: 1 Week" },
+    { value: "1M", label: "Expires in: 1 Month" },
+    { value: "3M", label: "Expires in: 3 Months" },
+    { value: "1y", label: "Expires in: 1 Year" },
+  ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -78,7 +91,8 @@ export default function UploadPage() {
         method: "POST",
         headers: {
           isPrivate: isPrivate.toString(),
-          keepOriginalName: isKeepingOrig.toString()
+          keepOriginalName: isKeepingOrig.toString(),
+          expiresIn: expiration
         },
         body: formData,
       });
@@ -210,6 +224,19 @@ export default function UploadPage() {
           </label>
         </div>
 
+        <div className="flex items-center space-x-5 mb-4">
+          <select
+            id="shortenerType"
+            value={expiration}
+            onChange={(e) => setExpiration(e.target.value)}
+            className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {expirationOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+
         <button
           onClick={handleUpload}
           disabled={uploading}
@@ -245,22 +272,31 @@ export default function UploadPage() {
   );
 }
 
-export async function getServerSideProps(
-  context: GetSessionParams & GetServerSidePropsContext
-) {
+export async function getServerSideProps(context: GetSessionParams & GetServerSidePropsContext) {
   const session = await getSession(context);
-
-  if (!session) {
-    const callbackUrl = encodeURIComponent(context.resolvedUrl || "/");
-    return {
-      redirect: {
-        destination: `/login?cbU=${callbackUrl}`,
-        permanent: false,
-      },
-    };
+  if (!session || !session.user) {
+    const callbackUrl = encodeURIComponent(context.resolvedUrl || "/shortener");
+    return { redirect: { destination: `/login?cbU=${callbackUrl}`, permanent: false } };
   }
 
-  return {
-    props: { user: session.user },
-  };
+  const baseUrl = getBase(context.req);
+  let expireDate = "never"; // Default
+
+  try {
+    const userResponse = await fetch(`${baseUrl}/api/users/${session.user.username}`, {
+      headers: { Authorization: session.user.token ?? "" },
+    });
+    if (userResponse.ok) {
+      const userData = await userResponse.json();
+      console.log(userData)
+      if (userData.success && userData.user && userData.user.defaultFileExpiration) {
+        expireDate = userData.user.defaultFileExpiration;
+      }
+    } else {
+      console.warn(`Failed to fetch user shortener preference for ${session.user.username}, status: ${userResponse.status}`);
+    }
+  } catch (error) {
+    console.error("Error fetching user shortener preference in getServerSideProps:", error);
+  }
+  return { props: { expireDate } };
 }

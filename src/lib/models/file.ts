@@ -7,9 +7,9 @@ export interface File extends Document {
   size: number;
   fileName: string;
   publicFileName?: string;
-  videoThumbnail?: string;
   owner: string;
   isPrivate: boolean;
+  expiresAt?: Date;
 }
 
 const FileSchema: Schema<File> = new Schema({
@@ -39,10 +39,6 @@ const FileSchema: Schema<File> = new Schema({
     type: String,
     required: false
   },
-  videoThumbnail: {
-    type: String,
-    required: false
-  },
   owner: {
     type: String,
     required: true,
@@ -51,6 +47,10 @@ const FileSchema: Schema<File> = new Schema({
     type: Boolean,
     required: true,
     default: false
+  },
+  expiresAt: {
+    type: Date,
+    required: false
   }
 });
 

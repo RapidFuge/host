@@ -15,6 +15,16 @@ import { shorteners } from "@lib/generators";
 // embedImageDirectly?: boolean;
 // customEmbedDescription?: string | null;
 
+const expirationOptions = [
+    "never",
+    "1h",
+    "6h",
+    "1d",
+    "1w",
+    "1M",
+    "3M",
+    "1y",
+];
 
 function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string, host?: string) {
     const apiBase = `${urlBase}/api`; // Assuming your API routes are under /api
@@ -84,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.json(config); // Send as JSON
 
     } else if (req.method === 'POST') {
-        const { password, resetToken, shortener, embedImageDirectly, customEmbedDescription } = req.body;
+        const { password, resetToken, shortener, embedImageDirectly, customEmbedDescription, defaultFileExpiration } = req.body;
         let updateApplied = false;
         const messages: string[] = [];
         const embedPreferencesToUpdate: { embedImageDirectly?: boolean; customEmbedDescription?: string | null } = {};
@@ -112,6 +122,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (!shorteners.includes(shortener)) return res.status(400).json(errorGenerator(400, "Invalid shortener type."));
                 await db.setShortener(targetUserFromDB.username, shortener as shorteners);
                 updateApplied = true; messages.push("ID generator updated.");
+            }
+
+            if (typeof defaultFileExpiration === 'string') {
+                if (!expirationOptions.includes(defaultFileExpiration)) return res.status(400).json(errorGenerator(400, "Invalid expiration option."));
+                await db.setDefaultExpiration(targetUserFromDB.username, defaultFileExpiration);
+                updateApplied = true; messages.push("Default Expiration date updated.");
             }
 
             let embedPrefsChanged = false;

@@ -51,9 +51,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return {
                 id: file.id,
                 filename: file.fileName,
+                publicFileName: file.publicFileName,
                 extension: file.extension,
                 mimetype: determinedMimeType,
                 isPrivate: file.isPrivate,
+                expiresAt: file.expiresAt,
                 created: file.created,
             };
         });

@@ -8,6 +8,7 @@ import removeGPS from '@lib/removeGPS';
 import fs from 'fs-extra';
 import { getDatabase } from '@lib/db';
 import path from 'path';
+import { ms } from 'humanize-ms';
 
 export const config = {
     api: {
@@ -45,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     const isPrivate = req.headers.isprivate === 'true' || req.headers.isPrivate === "true"; // More robust check
     const keepOriginalName = req.headers.keeporiginalname === 'true' || req.headers.keepOriginalName === 'true';
+    const expiresIn = req.headers.expiresin as string;
 
     return form.parse(req, async (err, fields, files) => {
         if (err) {
@@ -85,6 +87,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
                 const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);
 
+                let expiresAt: Date | undefined = undefined;
+                const expirationSetting = expiresIn || user.defaultFileExpiration;
+
+                if (expirationSetting && expirationSetting !== 'never') {
+                    try {
+                        const duration = ms(expirationSetting);
+                        if (duration) expiresAt = new Date(Date.now() + duration);
+                    } catch (_) {
+                        console.warn(`Invalid expiration format: ${expirationSetting}`);
+                    }
+                }
+
                 if (ext?.toLowerCase() === 'heic') {
                     filename = filename.replace(/heic$/i, 'jpg');
                     ext = 'jpg'
@@ -93,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename : (ext ? `${id}.${ext}` : id);
 
                 await db.imageDrive.put(filename, fileContent);
-                await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName);
+                await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName, expiresAt);
 
                 const base = getBase(req);
                 results.push({

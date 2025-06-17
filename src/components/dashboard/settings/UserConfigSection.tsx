@@ -18,6 +18,7 @@ interface SelectedUserDetails extends DashboardUser {
   shortener?: shorteners;
   embedImageDirectly?: boolean;
   customEmbedDescription?: string | null;
+  defaultFileExpiration?: string;
 }
 
 export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl }: UserConfigSectionProps) {
@@ -35,10 +36,21 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
   const [customDescription, setCustomDescription] = useState<string>("");
   const [initialCustomDescription, setInitialCustomDescription] = useState<string>("");
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
+  const [defaultFileExpiration, setDefaultFileExpiration] = useState<string>("never");
   const [tokenManagementMessage, setTokenManagementMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isResettingToken, setIsResettingToken] = useState(false);
   const [copiedApiToken, setCopiedApiToken] = useState<boolean>(false); // For API token copy feedback
   const router = useRouter();
+  const expirationOptions = [
+    { value: "never", label: "Never" },
+    { value: "1h", label: "1 Hour" },
+    { value: "6h", label: "6 Hours" },
+    { value: "1d", label: "1 Day" },
+    { value: "1w", label: "1 Week" },
+    { value: "1M", label: "1 Month" },
+    { value: "3M", label: "3 Months" },
+    { value: "1y", label: "1 Year" },
+  ];
 
   const canEditSelectedUser = loggedInUser.isAdmin || loggedInUser.username === selectedUser;
 
@@ -55,6 +67,7 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
         setEmbedDirectly(data.user.embedImageDirectly === true);
         setCustomDescription(data.user.customEmbedDescription || '');
         setInitialCustomDescription(data.user.customEmbedDescription || '');
+        setDefaultFileExpiration(data.user.defaultFileExpiration || 'never');
       } else { throw new Error(data.message || "User data not found in response."); }
     } catch (err: any) { setErrorUserDetails(err.message); setUserDetails(null); }
     finally { setIsLoadingUserDetails(false); }
@@ -152,6 +165,21 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
     } catch (err: any) { alert(`Error: ${err.message}`); }
   };
 
+  const handleDefaultExpirationChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canEditSelectedUser) { alert("Not authorized."); return; }
+    if (defaultFileExpiration === (userDetails?.defaultFileExpiration || 'never')) return;
+    try {
+      const response = await fetch(`/api/users/${selectedUser}/configuration`, { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ defaultFileExpiration }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || data.message || "Update failed.");
+      setUserDetails(prev => prev ? { ...prev, defaultFileExpiration } : null);
+      alert(data.message || "Default expiration updated!");
+    } catch (err: any) {
+      alert(`Error: ${err.message}`); setDefaultFileExpiration(userDetails?.defaultFileExpiration || 'never');
+    }
+  };
+
   const handleDeleteUser = async () => {
     if (!isDeletable || (!loggedInUser.isAdmin && loggedInUser.username !== selectedUser)) { alert("Not authorized or deletion prevented."); return; }
     if (confirm(`DELETE user "${selectedUser}"? IRREVERSIBLE.`)) {
@@ -219,6 +247,19 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
             <p className="text-xs text-neutral-400 mb-2">Used when &quot;Embed full media&quot; is off, or for non-images and non-videos. Blank for default.</p>
             <div><textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="Max 250 chars or leave blank." maxLength={250} className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white h-24 resize-none focus:ring-blue-500 focus:border-blue-500" /></div>
             <div className="mt-2 flex justify-start"><button type="submit" className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:opacity-50" disabled={customDescription === initialCustomDescription}>Save Description</button></div>
+          </form>
+
+          <form onSubmit={handleDefaultExpirationChange} className="pt-4 border-t border-neutral-800 mt-6">
+            <h4 className="text-md font-semibold text-zinc-200">Default File Expiration</h4>
+            <p className="text-xs text-neutral-400 mb-2">Set a default expiration time for all new uploads.</p>
+            <div>
+              <select value={defaultFileExpiration} onChange={(e) => setDefaultFileExpiration(e.target.value)} className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:ring-blue-500 focus:border-blue-500">
+                {expirationOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-2 flex justify-start"><button type="submit" className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:opacity-50" disabled={defaultFileExpiration === (userDetails?.defaultFileExpiration || 'never')}>Save Expiration Setting</button></div>
           </form>
         </div>
       )}

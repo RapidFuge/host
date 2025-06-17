@@ -12,6 +12,7 @@ interface FileItem {
   url: string;
   openURL: string;
   isPrivate: boolean;
+  expiresAt?: Date;
   created?: Date;
 }
 
@@ -54,10 +55,12 @@ export default function GalleryComponent({ username }: GalleryProps) {
         if (data.success) {
           const processedApiFiles = data.files.map((file: FileItem) => ({
             id: file.id,
-            filename: file.publicFileName ? file.publicFileName : file.extension ? `${file.id}.${file.extension}` : file.id,
+            filename: file.extension ? `${file.id}.${file.extension}` : file.id,
+            publicFileName: file.publicFileName,
             mimetype: file.mimetype,
             isPrivate: file.isPrivate,
             created: file.created ? new Date(file.created) : undefined,
+            expiresAt: file.expiresAt ? new Date(file.expiresAt) : undefined,
             url: `/api/files/${file.id}`,
             openURL: `/${file.id}`,
           }));
@@ -205,13 +208,14 @@ export default function GalleryComponent({ username }: GalleryProps) {
       {displayedFiles.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 flex-grow overflow-y-auto pb-4 scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-800">
           {displayedFiles.map((file) => {
+            const filename = file.publicFileName ?? file.filename;
             const isPreviewableInModal =
               file.mimetype.startsWith("image/") ||
               file.mimetype.startsWith("video/") ||
               file.mimetype.startsWith("audio/");
             return (
               <div
-                key={file.filename}
+                key={filename}
                 className={`relative border border-neutral-700 rounded-sm overflow-hidden shadow-lg bg-neutral-800 flex flex-col group ${isPreviewableInModal
                   ? "cursor-pointer hover:border-blue-500 transition-all"
                   : "cursor-default"
@@ -228,7 +232,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute inset-0 z-10"
-                    aria-label={`Open file ${file.filename}`}
+                    aria-label={`Open file ${filename}`}
                     onClick={(e) => e.stopPropagation()}
                   ></a>
                 ) : null}
@@ -236,7 +240,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={file.url}
-                    alt={file.filename}
+                    alt={filename}
                     className="w-full h-40 sm:h-48 object-cover bg-neutral-700"
                     loading="lazy"
                     onError={(e) => {
@@ -255,11 +259,11 @@ export default function GalleryComponent({ username }: GalleryProps) {
                     )}
                     <p
                       className="mt-2 text-xs text-zinc-300 break-all text-center"
-                      title={file.filename}
+                      title={filename}
                     >
-                      {file.filename.length > 20
-                        ? `${file.filename.substring(0, 18)}...`
-                        : file.filename}
+                      {filename.length > 20
+                        ? `${filename.substring(0, 18)}...`
+                        : filename}
                     </p>
                     {!isPreviewableInModal && (
                       <p className="text-xs mt-1 text-blue-400 underline">
@@ -271,76 +275,97 @@ export default function GalleryComponent({ username }: GalleryProps) {
                 <div className="p-3 bg-neutral-800">
                   <p
                     className="text-sm font-medium truncate text-zinc-200"
-                    title={file.filename}
+                    title={filename}
                   >
-                    {file.filename}
+                    {filename}
                   </p>
+                  {(file.publicFileName && file.publicFileName !== file.filename) && (
+                    <>
+                      <p
+                        className="text-sm text-neutral-400 truncate"
+                        title={file.filename}
+                      >
+                        {file.filename.length > 20
+                          ? `${file.filename.substring(0, 18)}...`
+                          : file.filename}
+                      </p>
+                    </>
+                  )}
+
                   <p
                     className="text-xs text-neutral-400 truncate"
                     title={file.mimetype}
                   >
                     {file.mimetype}
                   </p>
+
                   {file.isPrivate && (
                     <p className="text-xs text-yellow-400">Private</p>
                   )}
                 </div>
-                {isPreviewableInModal && (
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
-                    <ZoomIn className="h-10 w-10 text-white opacity-0 group-hover:opacity-80" strokeWidth={1.5} />
-                  </div>
-                )}
+                {
+                  isPreviewableInModal && (
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
+                      <ZoomIn className="h-10 w-10 text-white opacity-0 group-hover:opacity-80" strokeWidth={1.5} />
+                    </div>
+                  )
+                }
               </div>
             );
           })}
         </div>
-      )}
-      {totalPages > 1 && (
-        <div className="mt-auto pt-4 flex flex-wrap justify-center items-center gap-2">
-          <button
-            onClick={handlePreviousPage}
-            disabled={currentPage === 0 || isLoading}
-            className="px-3 py-1 bg-neutral-600 rounded hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm text-zinc-200"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-neutral-400">
-            Page {currentPage + 1} of {totalPages}
-          </span>
-          {[...Array(totalPages).keys()]
-            .slice(
-              Math.max(0, currentPage - 2),
-              Math.min(totalPages, currentPage + 3)
-            )
-            .map((num) => (
-              <button
-                key={num}
-                onClick={() => handlePageClick(num)}
-                className={`px-3 py-1 rounded text-sm transition-colors ${currentPage === num
-                  ? "bg-blue-600 text-white font-semibold"
-                  : "bg-neutral-700 hover:bg-neutral-600 text-zinc-200"
-                  }`}
-              >
-                {num + 1}
-              </button>
-            ))}
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage >= totalPages - 1 || isLoading}
-            className="px-3 py-1 bg-neutral-600 rounded hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm text-zinc-200"
-          >
-            Next
-          </button>
-        </div>
-      )}
-      {selectedFileForModal && (
-        <FileModal
-          file={selectedFileForModal}
-          isOpen={!!selectedFileForModal}
-          onClose={closeFileModal}
-          onDelete={handleDeleteFile}
-        />
-      )}
-    </div>
+      )
+      }
+      {
+        totalPages > 1 && (
+          <div className="mt-auto pt-4 flex flex-wrap justify-center items-center gap-2">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 0 || isLoading}
+              className="px-3 py-1 bg-neutral-600 rounded hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm text-zinc-200"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-neutral-400">
+              Page {currentPage + 1} of {totalPages}
+            </span>
+            {[...Array(totalPages).keys()]
+              .slice(
+                Math.max(0, currentPage - 2),
+                Math.min(totalPages, currentPage + 3)
+              )
+              .map((num) => (
+                <button
+                  key={num}
+                  onClick={() => handlePageClick(num)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${currentPage === num
+                    ? "bg-blue-600 text-white font-semibold"
+                    : "bg-neutral-700 hover:bg-neutral-600 text-zinc-200"
+                    }`}
+                >
+                  {num + 1}
+                </button>
+              ))}
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage >= totalPages - 1 || isLoading}
+              className="px-3 py-1 bg-neutral-600 rounded hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm text-zinc-200"
+            >
+              Next
+            </button>
+          </div>
+        )
+      }
+      {
+        selectedFileForModal && (
+          <FileModal
+            file={selectedFileForModal}
+            isOpen={!!selectedFileForModal}
+            onClose={closeFileModal}
+            onDelete={handleDeleteFile}
+          />
+        )
+      }
+    </div >
   );
 }

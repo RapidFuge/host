@@ -7,6 +7,7 @@ export interface User extends Document {
   shortener: string;
   customEmbedDescription?: string;
   embedImageDirectly?: boolean;
+  defaultFileExpiration?: string;
   isAdmin: boolean;
 }
 
@@ -33,6 +34,10 @@ const UserSchema: Schema<User> = new Schema({
     default: false
   },
   customEmbedDescription: {
+    type: String,
+    required: false
+  },
+  defaultFileExpiration: {
     type: String,
     required: false
   },

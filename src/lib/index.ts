@@ -46,3 +46,22 @@ export function errorGenerator(status: string | number, message: string, additio
 		}
 	};
 }
+
+export function formatTimeRemaining(dateString: string): string {
+	const future = new Date(dateString).getTime();
+	const now = new Date().getTime();
+	const diff = future - now;
+
+	if (diff <= 0) return "Expired";
+
+	const s = Math.floor(diff / 1000);
+	const m = Math.floor(s / 60);
+	const h = Math.floor(m / 60);
+	const d = Math.floor(h / 24);
+
+	if (d > 0) return `in ${d} day${d > 1 ? 's' : ''}`;
+	if (h > 0) return `in ${h} hour${h > 1 ? 's' : ''}`;
+	if (m > 0) return `in ${m} minute${m > 1 ? 's' : ''}`;
+
+	return 'in less than a minute';
+}
