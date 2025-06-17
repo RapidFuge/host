@@ -7,21 +7,12 @@ import * as generators from '@lib/generators';
 import removeGPS from '@lib/removeGPS';
 import fs from 'fs-extra';
 import { getDatabase } from '@lib/db';
+import path from 'path';
 
 export const config = {
     api: {
         bodyParser: false,
     },
-};
-
-const genFileName = async (originalname: string | null): Promise<string> => {
-    const tok = await generators.random(12);
-    const split = originalname?.split('.') || [];
-    if (split.length > 1) {
-        const ext = split.pop();
-        return (ext?.length || 0) > 10 ? tok : `${tok}.${ext}`;
-    }
-    return tok;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -38,7 +29,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = await db.getUserByToken(userToken);
     if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
 
-    const form = formidable({ maxFileSize: (1 * 1024 * 1024 * 1024) });
+    const form = formidable({
+        maxFileSize: (1 * 1024 * 1024 * 1024),
+        keepExtensions: true,
+        filename: (name, ext, part) => {
+            const originalName = part.originalFilename;
+            const tok = generators.random(12);
+            const split = originalName?.split('.') || [];
+            if (split.length > 1) {
+                const ext = split.pop();
+                return (ext?.length || 0) > 10 ? tok : `${tok}.${ext}`;
+            }
+            return tok;
+        }
+    });
     const isPrivate = req.headers.isprivate === 'true' || req.headers.isPrivate === "true"; // More robust check
     const keepOriginalName = req.headers.keeporiginalname === 'true' || req.headers.keepOriginalName === 'true';
 
@@ -74,9 +78,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     });
 
                 const fileContent = await fs.readFile(file.filepath);
-                const fileSizeInBytes = fileContent.length; // <--- GET FILE SIZE HERE
+                const fileSizeInBytes = fileContent.length;
 
-                let filename = await genFileName(file.originalFilename);
+                let filename = path.basename(file.filepath);
                 const extSplit = filename.split('.');
                 let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
                 const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);
@@ -102,10 +106,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 console.error(`Error processing file ${file.originalFilename}:`, uploadError);
                 if (results.length === 0 && filesToProcess.indexOf(file) === filesToProcess.length - 1) {
                     return res.status(500).json(errorGenerator(500, `Failed to process file: ${file.originalFilename}. ${uploadError.message}`));
-                }
-            } finally {
-                if (file && file.filepath) {
-                    await fs.unlink(file.filepath).catch(unlinkErr => console.error(`Failed to delete temp file ${file.filepath}:`, unlinkErr));
                 }
             }
         }

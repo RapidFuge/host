@@ -231,6 +231,7 @@ export default function FileViewerPage({
       ownerCustomDescription,
     } = fileData;
     const isImage = mimetype?.startsWith("image/");
+    const isVideo = mimetype?.startsWith("video/");
     const pageFullUrl = `${baseUrl}/${id}`;
 
     if (isImage && ownerEmbedPreference) {
@@ -240,10 +241,30 @@ export default function FileViewerPage({
         nofollow: isPrivate,
         canonical: pageFullUrl,
         openGraph: {
-          // type: "image.png",
+          type: "image.png",
           // url: pageFullUrl,
           // title: name,
           images: [
+            {
+              url: fileUrl,
+              type: mimetype,
+            },
+          ],
+        },
+        twitter: {
+          cardType: "summary_large_image",
+        },
+      };
+    } else if (isVideo && ownerEmbedPreference) {
+      seoConfig = {
+        noindex: isPrivate,
+        nofollow: isPrivate,
+        canonical: pageFullUrl,
+        openGraph: {
+          type: "video.other",
+          // url: pageFullUrl,
+          // title: name,
+          videos: [
             {
               url: fileUrl,
               type: mimetype,
@@ -269,7 +290,7 @@ export default function FileViewerPage({
         nofollow: isPrivate,
         openGraph: {
           url: pageFullUrl,
-          type: "article",
+          type: isVideo ? "video.other" : "article",
           title: name || "View File",
           description: finalEmbedDescription,
           ...(isImage && {
@@ -280,8 +301,18 @@ export default function FileViewerPage({
               },
             ],
           }),
+          ...(isVideo && {
+            videos: [
+              {
+                url: fileUrl,
+                type: mimetype,
+              },
+            ],
+          }),
         },
-        twitter: { cardType: isImage ? "summary_large_image" : "summary" },
+        twitter: {
+          cardType: isImage || isVideo ? "summary_large_image" : "summary",
+        },
       };
     }
   }

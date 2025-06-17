@@ -16,11 +16,11 @@ import { shorteners } from "@lib/generators";
 // customEmbedDescription?: string | null;
 
 
-function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string) {
+function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string, host?: string) {
     const apiBase = `${urlBase}/api`; // Assuming your API routes are under /api
     return isLink
         ? {
-            Name: `${user.username} URL Shortener (${urlBase})`,
+            Name: `${user.username} URL Shortener (${host ?? urlBase})`,
             DestinationType: "URLShortener, URLSharingService",
             RequestMethod: "POST",
             RequestURL: `${apiBase}/links`, // Use /api/links for consistency
@@ -30,7 +30,7 @@ function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase:
             URL: "$json:url$",
         }
         : {
-            Name: `${user.username} File Upload (${urlBase})`,
+            Name: `${user.username} File Upload (${host ?? urlBase})`,
             DestinationType: "ImageUploader, TextUploader, FileUploader",
             RequestMethod: "POST",
             RequestURL: `${apiBase}/files`,
@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await db.setToken(targetUserFromDB.username, userTokenForConfig);
         }
 
-        const config = generateSXCUConfig(targetUserFromDB, userTokenForConfig, isLink, urlBase);
+        const config = generateSXCUConfig(targetUserFromDB, userTokenForConfig, isLink, urlBase, req?.headers.host);
         res.setHeader("Content-Disposition", `attachment; filename="${targetUserFromDB.username} ${isLink ? "URL" : "File"} Config.sxcu"`);
         res.setHeader("Content-Type", "application/json"); // SXCU are JSON files with a specific extension
         return res.json(config); // Send as JSON

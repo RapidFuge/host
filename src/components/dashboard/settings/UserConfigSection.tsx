@@ -209,14 +209,14 @@ export default function UserConfigSection({ loggedInUser, selectedUser, baseUrl 
             <label htmlFor="embedToggle" className="flex items-center cursor-pointer mb-2 relative">
               <input type="checkbox" id="embedToggle" className="sr-only peer" checked={embedDirectly} onChange={handleEmbedPreferenceChange} />
               <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              <span className="ml-3 text-sm font-medium text-zinc-300">Embed full image directly</span>
+              <span className="ml-3 text-sm font-medium text-zinc-300">Embed full media directly</span>
             </label>
-            <p className="text-xs text-neutral-400">If on, only image embeds. If off, or for non-images, detailed info embeds.</p>
+            <p className="text-xs text-neutral-400">If on, only image and videos embeds. If off, or for non-images or non-videos, detailed info embeds.</p>
           </div>
 
           <form onSubmit={handleCustomDescriptionChange} className="pt-4 border-t border-neutral-800 mt-6">
             <h4 className="text-md font-semibold text-zinc-200">Custom Embed Description</h4>
-            <p className="text-xs text-neutral-400 mb-2">Used when &quot;Embed full image&quot; is off, or for non-images. Blank for default.</p>
+            <p className="text-xs text-neutral-400 mb-2">Used when &quot;Embed full media&quot; is off, or for non-images and non-videos. Blank for default.</p>
             <div><textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="Max 250 chars or leave blank." maxLength={250} className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white h-24 resize-none focus:ring-blue-500 focus:border-blue-500" /></div>
             <div className="mt-2 flex justify-start"><button type="submit" className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:opacity-50" disabled={customDescription === initialCustomDescription}>Save Description</button></div>
           </form>
