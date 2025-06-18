@@ -12,6 +12,7 @@ import { getBase } from "@lib";
 export default function UploadPage({ expireDate }: { expireDate: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -80,30 +81,55 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
     }
 
     setUploading(true);
+    setError(null);
+    setUploadResult(null);
+    setUploadProgress({});
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+
     try {
-      // Create FormData and append files under the "files" key
-      const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-      // Send the request to the local Next.js API route
-      const response = await fetch("/api/files", {
-        method: "POST",
-        headers: {
-          isPrivate: isPrivate.toString(),
-          keepOriginalName: isKeepingOrig.toString(),
-          expiresIn: expiration
-        },
-        body: formData,
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            const newProgress: Record<string, number> = {};
+            files.forEach((file) => {
+              newProgress[file.name] = percentComplete;
+            });
+            setUploadProgress(newProgress);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const data = JSON.parse(xhr.responseText);
+            setUploadResult(data.url);
+            setFiles([]);
+            setError(null);
+            resolve();
+          } else {
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              reject(new Error(errorData.message || `Failed to upload files. Status: ${xhr.status}`));
+            } catch (_) {
+              reject(new Error(`Failed to upload files. Status: ${xhr.status}`));
+            }
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error("Upload failed due to a network error."));
+        };
+
+        xhr.open("POST", "/api/files");
+        xhr.setRequestHeader("isPrivate", isPrivate.toString());
+        xhr.setRequestHeader("keepOriginalName", isKeepingOrig.toString());
+        xhr.setRequestHeader("expiresIn", expiration);
+        xhr.send(formData);
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUploadResult(data.url); // Assuming the URL is returned in the response
-        setFiles([]); // Clear files after successful upload
-        setError(null);
-      } else {
-        throw new Error("Failed to upload files.");
-      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setError(`Failed to upload files. ${error.message}`);
@@ -113,26 +139,41 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
   };
 
   const renderFileList = () => {
-    if (files.length === 0) return <p></p>;
+    if (files.length === 0) return null;
 
     return (
-      <ul className="list-disc mt-4 text-left">
-        {files.map((file, index) => (
-          <li
-            key={index}
-            className="text-sm text-gray-500 flex justify-between items-center"
-          >
-            <span>
-              {file.name} - {filesize(file.size)}
-            </span>
-            <button
-              className="ml-4 text-red-500 hover:text-red-700"
-              onClick={() => handleRemoveFile(index)}
+      <ul className="list-none mt-4 text-left w-96">
+        {files.map((file, index) => {
+          const progress = uploadProgress[file.name] || 0;
+          return (
+            <li
+              key={index}
+              className="text-sm text-gray-400 mb-2"
             >
-              Remove
-            </button>
-          </li>
-        ))}
+              <div className="flex justify-between items-center">
+                <span className="truncate pr-2">
+                  {file.name} - {filesize(file.size)}
+                </span>
+                {!uploading && (
+                  <button
+                    className="ml-4 text-red-500 hover:text-red-700 flex-shrink-0"
+                    onClick={() => handleRemoveFile(index)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {uploading && (
+                <div className="w-full bg-gray-700 rounded-full h-2.5 mt-1">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     );
   };
