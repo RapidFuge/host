@@ -116,8 +116,8 @@ class Database {
 			if (file.expiresAt && Date.now() >= file.expiresAt.getTime()) {
 				// Remove from storage
 				if (process.env.ISPRODUCTION === "true") {
-					await this.imageDrive.remove(file.fileName);
 					await this.removeFile(file.id);
+					await this.imageDrive.remove(file.fileName);
 				}
 
 				// Remove from database
