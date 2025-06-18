@@ -56,14 +56,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     return res.status(200).json({ success: true, message: "File expirty updated." });
                 }
 
-                if (isPrivate) {
-                    if (typeof isPrivate !== 'boolean') return res.status(400).json(errorGenerator(400, "Invalid 'isPrivate' value. Must be a boolean."));
+                if (typeof isPrivate !== 'boolean') return res.status(400).json(errorGenerator(400, "Invalid 'isPrivate' value. Must be a boolean."));
 
-                    await db.setFilePrivacy(fileId, isPrivate);
-                    return res.status(200).json({ success: true, message: "File privacy updated." });
-                }
-
-                return;
+                await db.setFilePrivacy(fileId, isPrivate);
+                return res.status(200).json({ success: true, message: "File privacy updated." });
             case "GET":
                 if (file.isPrivate && (!user || file.owner !== user.username && !user.isAdmin)) return res.status(403).json(errorGenerator(403, "Forbidden."));
                 if (req.headers.getinfo === "true") {
