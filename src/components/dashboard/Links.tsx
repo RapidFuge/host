@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy, CopyCheck, LoaderCircle } from "lucide-react";
+import { Copy, CopyCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface ShortenedLink {
   id: string;
@@ -21,7 +22,6 @@ export default function LinksComponent({
 }: LinksComponentProps) {
   const [links, setLinks] = useState<ShortenedLink[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [copiedURLValue, setCopiedURLValue] = useState<string | null>(null);
 
   const fetchLinks = useCallback(async () => {
@@ -30,7 +30,6 @@ export default function LinksComponent({
       return;
     }
     setIsLoading(true);
-    setError(null);
     try {
       const apiUrl = `/api/users/${username}/links`;
       const response = await fetch(apiUrl);
@@ -50,7 +49,7 @@ export default function LinksComponent({
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message || err);
       setLinks([]);
     } finally {
       setIsLoading(false);
@@ -74,7 +73,6 @@ export default function LinksComponent({
     )
       return;
     setIsLoading(true);
-    setError(null);
     try {
       const response = await fetch(`/api/url/${linkTag}`, {
         method: "DELETE",
@@ -94,12 +92,10 @@ export default function LinksComponent({
         );
       }
       fetchLinks();
-      alert(responseData.message || "Link deleted successfully!");
+      toast.success(responseData.message || "Link deleted successfully!")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.error("Delete failed:", err);
-      setError(`Delete failed: ${err.message}`);
-      alert(`Error deleting link: ${err.message}`);
+      toast.error(`Delete failed: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -109,12 +105,13 @@ export default function LinksComponent({
     navigator.clipboard
       .writeText(text)
       .then(() => {
+        toast.success("URL Copied successfully!");
         setCopiedURLValue(text);
         setTimeout(() => {
           setCopiedURLValue(null);
         }, 2000);
       })
-      .catch(() => alert("Failed to copy URL."));
+      .catch(() => toast.error("Failed to copy URL."));
   };
 
   if (!username && !isLoading) {
@@ -138,23 +135,23 @@ export default function LinksComponent({
         >
           {isLoading ? (
             <span className="flex items-center">
-              <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+              <RefreshCw className="animate-spin mr-2 w-5 h-5" />
               Refreshing
             </span>
-          ) : ("Refresh")}
+          ) : (
+            <span className="flex items-center">
+              <RefreshCw className="mr-2 w-5 h-5" />
+              Refresh
+            </span>
+          )}
         </button>
       </div>
-      {error && (
-        <div className="bg-red-700 border border-red-600 text-red-100 p-3 rounded mb-4 text-sm">
-          {error}
-        </div>
-      )}
       {isLoading && links.length === 0 && (
         <div className="text-center py-10 text-neutral-400">
           Loading links
         </div>
       )}
-      {!isLoading && !error && links.length === 0 && username && (
+      {!isLoading && links.length === 0 && username && (
         <div className="text-center py-10 text-neutral-400">
           No links found for this user.
         </div>

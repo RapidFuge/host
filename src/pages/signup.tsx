@@ -6,19 +6,18 @@ import Footer from "@components/Footer";
 import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [signUpToken, setSignUpToken] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false); // Added loading state
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true); // Set loading to true
-    setError("");
 
     const res = await signIn("credentials", {
       redirect: false,
@@ -30,7 +29,7 @@ export default function SignupPage() {
     setIsLoading(false); // Set loading to false
 
     if (res?.error) {
-      setError(res.error || "Invalid signup token or credentials");
+      toast.error(res.error || "Invalid signup token or credentials");
     } else {
       router.push("/login?signedUp=true"); // Redirect to login with a success indicator
     }
@@ -43,7 +42,6 @@ export default function SignupPage() {
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <form onSubmit={handleSubmit} className="p-6 rounded-md shadow-md w-full max-w-sm">
           <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
-          {error && <div className="mb-4 p-2 text-red-500 bg-red-100 rounded">{error}</div>}
           <div className="mb-4">
             <label htmlFor="username" className="block text-sm font-semibold mb-1 text-left">Username</label>
             <input

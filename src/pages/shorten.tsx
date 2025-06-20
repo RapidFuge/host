@@ -6,6 +6,7 @@ import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { getBase } from "@lib";
+import { toast } from "sonner";
 import { shorteners as validShorteners } from "@lib/generators"; // Assuming shorteners array is from here
 import { LoaderCircle, Link as LinkIcon } from "lucide-react";
 
@@ -13,14 +14,10 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
   const [url, setUrl] = useState("");
   const [tag, setTag] = useState("");
   const [shortener, setShortenerType] = useState(userShortener);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false); // Added loading state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     setIsLoading(true); // Set loading to true
 
     try {
@@ -28,25 +25,25 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "shorten-url": url, // Pass original URL in header
+          "shorten-url": url
         },
-        body: JSON.stringify({ tag, shortener }), // Custom tag and shortener type in body
+        body: JSON.stringify({ tag, shortener })
       });
 
       const data = await response.json();
       setIsLoading(false); // Set loading to false
 
       if (response.ok && data.success) { // Check for data.success
-        setSuccess(data.url);
+        toast.success(<Link href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{data.url}</Link>, { duration: Infinity })
         setUrl(""); // Clear input on success
         setTag("");   // Clear tag on success
       } else {
-        setError(data.error || data.message || "An error occurred while shortening the URL.");
+        toast.error(data.error.message || data.message || "An error occurred while shortening the URL.");
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (_err: any) {
       setIsLoading(false); // Set loading to false on error
-      setError("An error occurred while shortening the URL.");
+      toast.error("An error occurred while shortening the URL.");
     }
   };
 
@@ -57,12 +54,6 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <form onSubmit={handleSubmit} className="p-4 rounded-md shadow-md w-full max-w-sm">
           <h1 className="text-2xl font-bold mb-6">URL Shortener</h1>
-          {error && <div className="mb-4 p-2 text-red-500 bg-red-100 rounded">{error}</div>}
-          {success && (
-            <div className="mt-4 mb-4 p-2 bg-green-100 border-l-4 border-green-500 text-green-900">
-              <Link href={success} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{success}</Link>
-            </div>
-          )}
           <div className="mb-4">
             <label htmlFor="url" className="block text-sm font-semibold mb-1 text-left">Enter URL to Shorten</label>
             <input

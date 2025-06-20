@@ -1,7 +1,8 @@
 // components/dashboard/Gallery.tsx
 import { useState, useEffect, useCallback } from "react";
 import FileModal, { ModalFileItem } from "./FileModal";
-import { File, FileAudio, FileVideo2, LoaderCircle, ZoomIn } from "lucide-react";
+import { File, FileAudio, FileVideo2, RefreshCw, ZoomIn } from "lucide-react";
+import { toast } from "sonner";
 
 interface FileItem {
   id: string;
@@ -27,7 +28,6 @@ export default function GalleryComponent({ username }: GalleryProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showAllFileTypes, setShowAllFileTypes] = useState(false);
   const [selectedFileForModal, setSelectedFileForModal] =
     useState<ModalFileItem | null>(null);
@@ -41,7 +41,6 @@ export default function GalleryComponent({ username }: GalleryProps) {
         return;
       }
       setIsLoading(true);
-      setError(null);
       try {
         const apiUrl = `/api/users/${username}/files?page=${page}&limit=${ITEMS_PER_PAGE_GALLERY}`;
         const response = await fetch(apiUrl);
@@ -72,7 +71,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
-        setError(err.message);
+        toast.error(err.message || err)
         setFiles([]);
         setTotalPages(0);
       } finally {
@@ -119,7 +118,6 @@ export default function GalleryComponent({ username }: GalleryProps) {
     )
       return;
     setIsLoading(true);
-    setError(null);
     try {
       const response = await fetch(`/api/files/${fileId}`, {
         method: "DELETE",
@@ -137,7 +135,7 @@ export default function GalleryComponent({ username }: GalleryProps) {
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(`Delete failed: ${err.message}`);
+      toast.error(`Delete failed: ${err.message}`)
     } finally {
       setIsLoading(false);
     }
@@ -183,24 +181,24 @@ export default function GalleryComponent({ username }: GalleryProps) {
           >
             {isLoading ? (
               <span className="flex items-center">
-                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
+                <RefreshCw className="animate-spin mr-2 w-5 h-5" />
                 Refreshing
               </span>
-            ) : ("Refresh")}
+            ) : (
+              <span className="flex items-center">
+                <RefreshCw className="mr-2 w-5 h-5" />
+                Refresh
+              </span>
+            )}
           </button>
         </div>
       </div>
-      {error && (
-        <div className="bg-red-700 border border-red-600 text-red-100 p-3 rounded mb-4 text-sm">
-          {error}
-        </div>
-      )}
       {isLoading && displayedFiles.length === 0 && (
         <div className="text-center py-10 text-neutral-400">
           Loading files...
         </div>
       )}
-      {!isLoading && !error && files.length === 0 && username && (
+      {!isLoading && files.length === 0 && username && (
         <div className="text-center py-10 text-neutral-400">
           No files found for this user.
         </div>

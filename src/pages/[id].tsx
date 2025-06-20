@@ -29,6 +29,7 @@ import Header from "@components/Header";
 import Footer from "@components/Footer";
 import Link from "next/link";
 import Head from "next/head";
+import { toast } from "sonner";
 
 interface FileData {
   id: string;
@@ -376,11 +377,11 @@ export default function FileViewerPage({
               .catch(() => ({ message: "Delete failed." }));
             throw new Error(errData.message);
           }
-          // alert("File deleted.");
+          toast.success("File deleted.");
           router.push("/dashboard");
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-          alert(`Delete failed: ${err.message}`);
+          toast.error(err.message);
         } finally {
           setIsDeleting(false);
         }
@@ -391,7 +392,7 @@ export default function FileViewerPage({
   const handleRemoveExpiry = async () => {
     if (isOwner) {
       if (isRemovingExpiry) return;
-      if (confirm("Delete remove expiry? This cannot be undone.")) {
+      if (confirm("Remove expiry? This cannot be undone.")) {
         setIsRemovingPrivacy(true);
 
         try {
@@ -402,13 +403,13 @@ export default function FileViewerPage({
           });
           if (!res.ok) {
             const errData = await res.json().catch(() => ({ message: "Failed to update expiration." }));
-            throw new Error(errData.message);
+            throw errData.message || errData || "Failed to update expiration.";
           }
           setIsExpiring(false);
-          alert(`Successfully removed file expiry!`);
+          toast.success(`Successfully removed file expiry!`);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-          alert(`Delete failed: ${err.message}`);
+          toast.error(err.message || err);
         } finally {
           setIsRemovingPrivacy(false);
         }
@@ -435,14 +436,14 @@ export default function FileViewerPage({
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({ message: "Failed to update privacy." }));
-          throw new Error(errData.message);
+          throw errData.message || errData || "Failed to update privacy.";
         }
 
-        alert(`Successfully set file to ${newIsPrivate ? "private" : "public"}!`)
+        toast.success(`Successfully set file to ${newIsPrivate ? "private" : "public"}!`)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setIsPrivate(!newIsPrivate);
-        alert(`Failed to update privacy: ${err.message}`);
+        toast.error(`Failed to update privacy: ${err.message}`);
       } finally {
         setIsUpdatingPrivacy(false);
       }

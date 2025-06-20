@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   env: {
-    APP_VERSION: version
+    APP_VERSION: version,
   },
   webpack: (config, { isServer }) => {
     // Fixes npm packages that depend on `fs` module

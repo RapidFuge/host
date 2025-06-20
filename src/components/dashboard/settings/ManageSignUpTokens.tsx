@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Copy, CopyCheck, LoaderCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ClientSignUpToken {
   token: string;
@@ -24,17 +25,15 @@ export default function SignUpTokensManagerModal({
   const [newExpiration, setNewExpiration] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copiedTokenValue, setCopiedTokenValue] = useState<string | null>(null);
 
   const fetchTokens = useCallback(async () => {
     if (!isOpen) return;
     setIsLoading(true);
-    setMessage(null);
     try {
       const response = await fetch("/api/users/tokens");
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || data.message || "Failed to fetch tokens.");
+      if (!response.ok) throw data.error || data.message || "Failed to fetch tokens.";
       if (data.success && Array.isArray(data.tokens)) {
         const processedTokens: ClientSignUpToken[] = data.tokens.map(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,7 +45,7 @@ export default function SignUpTokensManagerModal({
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      toast.error(err.message || err || "Error fetching tokens");
       setTokens([]);
     } finally {
       setIsLoading(false);
@@ -62,21 +61,20 @@ export default function SignUpTokensManagerModal({
   const handleCreateToken = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpiration.trim()) {
-      setMessage({ type: "error", text: "Expiration time is required." });
+      toast.error("Expiration time is required.")
       return;
     }
     setIsCreating(true);
-    setMessage(null);
     try {
       const response = await fetch("/api/users/tokens", { method: "POST", headers: { expires: newExpiration } });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || data.message || "Failed to create token.");
-      setMessage({ type: "success", text: `Token created: ${data.token.token}. Expires in ${data.token.expires}.` });
+      if (!response.ok) throw data.error || data.message || "Failed to create token.";
+      toast.success(`Token created! Expires in ${data.token.expires}.`)
       setNewExpiration("");
       fetchTokens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      toast.error(err.message || err || "Failed to create token.")
     } finally {
       setIsCreating(false);
     }
@@ -87,25 +85,26 @@ export default function SignUpTokensManagerModal({
     try {
       const response = await fetch(`/api/users/tokens/${tokenValue}`, { method: "DELETE" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || data.message || "Failed to delete token.");
-      setMessage({ type: "success", text: `Token ${tokenValue} deleted.` });
+      if (!response.ok) throw data.error || data.message || "Failed to delete token.";
+      toast.success(`Token ${tokenValue} deleted.`)
       fetchTokens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      toast.error(err.message || err || "Failed to delete token.");
     }
   };
 
   const handleCopyToClipboard = (tokenToCopy: string) => {
     navigator.clipboard.writeText(tokenToCopy)
       .then(() => {
+        toast.success("Token copied successfully!");
         setCopiedTokenValue(tokenToCopy);
         setTimeout(() => {
           setCopiedTokenValue(null);
         }, 2000);
       })
       .catch(() => {
-        setMessage({ type: "error", text: "Failed to copy token." });
+        toast.error("Failed to copy token.")
       });
   };
 
@@ -137,14 +136,9 @@ export default function SignUpTokensManagerModal({
             ) : ("Create Token")}
           </button>
         </form>
-        {message && (
-          <div className={`p-3 mb-3 rounded text-sm ${message.type === "success" ? "bg-green-700 text-green-100" : "bg-red-700 text-red-100"}`}>
-            {message.text}
-          </div>
-        )}
         <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-black pr-1">
           {isLoading && <p className="text-neutral-400 text-center py-4">Loading tokens...</p>}
-          {!isLoading && tokens.length === 0 && !(message?.type === "error") && <p className="text-neutral-400 text-center py-4">No sign up tokens found.</p>}
+          {!isLoading && tokens.length === 0 && <p className="text-neutral-400 text-center py-4">No sign up tokens found.</p>}
           {tokens.length > 0 && (
             <div className="overflow-x-auto rounded-md">
               <table className="min-w-full divide-y divide-neutral-700 rounded-md">

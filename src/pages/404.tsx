@@ -7,11 +7,8 @@ export default function Contact() {
   return (
     <div className="flex flex-col min-h-screen text-black bg-black">
       <NextSeo title="RAPID HOST - 404" description="Uh ohhhhh" />
-
-      {/* Header */}
       <Header />
 
-      {/* Main Content */}
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <div className="max-w-md">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl text-white">
@@ -29,7 +26,6 @@ export default function Contact() {
         </div>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

@@ -8,13 +8,12 @@ import { GetServerSidePropsContext } from "next";
 import { filesize } from "filesize";
 import { LoaderCircle, Upload } from "lucide-react";
 import { getBase } from "@lib";
+import { toast } from "sonner";
 
 export default function UploadPage({ expireDate }: { expireDate: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [uploadResult, setUploadResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false); // State for the checkbox
   const [isKeepingOrig, setKeepOrig] = useState(false); // State for the checkbox
@@ -52,7 +51,7 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
       if (newFiles.length > 0) {
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
       } else {
-        setError("No valid files found in clipboard.");
+        toast.error("No valid files found in clipboard.");
       }
     }
   };
@@ -75,14 +74,9 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
   };
 
   const handleUpload = async () => {
-    if (files.length === 0) {
-      setError("Please select some files to upload.");
-      return;
-    }
+    if (files.length === 0) return toast.error("Please select some files to upload.");
 
     setUploading(true);
-    setError(null);
-    setUploadResult(null);
     setUploadProgress({});
 
     const formData = new FormData();
@@ -106,9 +100,8 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             const data = JSON.parse(xhr.responseText);
-            setUploadResult(data.url);
+            toast.success(<Link href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{data.url}</Link>, { duration: Infinity })
             setFiles([]);
-            setError(null);
             resolve();
           } else {
             try {
@@ -132,7 +125,7 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      setError(`Failed to upload files. ${error.message}`);
+      toast.error(`Failed to upload files. ${error.message || error}`)
     } finally {
       setUploading(false);
     }
@@ -200,17 +193,6 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
 
       <main className="flex-grow flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-2xl font-bold mb-4 text-white ">File Uploader</h1>
-        {error && <p className="mt-4 text-red-500 mb-4">{error}</p>}
-        {uploadResult && (
-          <div className="mt-4 mb-4 p-2 bg-green-100 border-l-4 border-green-500 text-green-900">
-            <Link
-              href={uploadResult}
-              className="text-blue-500 hover:underline bg-green-100 rounded"
-            >
-              {uploadResult}
-            </Link>
-          </div>
-        )}
         <div
           className="relative w-96 h-48 border-4 border-dashed border-gray-400 p-4 cursor-pointer mb-4"
           onClick={() => fileInputRef.current?.click()}

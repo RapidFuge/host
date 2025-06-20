@@ -4,20 +4,19 @@ import { useRouter } from "next/router";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
 import { NextSeo } from "next-seo";
+import { toast } from "sonner";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false); // Added loading state
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true); // Set loading to true
-    setError("");
 
     const res = await signIn("credentials", {
       redirect: false,
@@ -28,7 +27,7 @@ export default function LoginPage() {
     setIsLoading(false); // Set loading to false
 
     if (res?.error) {
-      setError("Invalid credentials");
+      toast.error(res.error || "Invalid credentials");
     } else {
       const callbackUrl = (router.query.cbU as string) || "/dashboard";
       router.push(callbackUrl);
@@ -42,7 +41,6 @@ export default function LoginPage() {
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <form onSubmit={handleSubmit} className="p-6 rounded-md shadow-md w-full max-w-sm">
           <h1 className="text-2xl font-bold mb-6">Login</h1>
-          {error && <div className="mb-4 p-2 text-red-500 bg-red-100 rounded">{error}</div>}
           <div className="mb-4">
             <label htmlFor="username" className="block text-sm font-semibold mb-1 text-left">Username</label>
             <input

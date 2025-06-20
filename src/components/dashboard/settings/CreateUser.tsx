@@ -1,19 +1,15 @@
 // components/dashboard/settings/CreateUser.tsx
 import { LoaderCircle, UserRoundPlus } from "lucide-react";
 import { useState, useEffect } from "react"; // Added useEffect for ESC key
+import { toast } from "sonner";
 
 export default function CreateUserForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => {
-    setMessage(null); // Clear previous messages
     setUsername(""); // Reset form fields
     setPassword("");
     setIsModalOpen(true);
@@ -39,7 +35,6 @@ export default function CreateUserForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setMessage(null);
     try {
       const response = await fetch("/api/users/create", {
         method: "POST",
@@ -47,19 +42,15 @@ export default function CreateUserForm() {
         body: JSON.stringify({ username, password }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || data.message || "Failed to create user.");
-      }
-      setMessage({
-        type: "success",
-        text: `User "${data.username}" created successfully!`,
-      });
+      if (!response.ok) throw data.error;
+
+      toast.success(`User "${data.username}" created successfully!`);
       setUsername(""); // Clear form on success
       setPassword("");
       // router.reload(); // Consider if reload is best UX or just update a user list if displayed elsewhere
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      toast.error(err.message || err || "Error creating user")
     } finally {
       setIsLoading(false);
     }
@@ -96,16 +87,6 @@ export default function CreateUserForm() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {message && (
-                <div
-                  className={`p-3 rounded text-sm ${message.type === "success"
-                    ? "bg-green-700 text-green-100"
-                    : "bg-red-700 text-red-100"
-                    }`}
-                >
-                  {message.text}
-                </div>
-              )}
               <div>
                 <label
                   htmlFor="new-username"
