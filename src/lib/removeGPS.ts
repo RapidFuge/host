@@ -1,4 +1,4 @@
-import { removeLocation } from '@xoi/gps-metadata-remover';
+import { removeLocation } from '@rapidfuge/gps-metadata-remover';
 import fs from 'fs-extra';
 
 export default (file: string): Promise<boolean> => {

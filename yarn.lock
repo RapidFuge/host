@@ -388,6 +388,15 @@
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
+"@rapidfuge/gps-metadata-remover@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@rapidfuge/gps-metadata-remover/-/gps-metadata-remover-2.0.1.tgz#dc54e9d163082c2faa2bd75e7614ee03319c4a67"
+  integrity sha512-z5QE1zpBs1K85tONBNfwfrMqvJ3SGvvody81kYMbXB1yd7N0DhdFr2xJP0L2Qk0Udb8plvmJuWns1gKK9elLXA==
+  dependencies:
+    Base64 "^1.1.0"
+    crc "^4.3.2"
+    debug "^4.1.1"
+
 "@rtsao/scc@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
@@ -769,15 +778,6 @@
   version "1.7.6"
   resolved "https://registry.yarnpkg.com/@unrs/resolver-binding-win32-x64-msvc/-/resolver-binding-win32-x64-msvc-1.7.6.tgz#a7ae6636fd562c554f9f1357e90c4c4b2da2e927"
   integrity sha512-/1kM+r9G86s0ZLk2ej0MuU3hJQGmnawAA1JPIhcVMkZCtxK/pJzNtzPms3vDwVxbbwho6ExRcVLoA4h0zwzVmA==
-
-"@xoi/gps-metadata-remover@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@xoi/gps-metadata-remover/-/gps-metadata-remover-2.0.0.tgz#b95449e4a0a23a1845818fc6699fcaade462bdb8"
-  integrity sha512-SDy5bX70IJ9nRfHG/URUo8kMMLWL4PwGdaQvC7WubjGESV5REgSN/nMQnZzSykC4Rj33xkS+O7Rs1wICzKS8Fw==
-  dependencies:
-    Base64 "^1.1.0"
-    crc "^4.3.2"
-    debug "^4.1.1"
 
 "@zxing/text-encoding@0.9.0":
   version "0.9.0"
