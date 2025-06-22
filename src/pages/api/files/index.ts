@@ -9,6 +9,7 @@ import fs from 'fs-extra';
 import { getDatabase } from '@lib/db';
 import path from 'path';
 import { ms } from 'humanize-ms';
+import lib from '@myunisoft/heif-converter';
 
 export const config = {
     api: {
@@ -79,8 +80,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         console.error(`GPS removal failed for ${file.filepath}:`, error);
                     });
 
-                const fileContent = await fs.readFile(file.filepath);
-                const fileSizeInBytes = fileContent.length;
+                let fileContent: Buffer = await fs.readFile(file.filepath);
+                let fileSizeInBytes = fileContent.length;
 
                 let filename = path.basename(file.filepath);
                 const extSplit = filename.split('.');
@@ -99,12 +100,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }
                 }
 
-                if (ext?.toLowerCase() === 'heic') {
-                    filename = filename.replace(/heic$/i, 'jpg');
-                    ext = 'jpg'
+                if (ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') {
+                    ext = 'png';
+                    const convertedBuffer = await lib.toPng(fileContent);
+                    fileContent = convertedBuffer;
+                    fileSizeInBytes = convertedBuffer.length;
+                    filename = filename.replace(/heic$/i, 'png').replace(/heif$/i, 'png');
                 }
 
-                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename : (ext ? `${id}.${ext}` : id);
+                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename.replace(/heic$/i, 'png').replace(/heif$/i, 'png') : (ext ? `${id}.${ext}` : id);
 
                 await db.imageDrive.put(filename, fileContent);
                 await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName, expiresAt);

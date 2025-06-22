@@ -1,6 +1,6 @@
 {
   "name": "rapid-host",
-  "version": "6.2.5",
+  "version": "6.2.6",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@bprogress/next": "^3.2.12",
+    "@myunisoft/heif-converter": "^0.2.3",
     "@rapidfuge/gps-metadata-remover": "^2.0.1",
     "bcrypt": "^6.0.0",
     "filesize": "^10.1.6",
