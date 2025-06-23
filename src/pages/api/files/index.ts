@@ -9,7 +9,7 @@ import fs from 'fs-extra';
 import { getDatabase } from '@lib/db';
 import path from 'path';
 import { ms } from 'humanize-ms';
-import lib from '@myunisoft/heif-converter';
+import convert from 'heic-convert';
 
 export const config = {
     api: {
@@ -102,9 +102,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 if (ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') {
                     ext = 'png';
-                    const convertedBuffer = await lib.toPng(fileContent);
-                    fileContent = convertedBuffer;
-                    fileSizeInBytes = convertedBuffer.length;
+                    const convertedBuffer = await convert({
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        buffer: (new Uint8Array(fileContent.buffer, fileContent.byteOffset, fileContent.byteLength)) as any,
+                        format: 'PNG',
+                    });
+                    fileContent = Buffer.from(convertedBuffer);
+                    fileSizeInBytes = fileContent.length;
                     filename = filename.replace(/heic$/i, 'png').replace(/heif$/i, 'png');
                 }
 
