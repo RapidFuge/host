@@ -101,18 +101,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
 
                 if (ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') {
-                    ext = 'png';
+                    ext = 'jpg';
                     const convertedBuffer = await convert({
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         buffer: (new Uint8Array(fileContent.buffer, fileContent.byteOffset, fileContent.byteLength)) as any,
-                        format: 'PNG',
+                        format: 'JPEG',
+                        // quality: 1
                     });
                     fileContent = Buffer.from(convertedBuffer);
                     fileSizeInBytes = fileContent.length;
-                    filename = filename.replace(/heic$/i, 'png').replace(/heif$/i, 'png');
+                    filename = filename.replace(/heic$/i, 'jpg').replace(/heif$/i, 'jpg');
                 }
 
-                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename.replace(/heic$/i, 'png').replace(/heif$/i, 'png') : (ext ? `${id}.${ext}` : id);
+                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename.replace(/heic$/i, 'jpg').replace(/heif$/i, 'jpg') : (ext ? `${id}.${ext}` : id);
 
                 await db.imageDrive.put(filename, fileContent);
                 await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName, expiresAt);
