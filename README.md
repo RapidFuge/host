@@ -64,6 +64,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     ```ini
     ISPRODUCTION=true # Whether to actually delete stray files.
     ROOT_PASSWORD=serverRootPass # Default root password. Only needed on first init of MongoDB
+    PREVENT_ROOT_DELETION=true # Prevent deletion of the root user.
     STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: MinIO (Default) Minio File DB
 
     # NextAuth.js
