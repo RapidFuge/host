@@ -1,5 +1,6 @@
 import { FileStat } from '@lib';
 import { put, del, list, head } from '@vercel/blob';
+import { Readable } from 'stream';
 
 export default class VercelBlobClient {
     public bucketName: string;
@@ -78,7 +79,7 @@ export default class VercelBlobClient {
             if (!response.ok) throw new Error(`Failed to fetch blob: ${response.statusText}`);
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return response.body as any;
+            return Readable.fromWeb(response.body as any);
         } catch (error) {
             console.error(`Failed to get object stream for: ${fileName}`, error);
             throw error;
