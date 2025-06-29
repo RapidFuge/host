@@ -9,19 +9,30 @@ RUN npm i
 # Copy the rest of the source code
 COPY . .
 
+ARG GITHUB_ACTIONS
+ARG GITHUB_RUN_NUMBER
+ARG GITHUB_WORKFLOW
+ARG GITHUB_SHA
+ARG CI
+
+ENV GITHUB_ACTIONS=$GITHUB_ACTIONS
+ENV GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER
+ENV GITHUB_WORKFLOW=$GITHUB_WORKFLOW
+ENV GITHUB_SHA=$GITHUB_SHA
+ENV CI=$CI
+ENV DOCKER=true
+ENV CONTAINER=true
+ENV NODE_ENV=production
+
 # Build the Next.js application
 RUN npm run build
-
-# ---
 
 # 2. Runner Stage: Create the final, minimal image
 FROM node:lts-alpine AS runner
 WORKDIR /app
 
 # Set the environment to production
-# ENV NODE_ENV=production
-# Disable telemetry
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
 # Copy the standalone output from the builder stage
 COPY --from=builder /app/.next/standalone ./
