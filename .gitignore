@@ -44,3 +44,6 @@ yarn.lock
 
 /uploads
 .env*.local
+
+# Local Netlify folder
+.netlify
