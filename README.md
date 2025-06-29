@@ -4,7 +4,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
-###### Note: If you're deploying from vercel, It is highly recommended that you use vercel's Blob storage.
+###### Note: If you're deploying from vercel, It is highly recommended that you use vercel's Blob storage. Or, alternatively, MinIO.
 
 ## Features
 
@@ -40,6 +40,8 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   npm or yarn or pnpm
 *   MongoDB instance (local or cloud-hosted like MongoDB Atlas)
 *   MinIO instance (Maybe plans of adding S3 support)
+    * Alternatively, Use Local Storage (If not hosting from vercel)
+    * or, Vercel Blob (If hosting from vercel)
 
 ### Installation
 
@@ -68,7 +70,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: MinIO (Default) Minio File DB
 
     # NextAuth.js
-    NEXTAUTH_URL=http://localhost:3000 # Change in production
+    NEXTAUTH_URL=http://localhost:3000 # Change in production. HEAVILY Required when using Vercel.
     NEXTAUTH_SECRET= # Generate a strong secret: openssl rand -base64 32
 
     # MongoDB
@@ -87,10 +89,16 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     *   Ensure your MongoDB instance is running and accessible.
     *   The application will typically create collections as needed, but ensure the user specified in `MONGODB_URI` has read/write permissions.
 
-5.  **MinIO/S3 Bucket Setup:**
-    *   Ensure your MinIO server is running or your S3 bucket\* is created (\*Maybe, not supported yet).
-    *   Make sure the bucket specified in `MINIO_BUCKET` exists and the provided access/secret keys have permissions to read, write, and delete objects in that bucket.
-    *   Configure bucket policies for public read access if you want files to be directly viewable via their MinIO/S3 URLs (alternatively, files can be served through a Next.js API route).
+5.  **File Storage Setup:**
+    * **Default: MinIO/S3 Bucket Setup:**
+        *   Ensure your MinIO server is running.
+        *   Make sure the bucket specified in `MINIO_BUCKET` exists and the provided access/secret keys have permissions to read, write, and delete objects in that bucket.
+    * **1: Local Storage Setup:**
+        * Ensure the app is able to be able to write to ./uploads
+        * If you're using docker, make sure to link the ./uploads dir to the outside host, if you want.
+    * **2: Vercel Blob Setup:**
+        * After initializing the project on vercel, go to storage and setup/connect the blob to your project.
+        * Redeploy ater connecting the blob to your project.
 
 ### Running the Application
 
@@ -128,7 +136,7 @@ A `Dockerfile` is provided for containerized deployments.
       -e MINIO_USERNAME="your_access_key_or_password" \
       -e MINIO_PASSWORD="your_secret_key_or_password" \
       -e MINIO_BUCKET="your_bucket" \
-      host
+      ghcr.io/rapidfuge/host:latest
     ```
     Replace placeholder values with your actual production configuration. Ensure the port mapping (`-p 3000:3000`) matches the `PORT` exposed by the container (default 3000).
 
