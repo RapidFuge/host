@@ -66,8 +66,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const owner = await db.getUser(file.owner);
                     return res.json({
                         ...file.toJSON(),
-                        ownerEmbedPreference: owner.embedImageDirectly,
-                        ownerCustomDescription: owner.customEmbedDescription
+                        ownerEmbedPreference: owner.embedImageDirectly ?? false,
+                        ownerCustomDescription: owner.customEmbedDescription ?? null
                     });
                 };
 

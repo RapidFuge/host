@@ -4,6 +4,7 @@ import { version } from './package.json';
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
+  transpilePackages: ['@rapidfuge/gps-metadata-remover'],
   output: 'standalone',
   env: {
     APP_VERSION: version,

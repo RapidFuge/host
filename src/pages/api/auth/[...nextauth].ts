@@ -76,7 +76,7 @@ export default NextAuth({
             return token;
         },
         async session({ session, token }) {
-            session.user = { token: token.token, username: token.username, isAdmin: token.isAdmin };
+            session.user = token;
             return session;
         }
     },

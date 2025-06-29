@@ -1,7 +1,7 @@
 // api/files/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
-import formidable, { File as FormidableFile } from 'formidable'; // Import File type from formidable
+import formidable, { File as FormidableFile } from 'formidable';
 import { errorGenerator, getBase } from '@lib';
 import * as generators from '@lib/generators';
 import removeGPS from '@lib/removeGPS';
@@ -55,7 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json(errorGenerator(400, "Failed to process file upload."));
         }
 
-        // Normalize 'files.files' to always be an array of FormidableFile
         let filesToProcess: FormidableFile[] = [];
         if (files.files) {
             filesToProcess = Array.isArray(files.files) ? files.files : [files.files];
@@ -100,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }
                 }
 
-                if (ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') {
+                if (ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif' && !keepOriginalName) {
                     ext = 'jpg';
                     const convertedBuffer = await convert({
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     filename = filename.replace(/heic$/i, 'jpg').replace(/heif$/i, 'jpg');
                 }
 
-                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename.replace(/heic$/i, 'jpg').replace(/heif$/i, 'jpg') : (ext ? `${id}.${ext}` : id);
+                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename : (ext ? `${id}.${ext}` : id);
 
                 await db.imageDrive.put(filename, fileContent);
                 await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName, expiresAt);

@@ -1,4 +1,4 @@
-import { adminUser, generateToken, hashRounds } from './index';
+import { adminUser, generateToken, hashRounds, FileStat } from './index';
 import { hash } from 'bcrypt';
 import mongoose from 'mongoose';
 import userBase from './models/user';
@@ -6,7 +6,9 @@ import linkBase from './models/url';
 import fileBase, { File } from './models/file';
 import upTokens from './models/upTokens';
 import { shorteners } from './generators';
-import MinIOClient, { FileStat } from './minio';
+import MinIOClient from './minio';
+import LocalStorageClient from './local';
+import VercelBlobClient from './vercel';
 
 const PAGE_SIZE = 20;
 let databaseInstance: Database | null = null;
@@ -16,23 +18,31 @@ class Database {
 	public linkBase = linkBase;
 	public fileBase = fileBase;
 	public upTokens = upTokens;
-	public imageDrive: MinIOClient;
+	public imageDrive: MinIOClient | LocalStorageClient | VercelBlobClient;
 	private initialized = false;
 
 	constructor() {
 		if (!process.env.MONGO_URI) throw new Error("Missing MONGO_URI environment variable.");
-		if (!process.env.MINIO_ENDPOINT) throw new Error("Missing MINIO_ENDPOINT environment variable.");
-		if (!process.env.MINIO_BUCKET) throw new Error("Missing MINIO_BUCKET environment variable.");
-		if (!process.env.MINIO_USERNAME) throw new Error("Missing MINIO_USERNAME environment variable.");
-		if (!process.env.MINIO_PASSWORD) throw new Error("Missing MINIO_PASSWORD environment variable.");
 
-		this.imageDrive = new MinIOClient(
-			process.env.MINIO_ENDPOINT!,
-			process.env.MINIO_BUCKET!,
-			'uploads',
-			process.env.MINIO_USERNAME!,
-			process.env.MINIO_PASSWORD!
-		)
+		if (process.env.STORAGE === '1') {
+			this.imageDrive = new LocalStorageClient(process.env.LOCAL_STORAGE_PATH);
+		} else if (process.env.STORAGE === '2') {
+			if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Missing BLOB_READ_WRITE_TOKEN environment variable.");
+			this.imageDrive = new VercelBlobClient(process.env.BLOB_READ_WRITE_TOKEN)
+		} else {
+			if (!process.env.MINIO_ENDPOINT) throw new Error("Missing MINIO_ENDPOINT environment variable.");
+			if (!process.env.MINIO_BUCKET) throw new Error("Missing MINIO_BUCKET environment variable.");
+			if (!process.env.MINIO_USERNAME) throw new Error("Missing MINIO_USERNAME environment variable.");
+			if (!process.env.MINIO_PASSWORD) throw new Error("Missing MINIO_PASSWORD environment variable.");
+
+			this.imageDrive = new MinIOClient(
+				process.env.MINIO_ENDPOINT!,
+				process.env.MINIO_BUCKET!,
+				'uploads',
+				process.env.MINIO_USERNAME!,
+				process.env.MINIO_PASSWORD!
+			);
+		}
 	}
 
 	public async initialize() {
@@ -40,7 +50,7 @@ class Database {
 			if (this.initialized) return console.log("Already initialized!");
 
 			await this.imageDrive.login();
-			console.log("Connected to S3")
+			console.log("Connected to File DB")
 
 			await mongoose.connect(process.env.MONGO_URI!);
 			console.log("Connected to MongoDB");

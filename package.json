@@ -1,6 +1,6 @@
 {
   "name": "rapid-host",
-  "version": "6.2.7",
+  "version": "6.2.8",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,6 +11,7 @@
   "dependencies": {
     "@bprogress/next": "^3.2.12",
     "@rapidfuge/gps-metadata-remover": "^2.0.1",
+    "@vercel/blob": "^1.1.1",
     "bcrypt": "^6.0.0",
     "filesize": "^10.1.6",
     "formidable": "^3.5.2",

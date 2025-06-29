@@ -1,13 +1,5 @@
+import { FileStat } from '@lib';
 import * as Minio from 'minio';
-
-export interface FileStat {
-    filename: string,
-    basename: string,
-    lastmod: Date,
-    size: number,
-    type: 'file' | 'folder',
-    etag?: string
-}
 
 export default class MinIOClient {
     public bucketName: string;

@@ -892,7 +892,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       rawApiFileData.ownerEmbedPreference === undefined
         ? false
         : rawApiFileData.ownerEmbedPreference,
-    ownerCustomDescription: rawApiFileData.ownerCustomDescription,
+    ownerCustomDescription: rawApiFileData.ownerCustomDescription ?? null,
   };
 
   const { raw, r, download, d } = query;

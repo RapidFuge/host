@@ -3,6 +3,15 @@ import { IncomingMessage } from 'http';
 import { NextApiRequest } from 'next';
 import { isEmpty, isAlphanumeric, isLength, isWhitelisted } from 'validator';
 
+export interface FileStat {
+	filename: string,
+	basename: string,
+	lastmod: Date,
+	size: number,
+	type: 'file' | 'folder',
+	etag?: string
+}
+
 export const adminUser = "root";
 export const hashRounds = 12;
 

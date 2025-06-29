@@ -2,6 +2,8 @@
 
 Rapid Host is a self-hostable service for managing your files and shortening URLs, built with Next.js and React. It provides a user-friendly dashboard, ShareX compatibility, and admin controls.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
+
 ## Features
 
 *   **File Uploads:** Securely upload and manage various file types.
@@ -58,13 +60,18 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     Create a `.env.local` file in the root of the project and configure the following variables:
 
     ```ini
+    ISPRODUCTION=true # Whether to actually delete stray files.
+    ROOT_PASSWORD=serverRootPass # Default root password. Only needed on first init of MongoDB
+    STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: MinIO (Default) Minio File DB
+
     # NextAuth.js
     NEXTAUTH_URL=http://localhost:3000 # Change in production
     NEXTAUTH_SECRET= # Generate a strong secret: openssl rand -base64 32
 
     # MongoDB
-    MONGODB_URI=mongodb://user:password@host:port/database_name # Your MongoDB connection string
+    MONGO_URI=mongodb://user:password@host:port/database_name # Your MongoDB connection string
 
+    # If you're using MinIO
     # MinIO (or S3 compatible)
     MINIO_ENDPOINT=your-minio-endpoint.com # e.g., localhost or s3.amazonaws.com or localhost:9010
     MINIO_USERNAME=YOUR_MINIO_ACCESS_KEY_OR_USERNAME
