@@ -4,7 +4,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
-###### Note: If you're deploying from vercel, It is highly recommended that you use vercel's Blob storage. Or, alternatively, MinIO.
+###### Note: If you're deploying from vercel, It is highly recommended that you use vercel's Blob storage. Or, alternatively, MinIO/S3.
 
 ## Features
 
@@ -28,7 +28,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Authentication:** [NextAuth.js](https://next-auth.js.org/)
 *   **Database (Metadata):** [MongoDB](https://www.mongodb.com/)
-*   **File Storage:** [MinIO](https://min.io/) (or any S3-compatible service)
+*   **File Storage:** Local, [Vercel Blob](https://vercel.com/storage/blob), [MinIO](https://min.io/) (or any S3-compatible service)
 *   **Markdown:** `remark`, `remark-gfm`, `rehype-react`, `rehype-prism-plus`
 *   **Syntax Highlighting:** `prism-react-renderer`, `rehype-prism-plus`
 
@@ -39,7 +39,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   Node.js (v18.x or later recommended)
 *   npm or yarn or pnpm
 *   MongoDB instance (local or cloud-hosted like MongoDB Atlas)
-*   MinIO instance (Maybe plans of adding S3 support)
+*   MinIO/S3 instance
     * Alternatively, Use Local Storage (If not hosting from vercel)
     * or, Vercel Blob (If hosting from vercel)
 
@@ -64,24 +64,26 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     Create a `.env.local` file in the root of the project and configure the following variables:
 
     ```ini
-    ISPRODUCTION=true # Whether to actually delete stray files.
+    ISPRODUCTION=true # Whether to actually delete stray files
     ROOT_PASSWORD=serverRootPass # Default root password. Only needed on first init of MongoDB
-    PREVENT_ROOT_DELETION=true # Prevent deletion of the root user.
+    PREVENT_ROOT_DELETION=true # Prevent deletion of the root user
     STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: MinIO (Default) Minio File DB
 
     # NextAuth.js
-    NEXTAUTH_URL=http://localhost:3000 # Change in production. HEAVILY Required when using Vercel.
-    NEXTAUTH_SECRET= # Generate a strong secret: openssl rand -base64 32
+    NEXTAUTH_URL=http://localhost:3000 # Change in production. HEAVILY Required when using Vercel and Netlify.
+    NEXTAUTH_SECRET=you_secret_key # Generate a strong secret: openssl rand -base64 32
 
     # MongoDB
     MONGO_URI=mongodb://user:password@host:port/database_name # Your MongoDB connection string
 
-    # If you're using MinIO
+    # If you're using MinIO/S3
     # MinIO (or S3 compatible)
     MINIO_ENDPOINT=your-minio-endpoint.com # e.g., localhost or s3.amazonaws.com or localhost:9010
-    MINIO_USERNAME=YOUR_MINIO_ACCESS_KEY_OR_USERNAME
-    MINIO_PASSWORD=YOUR_MINIO_SECRET_KEY_OR_PASSWORD
+    MINIO_ACCESS_KEY=YOUR_MINIO_ACCESS_KEY
+    MINIO_SECRET_KEY=YOUR_MINIO_SECRET_KEY
     MINIO_BUCKET=your-bucket-name # Name of the bucket for file storage
+    MINIO_USE_SSL=false # Whether to use SSL or not
+    MINIO_PORT=9010 # MinIO/S3 Instance Port. Default is 9010
     ```
     **Note:** For production, use strong, unique secrets and appropriate URLs.
 
@@ -91,7 +93,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 
 5.  **File Storage Setup:**
     * **Default: MinIO/S3 Bucket Setup:**
-        *   Ensure your MinIO server is running.
+        *   Ensure your MinIO/S3 server is running.
         *   Make sure the bucket specified in `MINIO_BUCKET` exists and the provided access/secret keys have permissions to read, write, and delete objects in that bucket.
     * **1: Local Storage Setup:**
         * Ensure the app is able to be able to write to ./uploads
@@ -129,9 +131,13 @@ A `Dockerfile` is provided for containerized deployments.
 2.  **Run the Docker container:**
     ```bash
     docker run -p 3000:3000 \
+      -e NEXTAUTH_URL=true \
       -e NEXTAUTH_URL="http://yourdomain.com" \
       -e NEXTAUTH_SECRET="your_strong_secret" \
       -e MONGODB_URI="your_mongodb_connection_string" \
+      -e ROOT_PASSWORD="serverRootPass" \
+      -e PREVENT_ROOT_DELETION=true \
+      -e STORAGE=3 \
       -e MINIO_ENDPOINT="your_minio_endpoint" \
       -e MINIO_USERNAME="your_access_key_or_password" \
       -e MINIO_PASSWORD="your_secret_key_or_password" \

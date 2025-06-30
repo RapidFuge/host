@@ -14,7 +14,7 @@ export default class MinIOClient {
         accessKey: string,
         secretKey: string,
         useSSL: boolean = false,
-        port?: number
+        port: number = 9010
     ) {
         this.username = accessKey;
         this.bucketName = bucketName;

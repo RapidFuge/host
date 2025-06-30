@@ -32,15 +32,17 @@ class Database {
 		} else {
 			if (!process.env.MINIO_ENDPOINT) throw new Error("Missing MINIO_ENDPOINT environment variable.");
 			if (!process.env.MINIO_BUCKET) throw new Error("Missing MINIO_BUCKET environment variable.");
-			if (!process.env.MINIO_USERNAME) throw new Error("Missing MINIO_USERNAME environment variable.");
-			if (!process.env.MINIO_PASSWORD) throw new Error("Missing MINIO_PASSWORD environment variable.");
+			if (!process.env.MINIO_ACCESS_KEY) throw new Error("Missing MINIO_USERNAME environment variable.");
+			if (!process.env.MINIO_SECRET_KEY) throw new Error("Missing MINIO_PASSWORD environment variable.");
 
 			this.imageDrive = new MinIOClient(
 				process.env.MINIO_ENDPOINT!,
 				process.env.MINIO_BUCKET!,
 				'uploads',
-				process.env.MINIO_USERNAME!,
-				process.env.MINIO_PASSWORD!
+				process.env.MINIO_ACCESS_KEY!,
+				process.env.MINIO_SECRET_KEY!,
+				typeof process.env.MINIO_USE_SSL === "string" ? process.env.MINIO_USE_SSL === "true" : false,
+				typeof process.env.MINIO_USE_SSL === "string" ? parseInt(process.env.MINIO_PORT as string) : 9010
 			);
 		}
 	}
