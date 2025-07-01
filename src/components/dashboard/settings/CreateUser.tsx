@@ -100,7 +100,7 @@ export default function CreateUserForm() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Alphanumeric, 3-50 chars"
                 />
               </div>
@@ -117,7 +117,7 @@ export default function CreateUserForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Min 3 chars"
                 />
               </div>

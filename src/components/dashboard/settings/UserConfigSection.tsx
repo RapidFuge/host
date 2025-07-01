@@ -379,7 +379,7 @@ export default function UserConfigSection({
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:ring-blue-500 focus:border-blue-500"
+                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 minLength={3}
               />
@@ -392,7 +392,7 @@ export default function UserConfigSection({
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:ring-blue-500 focus:border-blue-500"
+                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 minLength={3}
               />
@@ -433,7 +433,7 @@ export default function UserConfigSection({
                 onChange={(e) =>
                   setSelectedGenerator(e.target.value as shorteners)
                 }
-                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:ring-blue-500 focus:border-blue-500"
+                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {shorteners.map((gen) => (
                   <option key={gen} value={gen}>
@@ -493,7 +493,7 @@ export default function UserConfigSection({
                 onChange={(e) => setCustomDescription(e.target.value)}
                 placeholder="Max 250 chars or leave blank."
                 maxLength={250}
-                className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white h-24 resize-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white h-24 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div className="mt-2 flex justify-start">
@@ -521,7 +521,7 @@ export default function UserConfigSection({
               <select
                 value={defaultFileExpiration}
                 onChange={(e) => setDefaultFileExpiration(e.target.value)}
-                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:ring-blue-500 focus:border-blue-500"
+                className="w-full sm:w-1/2 p-2 bg-neutral-900 border border-neutral-700 rounded mt-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {expirationOptions.map((option) => (
                   <option key={option.value} value={option.value}>

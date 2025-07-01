@@ -9,14 +9,18 @@ import { filesize } from "filesize";
 import { LoaderCircle, Upload } from "lucide-react";
 import { getBase } from "@lib";
 import { toast } from "sonner";
+import { random } from "@lib/generators";
+
+const CHUNK_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 95 * 1024 * 1024;
 
 export default function UploadPage({ expireDate }: { expireDate: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [dragging, setDragging] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false); // State for the checkbox
-  const [isKeepingOrig, setKeepOrig] = useState(false); // State for the checkbox
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [isKeepingOrig, setKeepOrig] = useState(false);
   const [expiration, setExpiration] = useState(expireDate || "never");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const expirationOptions = [
@@ -73,62 +77,129 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
   };
 
+  const uploadSingleFile = (file: File, onProgress: (progress: number) => void) => {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("files", file);
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          onProgress(percentComplete);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const data = JSON.parse(xhr.responseText);
+          onProgress(100);
+          resolve(data);
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            reject(new Error(errorData.message || `Upload failed. Status: ${xhr.status}`));
+          } catch (_) {
+            reject(new Error(`Upload failed. Status: ${xhr.status}`));
+          }
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Upload failed due to a network error."));
+
+      xhr.open("POST", "/api/files");
+      xhr.setRequestHeader("isPrivate", isPrivate.toString());
+      xhr.setRequestHeader("keepOriginalName", isKeepingOrig.toString());
+      xhr.setRequestHeader("expiresIn", expiration);
+      xhr.send(formData);
+    });
+  };
+
+  const uploadChunkedFile = async (file: File, onProgress: (progress: number) => void) => {
+    const uploadId = random(25);
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const start = chunkIndex * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      const response = await fetch("/api/files", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "x-upload-id": uploadId,
+          "x-chunk-index": chunkIndex.toString(),
+          "x-original-filename": file.name,
+        },
+        body: chunk,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Chunk ${chunkIndex + 1}/${totalChunks} upload failed: ${errorText}`);
+      }
+      onProgress(Math.round(((chunkIndex + 1) / totalChunks) * 99));
+    }
+
+    const finalizeResponse = await fetch("/api/files", {
+      method: "POST",
+      headers: {
+        "x-upload-id": uploadId,
+        "x-finalize": "true",
+        "x-total-chunks": totalChunks.toString(),
+        "x-original-filename": file.name,
+        isPrivate: isPrivate.toString(),
+        keepOriginalName: isKeepingOrig.toString(),
+        expiresIn: expiration,
+      },
+    });
+
+    if (!finalizeResponse.ok) {
+      const errorData = await finalizeResponse.json();
+      throw new Error(errorData.message || "Failed to finalize upload.");
+    }
+
+    onProgress(100);
+    return await finalizeResponse.json();
+  };
+
   const handleUpload = async () => {
     if (files.length === 0) return toast.error("Please select some files to upload.");
 
     setUploading(true);
     setUploadProgress({});
 
-    const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    const uploadPromises = files.map((file) => {
+      const onProgress = (progress: number) => {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: progress }));
+      };
+      if (file.size > MAX_FILE_SIZE) {
+        return uploadChunkedFile(file, onProgress);
+      } else {
+        return uploadSingleFile(file, onProgress);
+      }
+    });
 
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
+    const results = await Promise.allSettled(uploadPromises);
 
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            const newProgress: Record<string, number> = {};
-            files.forEach((file) => {
-              newProgress[file.name] = percentComplete;
-            });
-            setUploadProgress(newProgress);
-          }
-        };
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled" && result.value.url) {
+        toast.success(
+          <Link href={result.value.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+            {result.value.url}
+          </Link>,
+          { duration: Infinity }
+        );
+      } else {
+        const file = files[index];
+        const errorMessage = result.status === "rejected" ? result.reason?.message : "An unknown error occurred.";
+        toast.error(`Failed to upload ${file.name}. ${errorMessage}`);
+      }
+    });
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const data = JSON.parse(xhr.responseText);
-            toast.success(<Link href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{data.url}</Link>, { duration: Infinity })
-            setFiles([]);
-            resolve();
-          } else {
-            try {
-              const errorData = JSON.parse(xhr.responseText);
-              reject(new Error(errorData.message || `Failed to upload files. Status: ${xhr.status}`));
-            } catch (_) {
-              reject(new Error(`Failed to upload files. Status: ${xhr.status}`));
-            }
-          }
-        };
-
-        xhr.onerror = () => {
-          reject(new Error("Upload failed due to a network error."));
-        };
-
-        xhr.open("POST", "/api/files");
-        xhr.setRequestHeader("isPrivate", isPrivate.toString());
-        xhr.setRequestHeader("keepOriginalName", isKeepingOrig.toString());
-        xhr.setRequestHeader("expiresIn", expiration);
-        xhr.send(formData);
-      });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      toast.error(`Failed to upload files. ${error.message || error}`)
-    } finally {
-      setUploading(false);
-    }
+    setFiles([]);
+    setUploading(false);
   };
 
   const renderFileList = () => {

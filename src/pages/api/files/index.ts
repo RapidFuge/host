@@ -1,4 +1,3 @@
-// api/files/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import formidable, { File as FormidableFile } from 'formidable';
@@ -6,16 +5,80 @@ import { errorGenerator, getBase } from '@lib';
 import * as generators from '@lib/generators';
 import removeGPS from '@lib/removeGPS';
 import fs from 'fs-extra';
-import { getDatabase } from '@lib/db';
+import { getDatabase, Database } from '@lib/db';
 import path from 'path';
 import { ms } from 'humanize-ms';
 import convert from 'heic-convert';
+import os from 'os';
+import { User } from '@lib/models/user';
 
 export const config = {
     api: {
         bodyParser: false,
     },
 };
+
+async function processAndStoreFinalFile(
+    tempFilepath: string,
+    storageFilename: string,
+    originalFilename: string | null,
+    filesize: number,
+    db: Database,
+    user: User,
+    isPrivate: boolean,
+    keepOriginalName: boolean,
+    expiresIn: string,
+    req: NextApiRequest
+) {
+    await removeGPS(tempFilepath).catch(error => {
+        console.error(`GPS removal failed for ${tempFilepath}:`, error);
+    });
+
+    let fileContent: Buffer = await fs.readFile(tempFilepath);
+    let currentFilesize = filesize;
+    let finalStorageFilename = storageFilename;
+
+    const extSplit = storageFilename.split('.');
+    let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
+
+    if ((ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') && !keepOriginalName) {
+        const originalExt = ext;
+        ext = 'jpg';
+        const convertedBuffer = await convert({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            buffer: (new Uint8Array(fileContent.buffer, fileContent.byteOffset, fileContent.byteLength)) as any,
+            format: 'JPEG',
+        });
+        fileContent = Buffer.from(convertedBuffer);
+        currentFilesize = fileContent.length;
+        finalStorageFilename = storageFilename.replace(new RegExp(`${originalExt}$`, 'i'), 'jpg');
+    }
+
+    const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);
+
+    let expiresAt: Date | undefined = undefined;
+    const expirationSetting = expiresIn || user.defaultFileExpiration;
+    if (expirationSetting && expirationSetting !== 'never') {
+        try {
+            const duration = ms(expirationSetting);
+            if (duration) expiresAt = new Date(Date.now() + duration);
+        } catch (_) {
+            console.warn(`Invalid expiration format: ${expirationSetting}`);
+        }
+    }
+
+    const publicFileName = keepOriginalName && originalFilename ? originalFilename : (ext ? `${id}.${ext}` : id);
+
+    await db.imageDrive.put(finalStorageFilename, fileContent);
+    await db.addFile(finalStorageFilename, id, ext, user.username, currentFilesize, isPrivate, publicFileName, expiresAt);
+
+    const base = getBase(req);
+    return {
+        url: `${base}/${id}`,
+        deletionUrl: `${base}/dashboard`,
+    };
+}
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') return res.setHeader('Allow', ['POST']).status(405).json({ error: 'Method Not Allowed' });
@@ -31,109 +94,120 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = await db.getUserByToken(userToken);
     if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
 
-    const form = formidable({
-        maxFileSize: (1 * 1024 * 1024 * 1024),
-        keepExtensions: true,
-        filename: (name, ext, part) => {
-            const originalName = part.originalFilename;
+    const isPrivate = req.headers.isprivate === 'true';
+    const keepOriginalName = req.headers.keeporiginalname === 'true';
+    const expiresIn = req.headers.expiresin as string;
+    const uploadId = req.headers['x-upload-id'] as string;
+
+    if (uploadId) {
+        const chunksDir = path.join(os.tmpdir(), 'rapid-host-chunks');
+        const uploadDir = path.join(chunksDir, uploadId);
+        await fs.ensureDir(uploadDir);
+
+        if (req.headers['x-finalize'] === 'true') {
+            const totalChunks = parseInt(req.headers['x-total-chunks'] as string, 10);
+            const originalFilename = req.headers['x-original-filename'] as string;
+
             const tok = generators.random(12);
-            const split = originalName?.split('.') || [];
+            const split = originalFilename?.split('.') || [];
+            let storageFilename: string;
             if (split.length > 1) {
                 const ext = split.pop();
-                return (ext?.length || 0) > 10 ? tok : `${tok}.${ext}`;
+                storageFilename = (ext?.length || 0) > 10 ? tok : `${tok}.${ext}`;
+            } else {
+                storageFilename = tok;
             }
-            return tok;
-        }
-    });
-    const isPrivate = req.headers.isprivate === 'true' || req.headers.isPrivate === "true"; // More robust check
-    const keepOriginalName = req.headers.keeporiginalname === 'true' || req.headers.keepOriginalName === 'true';
-    const expiresIn = req.headers.expiresin as string;
 
-    return form.parse(req, async (err, fields, files) => {
-        if (err) {
-            console.error("Formidable parsing error:", err);
-            return res.status(400).json(errorGenerator(400, "Failed to process file upload."));
-        }
-
-        let filesToProcess: FormidableFile[] = [];
-        if (files.files) {
-            filesToProcess = Array.isArray(files.files) ? files.files : [files.files];
-        }
-
-        if (filesToProcess.length === 0) {
-            return res.status(400).json(errorGenerator(400, "No file upload detected with field name 'files'!"));
-        }
-
-        const results = []; // To store results if you want to send multiple URLs back
-
-        for (const file of filesToProcess) {
-            if (!file) continue; // Should not happen if filesToProcess is constructed correctly
+            const assembledFilePath = path.join(os.tmpdir(), storageFilename);
 
             try {
-
-                await removeGPS(file.filepath)
-                    .then(result => {
-                        console.log(`GPS removal successful for ${file.filepath}: ${result}`);
-                    })
-                    .catch(error => {
-                        console.error(`GPS removal failed for ${file.filepath}:`, error);
-                    });
-
-                let fileContent: Buffer = await fs.readFile(file.filepath);
-                let fileSizeInBytes = fileContent.length;
-
-                let filename = path.basename(file.filepath);
-                const extSplit = filename.split('.');
-                let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
-                const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);
-
-                let expiresAt: Date | undefined = undefined;
-                const expirationSetting = expiresIn || user.defaultFileExpiration;
-
-                if (expirationSetting && expirationSetting !== 'never') {
-                    try {
-                        const duration = ms(expirationSetting);
-                        if (duration) expiresAt = new Date(Date.now() + duration);
-                    } catch (_) {
-                        console.warn(`Invalid expiration format: ${expirationSetting}`);
+                const writeStream = fs.createWriteStream(assembledFilePath);
+                for (let i = 0; i < totalChunks; i++) {
+                    const chunkPath = path.join(uploadDir, `chunk-${i}`);
+                    if (!await fs.pathExists(chunkPath)) {
+                        throw new Error(`Missing chunk: ${i}`);
                     }
-                }
-
-                if (ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif' && !keepOriginalName) {
-                    ext = 'jpg';
-                    const convertedBuffer = await convert({
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        buffer: (new Uint8Array(fileContent.buffer, fileContent.byteOffset, fileContent.byteLength)) as any,
-                        format: 'JPEG',
-                        // quality: 1
+                    const readStream = fs.createReadStream(chunkPath);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await new Promise((resolve: any, reject) => {
+                        readStream.pipe(writeStream, { end: false });
+                        readStream.on('end', resolve);
+                        readStream.on('error', reject);
                     });
-                    fileContent = Buffer.from(convertedBuffer);
-                    fileSizeInBytes = fileContent.length;
-                    filename = filename.replace(/heic$/i, 'jpg').replace(/heif$/i, 'jpg');
                 }
-
-                const publicFileName = keepOriginalName && file.originalFilename ? file.originalFilename : (ext ? `${id}.${ext}` : id);
-
-                await db.imageDrive.put(filename, fileContent);
-                await db.addFile(filename, id, ext, user.username, fileSizeInBytes, isPrivate, publicFileName, expiresAt);
-
-                const base = getBase(req);
-                results.push({
-                    url: `${base}/${id}`,
-                    deletionUrl: `${base}/dashboard`,
-                });
-
+                writeStream.end();
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (uploadError: any) {
-                console.error(`Error processing file ${file.originalFilename}:`, uploadError);
-                if (results.length === 0 && filesToProcess.indexOf(file) === filesToProcess.length - 1) {
-                    return res.status(500).json(errorGenerator(500, `Failed to process file: ${file.originalFilename}. ${uploadError.message}`));
+                await new Promise((resolve: any) => writeStream.on('finish', resolve));
+
+                const stats = await fs.stat(assembledFilePath);
+                const result = await processAndStoreFinalFile(
+                    assembledFilePath, storageFilename, originalFilename, stats.size,
+                    db, user, isPrivate, keepOriginalName, expiresIn, req
+                );
+                return res.status(200).json(result);
+            } catch (error) {
+                console.error("Chunked file processing failed:", error);
+                return res.status(500).json(errorGenerator(500, `Failed to process chunked file: ${(error as Error).message}`));
+            }
+        } else {
+            const chunkIndex = req.headers['x-chunk-index'] as string;
+            const chunkPath = path.join(uploadDir, `chunk-${chunkIndex}`);
+            const writeStream = fs.createWriteStream(chunkPath);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await new Promise((resolve: any, reject) => {
+                req.pipe(writeStream);
+                writeStream.on('finish', resolve);
+                writeStream.on('error', reject);
+            });
+            return res.status(200).json({ success: true });
+        }
+    } else {
+        const form = formidable({
+            maxFileSize: (1 * 1024 * 1024 * 1024),
+            keepExtensions: true,
+            filename: (name, ext, part) => {
+                const originalName = part.originalFilename;
+                const tok = generators.random(12);
+                const split = originalName?.split('.') || [];
+                if (split.length > 1) {
+                    const ext = split.pop();
+                    return (ext?.length || 0) > 10 ? tok : `${tok}.${ext}`;
+                }
+                return tok;
+            }
+        });
+
+        return form.parse(req, async (err, fields, files) => {
+            if (err) {
+                console.error("Formidable parsing error:", err);
+                return res.status(400).json(errorGenerator(400, "Failed to process file upload."));
+            }
+
+            let filesToProcess: FormidableFile[] = [];
+            if (files.files) {
+                filesToProcess = Array.isArray(files.files) ? files.files : [files.files];
+            }
+
+            if (filesToProcess.length === 0) {
+                return res.status(400).json(errorGenerator(400, "No file upload detected with field name 'files'!"));
+            }
+
+            const results = [];
+            for (const file of filesToProcess) {
+                try {
+                    const result = await processAndStoreFinalFile(
+                        file.filepath, file.newFilename, file.originalFilename, file.size,
+                        db, user, isPrivate, keepOriginalName, expiresIn, req
+                    );
+                    results.push(result);
+                } catch (uploadError) {
+                    console.error(`Error processing file ${file.originalFilename}:`, uploadError);
                 }
             }
-        }
 
-        if (results.length === 0) return res.status(500).json(errorGenerator(500, "All files failed to process."));
+            if (results.length === 0) return res.status(500).json(errorGenerator(500, "All files failed to process."));
 
-        return res.status(200).json({ ...results[0], files: results });
-    });
+            return res.status(200).json({ ...results[0], files: results });
+        });
+    }
 }

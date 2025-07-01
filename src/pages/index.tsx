@@ -1,4 +1,3 @@
-// /index.tsx
 /* eslint-disable @next/next/no-img-element */
 import Header from "@components/Header";
 import Footer from "@components/Footer";
@@ -7,6 +6,7 @@ import { NextSeo } from "next-seo";
 import { useState, useEffect } from "react";
 import CountUp from "react-countup";
 import { Upload, Link as LinkIcon } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -22,6 +22,17 @@ export default function Home() {
       setLoading(false);
     }
     fetchData();
+
+    async function checkVersion() {
+      const response = await fetch("/api/checkVersion");
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.match && data.remoteVersion > data.localVersion) {
+          toast("You are running an outdated version of Rapid Host", { position: 'top-right', duration: 10000, description: <span><br /><p>Local Version: {data.localVersion}</p><p>Remote Version: {data.remoteVersion}</p></span> })
+        }
+      }
+    }
+    checkVersion();
   }, []);
 
   return (

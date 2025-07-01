@@ -13,7 +13,7 @@ import VercelBlobClient from './vercel';
 const PAGE_SIZE = 20;
 let databaseInstance: Database | null = null;
 
-class Database {
+export class Database {
 	public userBase = userBase;
 	public linkBase = linkBase;
 	public fileBase = fileBase;
@@ -286,7 +286,6 @@ class Database {
 
 }
 
-
 export async function getDatabase(): Promise<Database> {
 	if (databaseInstance && mongoose.connection.readyState === 1) return databaseInstance;
 
@@ -297,4 +296,3 @@ export async function getDatabase(): Promise<Database> {
 	return databaseInstance;
 }
 
-// export default new Database();

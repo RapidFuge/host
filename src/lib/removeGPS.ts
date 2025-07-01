@@ -1,29 +1,26 @@
-import { removeLocation } from '@rapidfuge/gps-metadata-remover';
-import fs from 'fs-extra';
+import { ExifTool } from 'exiftool-vendored';
+import fs from 'fs';
 
-export default (file: string): Promise<boolean> => {
-    let fileDescriptor: number | undefined;
+const exiftool = new ExifTool();
 
-    return fs.open(file, 'r+')
-        .then((fd) => {
-            fileDescriptor = fd;
-            return removeLocation(
-                file,
-                (size: number, offset: number): Promise<ArrayBuffer> =>
-                    fs.read(fd, Buffer.alloc(size), 0, size, offset)
-                        .then(({ buffer }) => buffer.buffer),
-                (data: ArrayBuffer, offset: number): Promise<void> =>
-                    fs.write(fd, Buffer.from(data), 0, data.byteLength, offset)
-                        .then(() => { })
-            );
-        })
-        .finally(() => {
-            if (fileDescriptor !== undefined) {
-                return fs.close(fileDescriptor)
-                    .catch(err => {
-                        console.error(`Failed to close file descriptor for ${file}:`, err);
-                    });
-            }
-            return Promise.resolve();
+export default async function removeExifLocationDataVendored(filePath: string): Promise<boolean> {
+    try {
+        if (!fs.existsSync(filePath)) return false;
+
+        await exiftool.write(filePath, {}, {
+            writeArgs: [
+                '-GPS*=',
+                '-XMP:GPS*=',
+                '-IPTC:GPS*=',
+                '-overwrite_original'
+            ]
         });
-};
+
+        await exiftool.end();
+
+        return true;
+
+    } catch {
+        return false;
+    }
+}
