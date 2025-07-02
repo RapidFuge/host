@@ -784,7 +784,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   try {
     const shortUrlCheckResponse = await fetch(
-      `${pageBaseUrl}/api/url/${reqId}`
+      `${pageBaseUrl}/api/links/${reqId}`
     );
     if (shortUrlCheckResponse.ok) {
       const targetData = await shortUrlCheckResponse.json();

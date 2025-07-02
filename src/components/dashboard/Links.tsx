@@ -74,7 +74,7 @@ export default function LinksComponent({
       return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/url/${linkTag}`, {
+      const response = await fetch(`/api/links/${linkTag}`, {
         method: "DELETE",
       });
       if (!response.ok) {

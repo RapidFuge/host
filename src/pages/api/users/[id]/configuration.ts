@@ -27,11 +27,11 @@ function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase:
             DestinationType: "URLShortener, URLSharingService",
             RequestMethod: "POST",
             RequestURL: `${apiBase}/links`,
-            Headers: { Authorization: token },
-            Body: "JSON",
-            Data: {
-                url: "{input}"
+            Headers: {
+                Authorization: token,
+                'shorten-url': "{input}"
             },
+            Body: "JSON",
             URL: "{json:url}",
         }
         : {

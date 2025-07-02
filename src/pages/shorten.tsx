@@ -21,7 +21,7 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
     setIsLoading(true); // Set loading to true
 
     try {
-      const response = await fetch("/api/url", {
+      const response = await fetch("/api/links", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

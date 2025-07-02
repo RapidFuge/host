@@ -143,7 +143,35 @@ A `Dockerfile` is provided for containerized deployments.
       -e MINIO_BUCKET="your_bucket" \
       ghcr.io/rapidfuge/host:latest
     ```
-    Replace placeholder values with your actual production configuration. Ensure the port mapping (`-p 3000:3000`) matches the `PORT` exposed by the container (default 3000).
+    **Use Docker Compose instead:**
+    ```yaml
+      services:  
+        server:  
+        container_name: host  
+        image: ghcr.io/rapidfuge/host:latest  
+        restart: always  
+        ports:  
+            - "3000:3000"  
+        environment:  
+            ISPRODUCTION: "true" # Whether to delete expired/stray files/database entry.  
+            NEXTAUTH_SECRET: something_secret_here  
+            NEXTAUTH_URL: https://i.fuge.dev # What the domain of the host is gonna be. Not required anymore.
+            ROOT_PASSWORD: serverRootPass # Default root password  
+            MONGO_URI: 'mongodb://MONGO_USERNAME:MONGO_PASSWORD@mongodb:27017/'  
+            STORAGE: 1 # Again, 1 For local, 2 For vercel Blob, 3 For MinIO
+            PREVENT_ROOT_DELETION: "true"
+            MINIO_ENDPOINT: 'minio:9000' # If STORAGE is set to 3
+            MINIO_BUCKET: MINIO_BUCKET 
+            MINIO_ACCESS_KEY: MINIO_ACCESS_KEY 
+            MINIO_SECRET_KEY: MINIO_SECRET_KEY 
+        volumes: # If STORAGE is set to 1
+            - ./uploads:/app/uploads # local_folder:/app/uploads do not change /app/uploads 
+        # If you're going to have mongodb with rapid host in the same compose file
+        # depends_on:  
+        #     - mongodb
+        #     - minio # if minio is in the same compose file
+    ```
+    Replace placeholder values with your actual production configuration. Ensure the port mapping (`-p 3000:3000`).
 
 ## Contributing
 
