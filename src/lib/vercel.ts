@@ -1,5 +1,6 @@
 import { FileStat } from '@lib';
 import { put, del, list, head } from '@vercel/blob';
+import fs from 'fs';
 import { Readable } from 'stream';
 
 export default class VercelBlobClient {
@@ -50,11 +51,12 @@ export default class VercelBlobClient {
         }
     }
 
-    async put(fileName: string, buff: Buffer) {
+    async put(fileName: string, data: string | Buffer) {
         try {
             const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
+            const body = typeof data === 'string' ? fs.createReadStream(data) : data;
 
-            const blob = await put(objectName, buff, {
+            const blob = await put(objectName, body, {
                 access: 'public',
                 addRandomSuffix: false
             });

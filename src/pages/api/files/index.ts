@@ -12,6 +12,8 @@ import os from 'os';
 import { User } from '@lib/models/user';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
+import { pipeline } from 'stream/promises';
+import { PassThrough } from 'stream';
 
 export const config = {
     api: {
@@ -35,14 +37,15 @@ async function processAndStoreFinalFile(
         console.error(`GPS removal failed for ${tempFilepath}:`, error);
     });
 
-    let fileContent: Buffer = await fs.readFile(tempFilepath);
     let currentFilesize = filesize;
     let finalStorageFilename = storageFilename;
 
     const extSplit = storageFilename.split('.');
     let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
 
-    if ((ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') && !keepOriginalName) {
+    // Add a size check to prevent this from crashing on huge HEIC files
+    if ((ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') && !keepOriginalName && filesize <= 500 * 1024 * 1024) {
+        const fileContent = await fs.readFile(tempFilepath);
         const originalExt = ext;
         ext = 'jpg';
         const convertedBuffer = await convert({
@@ -50,9 +53,13 @@ async function processAndStoreFinalFile(
             buffer: (new Uint8Array(fileContent.buffer, fileContent.byteOffset, fileContent.byteLength)) as any,
             format: 'JPEG',
         });
-        fileContent = Buffer.from(convertedBuffer);
-        currentFilesize = fileContent.length;
+        const finalBuffer = Buffer.from(convertedBuffer);
+        currentFilesize = finalBuffer.length;
         finalStorageFilename = storageFilename.replace(new RegExp(`${originalExt}$`, 'i'), 'jpg');
+
+        await db.imageDrive.put(finalStorageFilename, finalBuffer);
+    } else {
+        await db.imageDrive.put(finalStorageFilename, tempFilepath);
     }
 
     const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);
@@ -70,7 +77,6 @@ async function processAndStoreFinalFile(
 
     const publicFileName = keepOriginalName && originalFilename ? originalFilename : (ext ? `${id}.${ext}` : id);
 
-    await db.imageDrive.put(finalStorageFilename, fileContent);
     await db.addFile(finalStorageFilename, id, ext, user.username, currentFilesize, isPrivate, publicFileName, expiresAt);
 
     const base = getBase(req);
@@ -123,29 +129,58 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             try {
                 const writeStream = fs.createWriteStream(assembledFilePath);
+                const chunkReader = new PassThrough();
+
+                const pipelinePromise = pipeline(chunkReader, writeStream);
+
                 for (let i = 0; i < totalChunks; i++) {
                     const chunkPath = path.join(uploadDir, `chunk-${i}`);
+
                     if (!await fs.pathExists(chunkPath)) {
+                        chunkReader.destroy(new Error(`Missing chunk: ${i}`));
                         throw new Error(`Missing chunk: ${i}`);
                     }
-                    const readStream = fs.createReadStream(chunkPath);
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    await new Promise((resolve: any, reject) => {
-                        readStream.pipe(writeStream, { end: false });
-                        readStream.on('end', resolve);
+
+                    const readStream = fs.createReadStream(chunkPath, {
+                        highWaterMark: 64 * 1024 // 64KB chunks to prevent memory issues
+                    });
+
+                    await new Promise((resolve, reject) => {
+                        readStream.on('data', (chunk) => {
+                            if (!chunkReader.write(chunk)) {
+                                readStream.pause();
+                                chunkReader.once('drain', () => readStream.resume());
+                            }
+                        });
+
+                        readStream.on('end', () => {
+                            resolve(void 0);
+                        });
+
                         readStream.on('error', reject);
                     });
+
+                    await fs.remove(chunkPath).catch(err =>
+                        console.warn(`Failed to delete chunk ${i}:`, err)
+                    );
                 }
-                writeStream.end();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await new Promise((resolve: any) => writeStream.on('finish', resolve));
+
+                chunkReader.end();
+
+                await pipelinePromise;
+
+                await fs.remove(uploadDir).catch(err =>
+                    console.warn(`Failed to remove upload directory:`, err)
+                );
 
                 const stats = await fs.stat(assembledFilePath);
                 const result = await processAndStoreFinalFile(
                     assembledFilePath, storageFilename, originalFilename, stats.size,
                     db, user, isPrivate, keepOriginalName, expiresIn, req
                 );
+
                 return res.status(200).json(result);
+
             } catch (error) {
                 console.error("Chunked file processing failed:", error);
                 return res.status(500).json(errorGenerator(500, `Failed to process chunked file: ${(error as Error).message}`));

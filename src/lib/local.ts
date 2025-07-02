@@ -43,9 +43,13 @@ export default class LocalStorageClient {
         return result;
     }
 
-    async put(fileName: string, buff: Buffer): Promise<void> {
-        const filePath = path.join(this.rootPath, fileName);
-        await fs.writeFile(filePath, buff);
+    async put(fileName: string, data: string | Buffer): Promise<void> {
+        const destinationPath = path.join(this.rootPath, fileName);
+        if (typeof data === 'string') {
+            await fs.copyFile(data, destinationPath);
+        } else {
+            await fs.writeFile(destinationPath, data);
+        }
     }
 
     async get(fileName: string) {

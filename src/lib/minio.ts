@@ -97,18 +97,15 @@ export default class MinIOClient {
         }
     }
 
-    async put(fileName: string, buff: Buffer) {
+    async put(fileName: string, data: string | Buffer) {
         try {
             const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
 
-            const result = await this.client.putObject(
-                this.bucketName,
-                objectName,
-                buff,
-                buff.length
-            );
-
-            return result;
+            if (typeof data === 'string') {
+                return await this.client.fPutObject(this.bucketName, objectName, data);
+            } else {
+                return await this.client.putObject(this.bucketName, objectName, data, data.length);
+            }
         } catch (error) {
             console.error('Failed to put object:', error);
             throw error;
