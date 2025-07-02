@@ -70,7 +70,6 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: MinIO (Default) Minio File DB
 
     # NextAuth.js
-    NEXTAUTH_URL=http://localhost:3000 # Change in production. HEAVILY Required when using Vercel and Netlify.
     NEXTAUTH_SECRET=you_secret_key # Generate a strong secret: openssl rand -base64 32
 
     # MongoDB

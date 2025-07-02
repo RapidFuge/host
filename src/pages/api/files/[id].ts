@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getToken } from 'next-auth/jwt';
 import { errorGenerator } from '@lib';
 import * as generators from '@lib/generators';
 import { getDatabase } from '@lib/db';
@@ -8,6 +7,8 @@ import os from 'os';
 import path from 'path';
 import { isAscii } from 'validator';
 import mime from 'mime-types';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 const removeExt = (str: string) => str.substring(0, str.indexOf('.'));
 
 export const config = {
@@ -18,10 +19,10 @@ export const config = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const db = await getDatabase();
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(req, res, authOptions);
     const authHeader = req.headers.authorization;
     let user;
-    if (token || authHeader) user = await db.getUserByToken(authHeader || token?.token);
+    if (session || authHeader) user = await db.getUserByToken(authHeader || session?.user.token);
 
     const { id } = req.query;
     if (!id || typeof id !== 'string') return res.status(400).json(errorGenerator(400, "Invalid file identifier."));

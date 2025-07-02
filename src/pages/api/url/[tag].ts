@@ -1,9 +1,10 @@
 import { isEmpty, isAscii } from 'validator';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getToken } from 'next-auth/jwt';
 import { errorGenerator } from '@lib';
 import * as generators from '@lib/generators';
 import { getDatabase } from '@lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 
 const validTag = (tag: string) => typeof tag === "string" && !isEmpty(tag) && (isAscii(tag) || generators.checkIfZws(tag));
 
@@ -11,10 +12,10 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
     const db = await getDatabase();
     const { tag } = req.query;
 
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(req, res, authOptions);
     const authHeader = req.headers.authorization;
     let user;
-    if ((token || authHeader) && req.method === "DELETE") user = await db.getUserByToken(token?.token || authHeader);
+    if ((session || authHeader) && req.method === "DELETE") user = await db.getUserByToken(session?.user.token || authHeader);
     if (!validTag(tag as string)) return res.status(400).json(errorGenerator(400, "Invalid short URL tag."));
 
     const link = await db.getLink(tag as string);

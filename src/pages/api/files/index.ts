@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getToken } from 'next-auth/jwt';
 import formidable, { File as FormidableFile } from 'formidable';
 import { errorGenerator, getBase } from '@lib';
 import * as generators from '@lib/generators';
@@ -11,6 +10,8 @@ import { ms } from 'humanize-ms';
 import convert from 'heic-convert';
 import os from 'os';
 import { User } from '@lib/models/user';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 
 export const config = {
     api: {
@@ -84,11 +85,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method !== 'POST') return res.setHeader('Allow', ['POST']).status(405).json({ error: 'Method Not Allowed' });
     const db = await getDatabase();
 
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(req, res, authOptions);
     const authHeader = req.headers.authorization;
-    if (!token && !authHeader) return res.status(401).json(errorGenerator(401, "Unauthorized"));
+    if (!session && !authHeader) return res.status(401).json(errorGenerator(401, "Unauthorized"));
 
-    const userToken = authHeader ? authHeader : token?.token;
+    const userToken = authHeader ? authHeader : session?.user.token;
     if (!userToken) return res.status(401).json(errorGenerator(401, "Unauthorized: Token is invalid or missing."));
 
     const user = await db.getUserByToken(userToken);

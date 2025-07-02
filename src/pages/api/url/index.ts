@@ -2,8 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { errorGenerator, getBase } from '@lib';
 import { getDatabase } from '@lib/db';
 import { isURL, trim } from 'validator';
-import { getToken } from 'next-auth/jwt';
 import * as generators from '@lib/generators';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 
 const validTag = (tag: string) => typeof tag === "string" && tag.length > 2 && tag.length < 69;
 
@@ -13,10 +14,10 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
     const db = await getDatabase();
 
     try {
-        const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+        const session = await getServerSession(req, res, authOptions);
         const authHeader = req.headers.authorization;
 
-        const user = await db.getUserByToken(authHeader || token?.token);
+        const user = await db.getUserByToken(authHeader || session?.user.token);
         if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
 
         const url = headers['shorten-url'] as string;

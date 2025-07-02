@@ -1,19 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getDatabase } from '@lib/db'; // Assuming User type is from db
-import { getBase, generateToken, errorGenerator, hashRounds } from "@lib"; // Ensure shorteners array and ShortenerType are from @lib
-import { getToken } from "next-auth/jwt";
+import { getDatabase } from '@lib/db';
+import { getBase, generateToken, errorGenerator, hashRounds } from "@lib";
 import { hash } from "bcrypt";
 import { User } from "@lib/models/user";
 import { shorteners } from "@lib/generators";
-
-// Assuming User interface includes:
-// username: string;
-// token: string; // API key
-// password?: string;
-// shortener: ShortenerType;
-// isAdmin: boolean;
-// embedImageDirectly?: boolean;
-// customEmbedDescription?: string | null;
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]';
 
 const expirationOptions = [
     "never",
@@ -27,19 +19,23 @@ const expirationOptions = [
 ];
 
 function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase: string, host?: string) {
-    const apiBase = `${urlBase}/api`; // Assuming your API routes are under /api
+    const apiBase = `${urlBase}/api`;
     return isLink
         ? {
+            Version: "17.1.0",
             Name: `${user.username} URL Shortener (${host ?? urlBase})`,
             DestinationType: "URLShortener, URLSharingService",
             RequestMethod: "POST",
-            RequestURL: `${apiBase}/links`, // Use /api/links for consistency
+            RequestURL: `${apiBase}/links`,
             Headers: { Authorization: token },
-            Body: "JSON", // Send URL in JSON body
-            Data: `{"url":"$input$"}`,
-            URL: "$json:url$",
+            Body: "JSON",
+            Data: {
+                url: "{input}"
+            },
+            URL: "{json:url}",
         }
         : {
+            Version: "17.1.0",
             Name: `${user.username} File Upload (${host ?? urlBase})`,
             DestinationType: "ImageUploader, TextUploader, FileUploader",
             RequestMethod: "POST",
@@ -47,8 +43,8 @@ function generateSXCUConfig(user: User, token: string, isLink: boolean, urlBase:
             Headers: { Authorization: token },
             Body: "MultipartFormData",
             FileFormName: "files",
-            URL: "$json:url$",
-            DeletionURL: "$json:deleteUrl$", // Use deleteUrl if your API returns it
+            URL: "{json:url}",
+            DeletionURL: "{json:deleteUrl}",
         };
 }
 
@@ -57,9 +53,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { id: targetUsername } = req.query;
     const db = await getDatabase();
 
-    const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(req, res, authOptions);
     const authHeader = req.headers.authorization;
-    const requestorTokenString = authHeader ? (authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader) : jwtToken?.token;
+    const requestorTokenString = authHeader || session?.user.token;
 
     if (!requestorTokenString) {
         return res.status(401).json(errorGenerator(401, "Unauthorized: Token missing."));
@@ -80,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
         const isLink = req.query.link === "true";
-        const urlBase = getBase(req); // Get http(s)://host
+        const urlBase = getBase(req);
         let userTokenForConfig = targetUserFromDB.token;
 
         if (!userTokenForConfig) {
@@ -90,9 +86,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const config = generateSXCUConfig(targetUserFromDB, userTokenForConfig, isLink, urlBase, req?.headers.host);
         res.setHeader("Content-Disposition", `attachment; filename="${targetUserFromDB.username} ${isLink ? "URL" : "File"} Config.sxcu"`);
-        res.setHeader("Content-Type", "application/json"); // SXCU are JSON files with a specific extension
-        return res.json(config); // Send as JSON
-
+        res.setHeader("Content-Type", "application/json");
+        return res.json(config);
     } else if (req.method === 'POST') {
         const { password, resetToken, shortener, embedImageDirectly, customEmbedDescription, defaultFileExpiration } = req.body;
         let updateApplied = false;
@@ -113,9 +108,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 updateApplied = true; messages.push("API token reset.");
                 // Optionally return newToken if the client needs it immediately for self-resets,
                 // but be cautious. For admin resets, no need to return it in response.
-                // if (requestorUser.username === targetUserFromDB.username) {
-                //     return res.json({ success: true, message: "API token reset successfully.", newToken });
-                // }
+                if (requestorUser.username === targetUserFromDB.username) {
+                    return res.json({ success: true, message: "API token reset successfully.", newToken });
+                }
             }
 
             if (typeof shortener === 'string') {

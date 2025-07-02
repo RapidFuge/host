@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardUser } from "@pages/dashboard";
 import { shorteners } from "@lib/generators";
 import { useRouter } from "next/router";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Copy, CopyCheck, Download, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +55,7 @@ export default function UserConfigSection({
   const [isResettingToken, setIsResettingToken] = useState(false);
   const [copiedApiToken, setCopiedApiToken] = useState<boolean>(false); // For API token copy feedback
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const expirationOptions = [
     { value: "never", label: "Never" },
     { value: "1h", label: "1 Hour" },
@@ -147,29 +148,49 @@ export default function UserConfigSection({
       setTokenManagementMessage(null);
       setCopiedApiToken(false);
       try {
-        const response = await fetch(
-          `/api/users/${selectedUser}/configuration`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ resetToken: true }),
-          }
-        );
+        const response = await fetch(`/api/users/${selectedUser}/configuration`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resetToken: true }),
+        });
         const data = await response.json();
-        if (!response.ok)
-          throw new Error(
-            data.error || data.message || "Failed to reset token."
-          );
+        if (!response.ok) throw data.error || data.message || "Failed to reset token.";
+
         setTokenManagementMessage({
           type: "success",
           text: data.message || "Token reset!",
         });
+
+        // Update local state with new token
         if (data.newToken && userDetails) {
           setUserDetails((prev) =>
             prev ? { ...prev, token: data.newToken } : null
           );
+
+          // If the user is resetting their own token, update the session
           if (loggedInUser.username === selectedUser) {
-            setTimeout(() => signOut({ callbackUrl: "/login" }), 1500);
+            try {
+              // Update the NextAuth session with the new token
+              console.log(data.newToken)
+              await updateSession({
+                token: data.newToken
+              });
+
+              // Small delay to ensure session update is processed
+              setTimeout(() => {
+                toast.success("Session updated with new token!");
+              }, 500);
+
+              // Optional: Force a page reload to ensure all components use the new token
+              // setTimeout(() => {
+              //   router.reload();
+              // }, 1000);
+
+            } catch (sessionError) {
+              console.error("Failed to update session:", sessionError);
+              toast.warning("Token reset successful, but session update failed. Please log in again.");
+              setTimeout(() => signOut({ callbackUrl: "/login" }), 2000);
+            }
           }
         }
       } catch (err: any) {
@@ -179,6 +200,7 @@ export default function UserConfigSection({
       }
     }
   };
+
 
   const handleCopyApiToken = (tokenToCopy: string | undefined) => {
     if (!tokenToCopy) {

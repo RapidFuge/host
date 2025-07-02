@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { AuthOptions } from 'next-auth';
 import { isLength, isAlphanumeric, isAscii } from 'validator';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getDatabase } from '@lib/db';
@@ -17,7 +17,7 @@ const validPassword = (str: string | undefined) => str && typeof str === "string
 });
 const validToken = (str: string) => str && typeof str === "string" && isAscii(str);
 
-export default NextAuth({
+export const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
             name: 'Credentials',
@@ -67,12 +67,18 @@ export default NextAuth({
     ],
     session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
     callbacks: {
-        async jwt({ token, user }) {
+        async redirect({ url, baseUrl }) {
+            return url.startsWith("/") ? `${baseUrl}${url}` : url;
+        },
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.token = user.token;
                 token.username = user.username;
                 token.isAdmin = user.isAdmin;
             }
+
+            if (trigger === "update" && session?.token) token.token = session.token;
+
             return token;
         },
         async session({ session, token }) {
@@ -83,4 +89,6 @@ export default NextAuth({
     pages: {
         signIn: "/login",
     }
-});
+}
+
+export default NextAuth(authOptions);
