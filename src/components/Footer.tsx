@@ -94,7 +94,6 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-x-2 text-xs text-gray-500">
-            {/* Build details first */}
             {buildInfo.details.map((detail, index) => (
               <span key={index} className="whitespace-nowrap">
                 {detail}
@@ -102,15 +101,17 @@ export default function Footer() {
               </span>
             ))}
 
-            {buildInfo.details.length > 0 && <span className="mx-1.5">•</span>}
+            {process.env.NODE_ENV !== "production" && (
+              <>
+                {buildInfo.details.length > 0 && <span className="mx-1.5">•</span>}
 
-            <details className="relative">
-              <summary className="cursor-pointer hover:text-gray-300 select-none">
-                Debug Info
-              </summary>
-              <pre className="absolute bottom-full right-0 mb-2 p-3 w-max max-w-lg rounded-md bg-gray-900 shadow-lg font-mono text-xs text-left z-10 overflow-x-auto">
-                <code>
-                  {`
+                <details className="relative">
+                  <summary className="cursor-pointer hover:text-gray-300 select-none">
+                    Debug Info
+                  </summary>
+                  <pre className="absolute bottom-full right-0 mb-2 p-3 w-max max-w-lg rounded-md bg-gray-900 shadow-lg font-mono text-xs text-left z-10 overflow-x-auto">
+                    <code>
+                      {`
 NODE_ENV:             ${process.env.NODE_ENV || 'N/A'}
 VERCEL:               ${process.env.VERCEL || 'N/A'}
 VERCEL_ENV:           ${process.env.VERCEL_ENV || 'N/A'}
@@ -121,9 +122,11 @@ DEPLOY_ID:            ${process.env.DEPLOY_ID || 'N/A'}
 GITHUB_ACTIONS:       ${process.env.GITHUB_ACTIONS || 'N/A'}
 CI:                   ${process.env.CI || 'N/A'}
                 `.trim()}
-                </code>
-              </pre>
-            </details>
+                    </code>
+                  </pre>
+                </details>
+              </>
+            )}
           </div>
         </div>
       </div>

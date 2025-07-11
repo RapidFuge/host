@@ -6,9 +6,9 @@ import linkBase from './models/url';
 import fileBase, { File } from './models/file';
 import upTokens from './models/upTokens';
 import { shorteners } from './generators';
-import MinIOClient from './minio';
 import LocalStorageClient from './local';
 import VercelBlobClient from './vercel';
+import AWSS3Client from './s3';
 
 const PAGE_SIZE = 20;
 let databaseInstance: Database | null = null;
@@ -18,7 +18,7 @@ export class Database {
 	public linkBase = linkBase;
 	public fileBase = fileBase;
 	public upTokens = upTokens;
-	public imageDrive: MinIOClient | LocalStorageClient | VercelBlobClient;
+	public imageDrive: LocalStorageClient | VercelBlobClient | AWSS3Client;
 	private initialized = false;
 
 	constructor() {
@@ -30,19 +30,19 @@ export class Database {
 			if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Missing BLOB_READ_WRITE_TOKEN environment variable.");
 			this.imageDrive = new VercelBlobClient(process.env.BLOB_READ_WRITE_TOKEN)
 		} else {
-			if (!process.env.MINIO_ENDPOINT) throw new Error("Missing MINIO_ENDPOINT environment variable.");
-			if (!process.env.MINIO_BUCKET) throw new Error("Missing MINIO_BUCKET environment variable.");
-			if (!process.env.MINIO_ACCESS_KEY) throw new Error("Missing MINIO_USERNAME environment variable.");
-			if (!process.env.MINIO_SECRET_KEY) throw new Error("Missing MINIO_PASSWORD environment variable.");
+			if (!process.env.S3_ENDPOINT) throw new Error("Missing S3_ENDPOINT environment variable.");
+			if (!process.env.S3_BUCKET) throw new Error("Missing S3_BUCKET environment variable.");
+			if (!process.env.S3_ACCESS_KEY) throw new Error("Missing S3_USERNAME environment variable.");
+			if (!process.env.S3_SECRET_KEY) throw new Error("Missing S3_PASSWORD environment variable.");
 
-			this.imageDrive = new MinIOClient(
-				process.env.MINIO_ENDPOINT!,
-				process.env.MINIO_BUCKET!,
+			this.imageDrive = new AWSS3Client(
+				process.env.S3_ENDPOINT!,
+				process.env.S3_BUCKET!,
 				'uploads',
-				process.env.MINIO_ACCESS_KEY!,
-				process.env.MINIO_SECRET_KEY!,
-				typeof process.env.MINIO_USE_SSL === "string" ? process.env.MINIO_USE_SSL === "true" : false,
-				typeof process.env.MINIO_USE_SSL === "string" ? parseInt(process.env.MINIO_PORT as string) : 9010
+				process.env.S3_ACCESS_KEY!,
+				process.env.S3_SECRET_KEY!,
+				typeof process.env.S3_USE_SSL === "string" ? process.env.S3_USE_SSL === "true" : false,
+				typeof process.env.S3_USE_SSL === "string" ? parseInt(process.env.S3_PORT as string) : 9010
 			);
 		}
 	}

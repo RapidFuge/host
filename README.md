@@ -28,7 +28,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Authentication:** [NextAuth.js](https://next-auth.js.org/)
 *   **Database (Metadata):** [MongoDB](https://www.mongodb.com/)
-*   **File Storage:** Local, [Vercel Blob](https://vercel.com/storage/blob), [MinIO](https://min.io/) (or any S3-compatible service)
+*   **File Storage:** Local, [Vercel Blob](https://vercel.com/storage/blob), AWS S3 (or any S3-compatible service)
 *   **Markdown:** `remark`, `remark-gfm`, `rehype-react`, `rehype-prism-plus`
 *   **Syntax Highlighting:** `prism-react-renderer`, `rehype-prism-plus`
 
@@ -39,7 +39,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   Node.js (v18.x or later recommended)
 *   npm or yarn or pnpm
 *   MongoDB instance (local or cloud-hosted like MongoDB Atlas)
-*   MinIO/S3 instance
+*   S3 instance
     * Alternatively, Use Local Storage (If not hosting from vercel)
     * or, Vercel Blob (If hosting from vercel)
 
@@ -67,7 +67,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     ISPRODUCTION=true # Whether to actually delete stray files
     ROOT_PASSWORD=serverRootPass # Default root password. Only needed on first init of MongoDB
     PREVENT_ROOT_DELETION=true # Prevent deletion of the root user
-    STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: MinIO (Default) Minio File DB
+    STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: S3 (Default) S3 File DB
 
     # NextAuth.js
     NEXTAUTH_SECRET=you_secret_key # Generate a strong secret: openssl rand -base64 32
@@ -75,14 +75,13 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     # MongoDB
     MONGO_URI=mongodb://user:password@host:port/database_name # Your MongoDB connection string
 
-    # If you're using MinIO/S3
-    # MinIO (or S3 compatible)
-    MINIO_ENDPOINT=your-minio-endpoint.com # e.g., localhost or s3.amazonaws.com or localhost:9010
-    MINIO_ACCESS_KEY=YOUR_MINIO_ACCESS_KEY
-    MINIO_SECRET_KEY=YOUR_MINIO_SECRET_KEY
-    MINIO_BUCKET=your-bucket-name # Name of the bucket for file storage
-    MINIO_USE_SSL=false # Whether to use SSL or not
-    MINIO_PORT=9010 # MinIO/S3 Instance Port. Default is 9010
+    # If you're using S3
+    S3_ENDPOINT=your-s3-endpoint.com # e.g., localhost or s3.amazonaws.com or localhost:9010
+    S3_ACCESS_KEY=YOUR_S3_ACCESS_KEY
+    S3_SECRET_KEY=YOUR_S3_SECRET_KEY
+    S3_BUCKET=your-bucket-name # Name of the bucket for file storage
+    S3_USE_SSL=false # Whether to use SSL or not
+    S3_PORT=9010 # S3 Instance Port. Default is 9010
     ```
     **Note:** For production, use strong, unique secrets and appropriate URLs.
 
@@ -91,9 +90,9 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     *   The application will typically create collections as needed, but ensure the user specified in `MONGODB_URI` has read/write permissions.
 
 5.  **File Storage Setup:**
-    * **Default: MinIO/S3 Bucket Setup:**
-        *   Ensure your MinIO/S3 server is running.
-        *   Make sure the bucket specified in `MINIO_BUCKET` exists and the provided access/secret keys have permissions to read, write, and delete objects in that bucket.
+    * **Default: S3 Bucket Setup:**
+        *   Ensure your S3 server is running.
+        *   Make sure the bucket specified in `S3_BUCKET` exists and the provided access/secret keys have permissions to read, write, and delete objects in that bucket.
     * **1: Local Storage Setup:**
         * Ensure the app is able to be able to write to ./uploads
         * If you're using docker, make sure to link the ./uploads dir to the outside host, if you want.
@@ -137,10 +136,10 @@ A `Dockerfile` is provided for containerized deployments.
       -e ROOT_PASSWORD="serverRootPass" \
       -e PREVENT_ROOT_DELETION=true \
       -e STORAGE=3 \
-      -e MINIO_ENDPOINT="your_minio_endpoint" \
-      -e MINIO_USERNAME="your_access_key_or_password" \
-      -e MINIO_PASSWORD="your_secret_key_or_password" \
-      -e MINIO_BUCKET="your_bucket" \
+      -e S3_ENDPOINT="your_S3_endpoint" \
+      -e S3_USERNAME="your_access_key_or_password" \
+      -e S3_PASSWORD="your_secret_key_or_password" \
+      -e S3_BUCKET="your_bucket" \
       ghcr.io/rapidfuge/host:latest
     ```
     **Use Docker Compose instead:**
@@ -158,12 +157,12 @@ A `Dockerfile` is provided for containerized deployments.
             NEXTAUTH_URL: https://i.fuge.dev # What the domain of the host is gonna be. Not required anymore.
             ROOT_PASSWORD: serverRootPass # Default root password  
             MONGO_URI: 'mongodb://MONGO_USERNAME:MONGO_PASSWORD@mongodb:27017/'  
-            STORAGE: 1 # Again, 1 For local, 2 For vercel Blob, 3 For MinIO
+            STORAGE: 1 # Again, 1 For local, 2 For vercel Blob, 3 For S3
             PREVENT_ROOT_DELETION: "true"
-            MINIO_ENDPOINT: 'minio:9000' # If STORAGE is set to 3
-            MINIO_BUCKET: MINIO_BUCKET 
-            MINIO_ACCESS_KEY: MINIO_ACCESS_KEY 
-            MINIO_SECRET_KEY: MINIO_SECRET_KEY 
+            S3_ENDPOINT: 'minio:9000' # If STORAGE is set to 3
+            S3_BUCKET: S3_BUCKET 
+            S3_ACCESS_KEY: S3_ACCESS_KEY 
+            S3_SECRET_KEY: S3_SECRET_KEY 
         volumes: # If STORAGE is set to 1
             - ./uploads:/app/uploads # local_folder:/app/uploads do not change /app/uploads 
         # If you're going to have mongodb with rapid host in the same compose file

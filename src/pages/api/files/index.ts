@@ -43,8 +43,7 @@ async function processAndStoreFinalFile(
     const extSplit = storageFilename.split('.');
     let ext = extSplit.length > 1 ? extSplit.pop() : undefined;
 
-    // Add a size check to prevent this from crashing on huge HEIC files
-    if ((ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') && !keepOriginalName && filesize <= 500 * 1024 * 1024) {
+    if ((ext?.toLowerCase() === 'heic' || ext?.toLowerCase() === 'heif') && !keepOriginalName) {
         const fileContent = await fs.readFile(tempFilepath);
         const originalExt = ext;
         ext = 'jpg';
@@ -57,9 +56,21 @@ async function processAndStoreFinalFile(
         currentFilesize = finalBuffer.length;
         finalStorageFilename = storageFilename.replace(new RegExp(`${originalExt}$`, 'i'), 'jpg');
 
-        await db.imageDrive.put(finalStorageFilename, finalBuffer);
+        if (currentFilesize > 1024 * 1024 * 1024) {
+            const convertedTempPath = `${tempFilepath}.converted.jpg`;
+            await fs.writeFile(convertedTempPath, finalBuffer);
+            await db.imageDrive.put(finalStorageFilename, convertedTempPath);
+            await fs.unlink(convertedTempPath);
+        } else {
+            await db.imageDrive.put(finalStorageFilename, finalBuffer);
+        }
     } else {
-        await db.imageDrive.put(finalStorageFilename, tempFilepath);
+        if (filesize > 1024 * 1024 * 1024) {
+            await db.imageDrive.put(finalStorageFilename, tempFilepath);
+        } else {
+            const fileContent = await fs.readFile(tempFilepath);
+            await db.imageDrive.put(finalStorageFilename, fileContent);
+        }
     }
 
     const id = generators[(user.shortener || 'random') as generators.shorteners](user.shortener === 'gfycat' ? 2 : 6);

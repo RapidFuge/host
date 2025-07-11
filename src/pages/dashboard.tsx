@@ -88,7 +88,7 @@ export default function Dashboard({
       <Header />
       <div className="flex flex-col lg:flex-row flex-grow px-2 sm:px-4 pt-4 lg:pt-6 pb-4 gap-4">
         <button
-          className="lg:hidden fixed top-[calc(theme(spacing.16)+1rem)] right-4 z-30 bg-neutral-800 text-zinc-100 p-2 rounded hover:bg-neutral-700 shadow-lg"
+          className="lg:hidden fixed top-[calc(theme(spacing.16)+2.4rem)] right-4 z-30 bg-neutral-900 text-zinc-100 p-2 rounded hover:bg-neutral-800 shadow-lg"
           onClick={() => setSidebarOpen(!isSidebarOpen)}
           aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
           aria-expanded={isSidebarOpen}
@@ -101,7 +101,7 @@ export default function Dashboard({
           )}
         </button>
         <aside
-          className={`fixed lg:sticky top-16 lg:top-[calc(theme(spacing.16)+1.5rem)] left-0 z-20 h-[calc(100vh-4rem)] lg:h-auto w-3/4 sm:w-1/2 lg:w-64 xl:w-1/5 bg-black border border-neutral-800 p-4 rounded-md shadow-lg space-y-4 transition-transform duration-300 ease-in-out ${isSidebarOpen
+          className={`fixed lg:sticky top-16 lg:top-[calc(theme(spacing.16)+1.5rem)] left-0 z-20 h-[calc(100vh-4rem)] lg:h-auto w-3/4 sm:w-1/2 lg:w-64 xl:w-1/5 bg-black border border-neutral-900 p-4 rounded-md shadow-lg space-y-4 transition-transform duration-300 ease-in-out ${isSidebarOpen
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0"
             } lg:max-h-[calc(100vh-theme(spacing.16)-3rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-900`}
@@ -167,7 +167,7 @@ export default function Dashboard({
             )} */}
           </nav>
           {loggedInUser.isAdmin && (
-            <div className="mt-8 pt-4 border-t border-neutral-800">
+            <div className="mt-8 pt-4 border-t border-neutral-900">
               <h2 className="text-lg font-semibold mb-3 text-zinc-300">
                 Admin: View As
               </h2>
@@ -195,7 +195,7 @@ export default function Dashboard({
             </div>
           )}
         </aside>
-        <main className="flex-grow bg-black border border-neutral-800 rounded-md shadow-lg lg:ml-0 w-full overflow-hidden">
+        <main className="flex-grow bg-black border border-neutral-900 rounded-md shadow-lg lg:ml-0 w-full overflow-hidden">
           <div
             className={`h-full ${isSidebarOpen && window.innerWidth < 1024
               ? "mt-12 lg:mt-0"

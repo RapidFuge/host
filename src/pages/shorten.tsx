@@ -31,18 +31,18 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
       });
 
       const data = await response.json();
-      setIsLoading(false); // Set loading to false
+      setIsLoading(false);
 
-      if (response.ok && data.success) { // Check for data.success
+      if (response.ok && data.success) {
         toast.success(<Link href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{data.url}</Link>, { duration: Infinity })
-        setUrl(""); // Clear input on success
-        setTag("");   // Clear tag on success
+        setUrl("");
+        setTag("");
       } else {
         toast.error(data.error.message || data.message || "An error occurred while shortening the URL.");
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (_err: any) {
-      setIsLoading(false); // Set loading to false on error
+      setIsLoading(false);
       toast.error("An error occurred while shortening the URL.");
     }
   };

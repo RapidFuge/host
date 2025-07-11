@@ -1,6 +1,6 @@
 {
   "name": "rapid-host",
-  "version": "6.3.4",
+  "version": "6.3.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.842.0",
     "@bprogress/next": "^3.2.12",
     "@vercel/blob": "^1.1.1",
     "bcrypt": "^6.0.0",
@@ -21,7 +22,6 @@
     "humanize-ms": "^2.0.0",
     "lucide-react": "^0.514.0",
     "mime-types": "^3.0.1",
-    "minio": "^8.0.5",
     "mongoose": "^8.8.1",
     "nanoid": "^5.0.8",
     "next": "15.3.2",

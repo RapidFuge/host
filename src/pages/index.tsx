@@ -36,7 +36,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="text-black bg-black flex flex-col min-h-screen">
+    <div className="bg-black flex flex-col min-h-screen">
       <NextSeo
         title="RAPID HOST"
         description="Rapid Host. File Hosting & URL Shortening Service"
@@ -44,7 +44,7 @@ export default function Home() {
       <Header />
 
       <section className="flex-grow flex text-gray-600 body-font">
-        <div className="max-w-5xl pt-28 md:pt-52 pb-24 mx-auto">
+        <div className="max-w-5xl pt-16 md:pt-52 pb-24 mx-auto">
           <h1 className="text-6xl lg:text-8xl md:text-7xl text-center lh-6 ld-04 font-black text-white mb-6">
             RAPID HOST
           </h1>
