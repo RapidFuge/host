@@ -265,7 +265,7 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
       <main className="flex-grow flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-2xl font-bold mb-4 text-white ">File Uploader</h1>
         <div
-          className="relative w-96 h-48 border-4 border-dashed border-gray-400 p-4 cursor-pointer mb-4"
+          className="relative w-96 h-48 border-4 border-dashed border-neutral-400 p-4 cursor-pointer mb-4"
           onClick={() => fileInputRef.current?.click()}
         >
           <div
@@ -350,7 +350,7 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
             </span>
           )}
         </button>
-        <p className="mt-4 text-gray-500">
+        <p className="mt-4 text-neutral-500">
           While the uploader can support multiple file uploads, the result will
           only give one URL. To see other files, visit your{" "}
           <Link href="/dashboard" className="text-blue-500 hover:underline">
@@ -368,12 +368,12 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
 export async function getServerSideProps(context: GetSessionParams & GetServerSidePropsContext) {
   const session = await getSession(context);
   if (!session || !session.user) {
-    const callbackUrl = encodeURIComponent(context.resolvedUrl || "/shortener");
+    const callbackUrl = encodeURIComponent(context.resolvedUrl || "/upload");
     return { redirect: { destination: `/login?cbU=${callbackUrl}`, permanent: false } };
   }
 
   const baseUrl = getBase(context.req);
-  let expireDate = "never"; // Default
+  let expireDate = "never";
 
   try {
     const userResponse = await fetch(`${baseUrl}/api/users/${session.user.username}`, {

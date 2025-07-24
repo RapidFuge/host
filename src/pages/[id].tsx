@@ -363,7 +363,7 @@ export default function FileViewerPage({
   const isTextBased = extension
     ? TEXT_BASED_EXTENSIONS.has(extension.toLowerCase())
     : false;
-  const syntaxThemeForRawView = themes.oneDark;
+  const syntaxThemeForRawView = themes.vsDark;
 
   const handleDelete = async () => {
     if (isOwner) {
@@ -613,9 +613,9 @@ export default function FileViewerPage({
         >
           <div className="w-full max-w-5xl">
             <div className="mb-4 p-3 sm:p-4 bg-neutral-800 rounded-md shadow-md">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+              <div className="flex w-full flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
                 <h1
-                  className="text-xl sm:text-2xl lg:text-3xl font-bold truncate mr-4 text-white"
+                  className="text-xl sm:text-2xl lg:text-3xl font-bold mr-4 text-white min-w-0 break-all"
                   title={name}
                 >
                   {name}

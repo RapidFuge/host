@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { AlignJustify, X, LogIn, LogOut, User, Upload, Link as LinkIcon } from 'lucide-react';
+import { AlignJustify, X, LogIn, LogOut, User, Upload, Link as LinkIcon, FileText } from 'lucide-react';
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
@@ -58,6 +58,13 @@ export default function Header() {
             >
               <Upload className="mr-2 w-4 h-4" strokeWidth={2.5} />{" "}
               Upload
+            </Link>
+            <Link
+              href="/paste"
+              className="cursor-pointer text-gray-300 hover:text-white font-semibold tr04 flex items-center justify-center"
+            >
+              <FileText className="mr-2 w-4 h-4" strokeWidth={2.5} />{" "}
+              Paste
             </Link>
             <Link
               href="/shorten"
