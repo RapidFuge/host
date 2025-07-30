@@ -16,7 +16,7 @@ export default function Header() {
   const mobileMenuStackedItemClasses = "flex flex-col items-center mt-4 w-full";
 
   return (
-    <header className="sticky backdrop-blur-sm top-3 text-white w-[calc(100%-1rem)] xl:max-w-5xl mx-auto z-10 bg-black border border-neutral-900 rounded-xl shadow-lg">
+    <header className="sticky backdrop-blur-sm top-3 text-white w-[calc(100%-1rem)] xl:max-w-5xl mx-auto z-10 border border-neutral-900 rounded-xl shadow-lg">
       <div className="mx-auto flex flex-wrap p-5 flex-col md:flex-row md:items-center md:relative">
         <div className="flex items-center justify-between w-full md:w-auto">
           <Link href="/" className="flex text-3xl text-white font-black">

@@ -139,7 +139,7 @@ export class Database {
 	}
 
 	// Gets
-	public async getFile(id: string) {
+	public async getFile(id: string): Promise<File | null> {
 		return this.fileBase.findOne({ id });
 	}
 	public async getFileByName(fileName: string) {

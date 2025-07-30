@@ -72,6 +72,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     });
                 };
 
+                const fileSize = file.size;
+                if (!fileSize) {
+                    console.error("File size is unknown for:", file.fileName);
+                    return res.status(500).json(errorGenerator(500, 'Could not determine file size.'));
+                }
+
                 const Path = path.join(os.tmpdir(), file.fileName);
                 const downloadFilename = file.publicFileName || `${file.id}${file.extension ? `.${file.extension}` : ''}`;
                 let Mime;
@@ -85,11 +91,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 res.setHeader("Content-Type", Mime);
                 res.setHeader('Content-Disposition', `inline; filename="${downloadFilename}"`);
+                if (fileSize) res.setHeader('Content-Length', fileSize);
 
                 if (fs.existsSync(Path)) {
                     // console.log(`CACHE HIT: Serving ${file.fileName} from local cache.`);
-                    const cacheStream = fs.createReadStream(Path);
-                    cacheStream.pipe(res);
+                    fs.createReadStream(Path).pipe(res);
                     return;
                 }
 
