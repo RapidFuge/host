@@ -52,15 +52,21 @@ export default class LocalStorageClient {
         }
     }
 
-    async get(fileName: string) {
+    async get(fileName: string, options?: { start?: number; end?: number }) {
         const filePath = path.join(this.rootPath, fileName);
         try {
             await fs.access(filePath);
+
+            if (options?.start !== undefined && options?.end !== undefined) {
+                return fs.createReadStream(filePath, { start: options.start, end: options.end });
+            }
+
             return fs.createReadStream(filePath);
         } catch {
             throw new Error(`File not found in local storage: ${fileName}`);
         }
     }
+
 
     async remove(fileName: string): Promise<boolean> {
         try {

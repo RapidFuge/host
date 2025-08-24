@@ -132,6 +132,12 @@ const TEXT_BASED_EXTENSIONS = new Set([
   "desktop"
 ]);
 
+const BROWSER_PREVIEWABLE_EXTENSIONS = new Set([
+  "pdf",
+  // You could add other types here if needed, like 'html', 'xml', etc.
+  // but be cautious with security implications (like XSS with HTML).
+]);
+
 const markdownComponents = {
   a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
     const { href, children, ...rest } = props;
@@ -576,6 +582,15 @@ export default function FileViewerPage({
           Your browser does not support the audio element.
         </audio>
       );
+    } else if (extension && BROWSER_PREVIEWABLE_EXTENSIONS.has(extension.toLowerCase())) {
+      return (
+        <iframe
+          src={fileUrl}
+          title={name}
+          // These classes make it responsive with a document aspect ratio
+          className="w-full aspect-[8.5/11] border-none"
+        />
+      );
     } else {
       return (
         <div className="p-6 bg-neutral-800 rounded text-center">
@@ -598,7 +613,6 @@ export default function FileViewerPage({
 
   const headerHeightPx = 64;
   const mainContentPaddingTop = `pt-[${headerHeightPx}px]`;
-  const topBarApproxHeightPx = 100;
 
   return (
     <>
@@ -750,9 +764,9 @@ export default function FileViewerPage({
             </div>
             <div className="bg-neutral-800 rounded-lg shadow-xl overflow-hidden">
               <div
-                className={`min-h-[300px] max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-70px)] sm:max-h-[calc(100vh-${headerHeightPx}px-${topBarApproxHeightPx}px-80px)] bg-neutral-900 ${isMarkdownFile || (isTextBased && rawFileContent)
+                className={`bg-neutral-900 ${isMarkdownFile || (isTextBased && rawFileContent) || (extension && BROWSER_PREVIEWABLE_EXTENSIONS.has(extension.toLowerCase()))
                   ? ""
-                  : "flex justify-center items-center p-1 sm:p-2"
+                  : "flex justify-center items-center p-1 sm:p-2 min-h-[300px]"
                   }`}
               >
                 {isMarkdownFile || (isTextBased && rawFileContent) ? (

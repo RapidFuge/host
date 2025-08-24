@@ -7,7 +7,6 @@ import fileBase, { File } from './models/file';
 import upTokens from './models/upTokens';
 import { shorteners } from './generators';
 import LocalStorageClient from './local';
-import VercelBlobClient from './vercel';
 import AWSS3Client from './s3';
 
 const PAGE_SIZE = 20;
@@ -18,7 +17,7 @@ export class Database {
 	public linkBase = linkBase;
 	public fileBase = fileBase;
 	public upTokens = upTokens;
-	public imageDrive: LocalStorageClient | VercelBlobClient | AWSS3Client;
+	public imageDrive: LocalStorageClient | AWSS3Client;
 	private initialized = false;
 
 	constructor() {
@@ -26,9 +25,6 @@ export class Database {
 
 		if (process.env.STORAGE === '1') {
 			this.imageDrive = new LocalStorageClient(process.env.LOCAL_STORAGE_PATH);
-		} else if (process.env.STORAGE === '2') {
-			if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Missing BLOB_READ_WRITE_TOKEN environment variable.");
-			this.imageDrive = new VercelBlobClient(process.env.BLOB_READ_WRITE_TOKEN)
 		} else {
 			if (!process.env.S3_ENDPOINT) throw new Error("Missing S3_ENDPOINT environment variable.");
 			if (!process.env.S3_BUCKET) throw new Error("Missing S3_BUCKET environment variable.");

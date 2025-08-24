@@ -4,8 +4,6 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
-###### Note: If you're deploying from vercel, It is highly recommended that you use vercel's Blob storage. Or, alternatively, MinIO/S3.
-
 ## Features
 
 *   **File Uploads:** Securely upload and manage various file types.
@@ -28,7 +26,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Authentication:** [NextAuth.js](https://next-auth.js.org/)
 *   **Database (Metadata):** [MongoDB](https://www.mongodb.com/)
-*   **File Storage:** Local, [Vercel Blob](https://vercel.com/storage/blob), AWS S3 (or any S3-compatible service)
+*   **File Storage:** Local, AWS S3 (or any S3-compatible service)
 *   **Markdown:** `remark`, `remark-gfm`, `rehype-react`, `rehype-prism-plus`
 *   **Syntax Highlighting:** `prism-react-renderer`, `rehype-prism-plus`
 
@@ -40,8 +38,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 *   npm or yarn or pnpm
 *   MongoDB instance (local or cloud-hosted like MongoDB Atlas)
 *   S3 instance
-    * Alternatively, Use Local Storage (If not hosting from vercel)
-    * or, Vercel Blob (If hosting from vercel)
+    * Alternatively, Use Local Storage
 
 ### Installation
 
@@ -67,7 +64,7 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     ISPRODUCTION=true # Whether to actually delete stray files
     ROOT_PASSWORD=serverRootPass # Default root password. Only needed on first init of MongoDB
     PREVENT_ROOT_DELETION=true # Prevent deletion of the root user
-    STORAGE=3 # 1: Local storage (/upload dir). 2: Vercel Blob (This requires the BLOB_READ_WRITE_TOKEN env variable set by vercel.). 3, or anything else: S3 (Default) S3 File DB
+    STORAGE=3 # 1: Local storage (/upload dir). 2, or anything else: S3 (Default) S3 File DB
 
     # NextAuth.js
     NEXTAUTH_SECRET=you_secret_key # Generate a strong secret: openssl rand -base64 32
@@ -96,9 +93,6 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
     * **1: Local Storage Setup:**
         * Ensure the app is able to be able to write to ./uploads
         * If you're using docker, make sure to link the ./uploads dir to the outside host, if you want.
-    * **2: Vercel Blob Setup:**
-        * After initializing the project on vercel, go to storage and setup/connect the blob to your project.
-        * Redeploy ater connecting the blob to your project.
 
 ### Running the Application
 
@@ -157,7 +151,7 @@ A `Dockerfile` is provided for containerized deployments.
             NEXTAUTH_URL: https://i.fuge.dev # What the domain of the host is gonna be. Not required anymore.
             ROOT_PASSWORD: serverRootPass # Default root password  
             MONGO_URI: 'mongodb://MONGO_USERNAME:MONGO_PASSWORD@mongodb:27017/'  
-            STORAGE: 1 # Again, 1 For local, 2 For vercel Blob, 3 For S3
+            STORAGE: 1 # Again, 1 For local, 2 For S3
             PREVENT_ROOT_DELETION: "true"
             S3_ENDPOINT: 'minio:9000' # If STORAGE is set to 3
             S3_BUCKET: S3_BUCKET 

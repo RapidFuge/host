@@ -1,6 +1,6 @@
 {
   "name": "rapid-host",
-  "version": "6.4.1",
+  "version": "6.4.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,7 +11,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
     "@bprogress/next": "^3.2.12",
-    "@vercel/blob": "^1.1.1",
     "bcrypt": "^6.0.0",
     "exiftool-vendored": "^30.3.0",
     "filesize": "^10.1.6",

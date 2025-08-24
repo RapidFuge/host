@@ -131,13 +131,16 @@ export default class AWSS3Client {
         }
     }
 
-    async get(fileName: string): Promise<Readable> {
+    async get(fileName: string, options?: { start?: number; end?: number }): Promise<Readable> {
         try {
             const objectName = this.rootFolder ? `${this.rootFolder}/${fileName}` : fileName;
 
             const command = new GetObjectCommand({
                 Bucket: this.bucketName,
                 Key: objectName,
+                ...(options?.start !== undefined && options?.end !== undefined && {
+                    Range: `bytes=${options.start}-${options.end}`
+                })
             });
 
             const response = await this.client.send(command);
