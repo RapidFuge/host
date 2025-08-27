@@ -210,7 +210,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     } else {
         const form = formidable({
-            maxFileSize: (1 * 1024 * 1024 * 1024),
+            maxFileSize: (10 * 1024 * 1024 * 1024),
             keepExtensions: true,
             filename: (name, ext, part) => {
                 const originalName = part.originalFilename;
