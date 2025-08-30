@@ -2,16 +2,29 @@ import React from "react";
 import Link from "next/link";
 import { AlignJustify, X, LogIn, LogOut, User, Upload, Link as LinkIcon, FileText } from 'lucide-react';
 import { useSession, signOut } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function Header() {
   const [navbarOpen, setNavbarOpen] = React.useState(false);
   const { data: session } = useSession();
 
   const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to log out?");
-    if (confirmLogout) {
-      signOut();
-    }
+    toast("Are you sure you want to log out?", {
+      duration: 10000,
+      action: {
+        label: "Log out",
+        onClick: () => {
+          signOut();
+          toast.success("Logged out successfully");
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {
+          return;
+        },
+      },
+    });
   };
   const mobileMenuStackedItemClasses = "flex flex-col items-center mt-4 w-full";
 

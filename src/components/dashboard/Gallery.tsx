@@ -111,34 +111,41 @@ export default function GalleryComponent({ username }: GalleryProps) {
 
   const handleDeleteFile = async (fileId: string) => {
     if (!username) return;
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this file? This action cannot be undone."
-      )
-    )
-      return;
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/files/${fileId}`, {
-        method: "DELETE",
-      })
-      const responseData = await response.json();
-      if (!response.ok || !responseData.success)
-        throw new Error(responseData.message || "Failed to delete file.");
-      setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
-      closeFileModal();
-      if (
-        files.filter((f) => f.id !== fileId).length === 0 &&
-        currentPage > 0
-      ) {
-        setCurrentPage((prev) => prev - 1);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(`Delete failed: ${err.message}`)
-    } finally {
-      setIsLoading(false);
-    }
+
+    toast("Are you sure you want to delete this file? This action cannot be undone.", {
+      duration: 10000,
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          setIsLoading(true);
+          try {
+            const response = await fetch(`/api/files/${fileId}`, {
+              method: "DELETE",
+            })
+            const responseData = await response.json();
+            if (!response.ok || !responseData.success)
+              throw new Error(responseData.message || "Failed to delete file.");
+            setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
+            closeFileModal();
+            if (
+              files.filter((f) => f.id !== fileId).length === 0 &&
+              currentPage > 0
+            ) {
+              setCurrentPage((prev) => prev - 1);
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (err: any) {
+            toast.error(`Delete failed: ${err.message}`)
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => { return },
+      },
+    });
   };
 
   const displayedFiles = showAllFileTypes

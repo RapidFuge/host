@@ -373,53 +373,73 @@ export default function FileViewerPage({
 
   const handleDelete = async () => {
     if (isOwner) {
-      if (confirm("Delete this file? This cannot be undone.")) {
-        setIsDeleting(true);
-        try {
-          const res = await fetch(`/api/files/${id}`, { method: "DELETE" });
-          if (!res.ok) {
-            const errData = await res
-              .json()
-              .catch(() => ({ message: "Delete failed." }));
-            throw new Error(errData.message);
-          }
-          toast.success("File deleted.");
-          router.push("/dashboard");
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-          toast.error(err.message);
-        } finally {
-          setIsDeleting(false);
-        }
-      }
+      toast("Delete this file? This cannot be undone.", {
+        duration: 10000,
+        action: {
+          label: "Delete",
+          onClick: async () => {
+            setIsDeleting(true);
+            try {
+              const res = await fetch(`/api/files/${id}`, { method: "DELETE" });
+              if (!res.ok) {
+                const errData = await res
+                  .json()
+                  .catch(() => ({ message: "Delete failed." }));
+                throw new Error(errData.message);
+              }
+              toast.success("File deleted.");
+              router.push("/dashboard");
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (err: any) {
+              toast.error(err.message);
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => { return },
+        },
+      });
     }
   };
 
   const handleRemoveExpiry = async () => {
     if (isOwner) {
       if (isRemovingExpiry) return;
-      if (confirm("Remove expiry? This cannot be undone.")) {
-        setIsRemovingPrivacy(true);
+      toast("Remove expiry? This cannot be undone.", {
+        duration: 10000,
+        action: {
+          label: "Confirm",
+          onClick: async () => {
+            setIsRemovingPrivacy(true);
 
-        try {
-          const res = await fetch(`/api/files/${id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ removeExpiry: true }),
-          });
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({ message: "Failed to update expiration." }));
-            throw errData.message || errData || "Failed to update expiration.";
-          }
-          setIsExpiring(false);
-          toast.success(`Successfully removed file expiry!`);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-          toast.error(err.message || err);
-        } finally {
-          setIsRemovingPrivacy(false);
-        }
-      }
+            try {
+              const res = await fetch(`/api/files/${id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ removeExpiry: true }),
+              });
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({ message: "Failed to update expiration." }));
+                throw errData.message || errData || "Failed to update expiration.";
+              }
+              setIsExpiring(false);
+              toast.success(`Successfully removed file expiry!`);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (err: any) {
+              toast.error(err.message || err);
+            } finally {
+              setIsRemovingPrivacy(false);
+            }
+          },
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => { return },
+        },
+      });
     }
   }
 

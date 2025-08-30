@@ -66,39 +66,46 @@ export default function LinksComponent({
 
   const handleDeleteLink = async (linkTag: string) => {
     if (!username) return;
-    if (
-      !window.confirm(
-        `Are you sure you want to delete the link with tag "${linkTag}"?`
-      )
-    )
-      return;
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/links/${linkTag}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          message: `HTTP error ${response.status} while deleting.`,
-        }));
-        throw new Error(
-          errorData.error || errorData.message || `Failed to delete link.`
-        );
-      }
-      const responseData = await response.json();
-      if (!responseData.success) {
-        throw new Error(
-          responseData.message || "API reported failure during delete."
-        );
-      }
-      fetchLinks();
-      toast.success(responseData.message || "Link deleted successfully!")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(`Delete failed: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
+
+    toast(`Are you sure you want to delete the link with tag "${linkTag}"?`, {
+      duration: 10000,
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          setIsLoading(true);
+          try {
+            const response = await fetch(`/api/links/${linkTag}`, {
+              method: "DELETE",
+            });
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({
+                message: `HTTP error ${response.status} while deleting.`,
+              }));
+              throw new Error(
+                errorData.error || errorData.message || `Failed to delete link.`
+              );
+            }
+            const responseData = await response.json();
+            if (!responseData.success) {
+              throw new Error(
+                responseData.message || "API reported failure during delete."
+              );
+            }
+            fetchLinks();
+            toast.success(responseData.message || "Link deleted successfully!")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (err: any) {
+            toast.error(`Delete failed: ${err.message}`);
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => { return },
+      },
+    });
   };
 
   const copyToClipboard = (text: string) => {

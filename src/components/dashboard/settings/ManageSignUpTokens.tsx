@@ -81,17 +81,28 @@ export default function SignUpTokensManagerModal({
   };
 
   const handleDeleteToken = async (tokenValue: string) => {
-    if (!confirm(`Are you sure you want to delete token: ${tokenValue}?`)) return;
-    try {
-      const response = await fetch(`/api/users/tokens/${tokenValue}`, { method: "DELETE" });
-      const data = await response.json();
-      if (!response.ok) throw data.error || data.message || "Failed to delete token.";
-      toast.success(`Token ${tokenValue} deleted.`)
-      fetchTokens();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(err.message || err || "Failed to delete token.");
-    }
+    toast(`Are you sure you want to delete token: ${tokenValue}?`, {
+      duration: 10000,
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            const response = await fetch(`/api/users/tokens/${tokenValue}`, { method: "DELETE" });
+            const data = await response.json();
+            if (!response.ok) throw data.error || data.message || "Failed to delete token.";
+            toast.success(`Token ${tokenValue} deleted.`)
+            fetchTokens();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (err: any) {
+            toast.error(err.message || err || "Failed to delete token.");
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => { return },
+      },
+    });
   };
 
   const handleCopyToClipboard = (tokenToCopy: string) => {

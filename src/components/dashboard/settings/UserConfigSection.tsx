@@ -143,62 +143,68 @@ export default function UserConfigSection({
 
   const handleResetToken = async () => {
     if (!canEditSelectedUser) return toast.error("Not authorized.");
-    if (confirm(`Reset API token? Your Current token will be unusable and you will be logged out.`)) {
-      setIsResettingToken(true);
-      setTokenManagementMessage(null);
-      setCopiedApiToken(false);
-      try {
-        const response = await fetch(`/api/users/${selectedUser}/configuration`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resetToken: true }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw data.error || data.message || "Failed to reset token.";
 
-        setTokenManagementMessage({
-          type: "success",
-          text: data.message || "Token reset!",
-        });
+    toast(`Reset API token? This action will be irreversible`, {
+      duration: 10000,
+      action: {
+        label: "Reset",
+        onClick: async () => {
+          setIsResettingToken(true);
+          setTokenManagementMessage(null);
+          setCopiedApiToken(false);
+          try {
+            const response = await fetch(`/api/users/${selectedUser}/configuration`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ resetToken: true }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw data.error || data.message || "Failed to reset token.";
 
-        // Update local state with new token
-        if (data.newToken && userDetails) {
-          setUserDetails((prev) =>
-            prev ? { ...prev, token: data.newToken } : null
-          );
+            setTokenManagementMessage({
+              type: "success",
+              text: data.message || "Token reset!",
+            });
 
-          // If the user is resetting their own token, update the session
-          if (loggedInUser.username === selectedUser) {
-            try {
-              // Update the NextAuth session with the new token
-              console.log(data.newToken)
-              await updateSession({
-                token: data.newToken
-              });
+            if (data.newToken && userDetails) {
+              setUserDetails((prev) =>
+                prev ? { ...prev, token: data.newToken } : null
+              );
 
-              // Small delay to ensure session update is processed
-              setTimeout(() => {
-                toast.success("Session updated with new token!");
-              }, 500);
+              if (loggedInUser.username === selectedUser) {
+                try {
+                  console.log(data.newToken)
+                  await updateSession({
+                    token: data.newToken
+                  });
 
-              // Optional: Force a page reload to ensure all components use the new token
-              // setTimeout(() => {
-              //   router.reload();
-              // }, 1000);
+                  setTimeout(() => {
+                    toast.success("Session updated with new token!");
+                  }, 500);
 
-            } catch (sessionError) {
-              console.error("Failed to update session:", sessionError);
-              toast.warning("Token reset successful, but session update failed. Please log in again.");
-              setTimeout(() => signOut({ callbackUrl: "/login" }), 2000);
+                  // setTimeout(() => {
+                  //   router.reload();
+                  // }, 1000);
+
+                } catch (sessionError) {
+                  console.error("Failed to update session:", sessionError);
+                  toast.warning("Token reset successful, but session update failed. Please log in again.");
+                  setTimeout(() => signOut({ callbackUrl: "/login" }), 2000);
+                }
+              }
             }
+          } catch (err: any) {
+            setTokenManagementMessage({ type: "error", text: err.message });
+          } finally {
+            setIsResettingToken(false);
           }
-        }
-      } catch (err: any) {
-        setTokenManagementMessage({ type: "error", text: err.message });
-      } finally {
-        setIsResettingToken(false);
-      }
-    }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => { return },
+      },
+    });
   };
 
 
@@ -326,23 +332,48 @@ export default function UserConfigSection({
 
   const handleDeleteUser = async () => {
     if (!isDeletable || (!loggedInUser.isAdmin && loggedInUser.username !== selectedUser)) return toast.error("Not authorized or deletion prevented.");
-    if (confirm(`DELETE user "${selectedUser}"? IRREVERSIBLE.`)) {
-      if (confirm(`SECOND CONFIRMATION: Delete user "${selectedUser}"?`)) {
-        try {
-          const response = await fetch(`/api/users/${selectedUser}`, {
-            method: "DELETE",
+
+    toast(`Are you sure you want to delete ${loggedInUser.username === selectedUser ? `your user` : `user "${selectedUser}"`}?`, {
+      duration: 10000,
+      action: {
+        label: "Confirm",
+        onClick: () => {
+          toast(`SECOND CONFIRMATION: Confirm deletion of  ${loggedInUser.username === selectedUser ? `your user` : `user "${selectedUser}"`}?`, {
+            duration: 10000,
+            action: {
+              label: "Confirm",
+              onClick: async () => {
+                try {
+                  const response = await fetch(`/api/users/${selectedUser}`, {
+                    method: "DELETE",
+                  });
+                  const data = await response.json();
+                  if (!response.ok)
+                    throw data.error || data.message || "Delete failed.";
+                  toast.success(`User ${selectedUser} deleted.`);
+                  if (loggedInUser.username === selectedUser) signOut({ callbackUrl: "/login" });
+                  else router.reload();
+                } catch (err: any) {
+                  toast.error(err.message);
+                }
+              },
+            },
+            cancel: {
+              label: "Cancel",
+              onClick: () => {
+                return;
+              },
+            },
           });
-          const data = await response.json();
-          if (!response.ok)
-            throw data.error || data.message || "Delete failed.";
-          toast.success(data.message || `User ${selectedUser} deleted.`);
-          if (loggedInUser.username === selectedUser) signOut({ callbackUrl: "/login" });
-          else router.reload();
-        } catch (err: any) {
-          toast.error(err.message);
-        }
-      }
-    }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {
+          return;
+        },
+      },
+    });
   };
 
   if (isLoadingUserDetails)
