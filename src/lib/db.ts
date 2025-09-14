@@ -276,6 +276,10 @@ export class Database {
 		return this.userBase.updateOne({ username }, { $set: { defaultFileExpiration } })
 	}
 
+	public async setLink(id: string, opt: { url?: string, id?: string }) {
+		return this.linkBase.updateOne({ id }, { $set: opt });
+	}
+
 	public async expireToken(username: string) {
 		return this.setToken(username, undefined);
 	}

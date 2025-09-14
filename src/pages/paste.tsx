@@ -23,7 +23,6 @@ import Footer from "@components/Footer";
 import Editor from "@components/Editor";
 import { getBase } from "@lib";
 import Link from "next/link";
-import { random } from "@lib/generators";
 
 const languageOptions = [
     { value: 'plaintext', label: 'Plain Text', ext: 'txt' },
@@ -102,20 +101,16 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
         try {
             const langInfo = languageOptions.find(opt => opt.value === language);
             const ext = langInfo?.ext || 'txt';
-            let finalFileName: string;
-            if (fileName.trim()) {
-                finalFileName = fileName.includes('.') ? fileName : `${fileName}.${ext}`;
-            } else {
-                const randomName = await random(8);
-                finalFileName = `${randomName}.${ext}`;
-            }
+            let finalFileName: string = "file.txt";
+            if (fileName.trim()) finalFileName = fileName.includes('.') ? fileName : `${fileName}.${ext}`;
+
             const fileToUpload = new File([content], finalFileName, { type: 'text/plain' });
             const formData = new FormData();
             formData.append("files", fileToUpload);
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/api/files");
             xhr.setRequestHeader("isPrivate", isPrivate.toString());
-            xhr.setRequestHeader("keepOriginalName", "true");
+            xhr.setRequestHeader("keepOriginalName", (fileName.trim().length > 0).toString());
             xhr.setRequestHeader("expiresIn", expiration);
             xhr.onload = () => {
                 setIsUploading(false);
