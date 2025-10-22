@@ -14,6 +14,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import { pipeline } from 'stream/promises';
 import { PassThrough } from 'stream';
+import LocalStorageClient from '@lib/local';
 
 export const config = {
     api: {
@@ -189,6 +190,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     assembledFilePath, storageFilename, originalFilename, stats.size,
                     db, user, isPrivate, keepOriginalName, expiresIn, req
                 );
+
+                if (db.imageDrive instanceof LocalStorageClient) {
+                    await fs.unlink(assembledFilePath).catch(err =>
+                        console.warn(`Failed to remove assembled temp file (${assembledFilePath}):`, err)
+                    );
+                }
 
                 return res.status(200).json(result);
 

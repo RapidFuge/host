@@ -10,6 +10,7 @@ import mime from 'mime-types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import { File } from '@lib/models/file';
+import LocalStorageClient from '@lib/local';
 
 const removeExt = (str: string) => str.substring(0, str.indexOf('.'));
 
@@ -51,6 +52,7 @@ function parseRange(size: number, range: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const db = await getDatabase();
+    const isLocalStorage = db.imageDrive instanceof LocalStorageClient;
     const session = await getServerSession(req, res, authOptions);
     const authHeader = req.headers.authorization;
     let user;
@@ -151,7 +153,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const fullCachePath = path.join(os.tmpdir(), file.fileName);
                     const cachingPath = `${fullCachePath}.caching`;
 
-                    if (fs.existsSync(fullCachePath)) {
+                    if (!isLocalStorage && fs.existsSync(fullCachePath)) {
                         try {
                             const cachedSize = (await fs.stat(fullCachePath)).size;
                             if (cachedSize === fileSize) {
@@ -168,7 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         const rangeStream = await db.imageDrive.get(file.fileName, { start, end });
                         rangeStream.pipe(res);
 
-                        if (!fs.existsSync(cachingPath) && !fs.existsSync(fullCachePath)) {
+                        if (!isLocalStorage && !fs.existsSync(cachingPath) && !fs.existsSync(fullCachePath)) {
                             setImmediate(() => cacheFullVideo(db, file, fullCachePath, cachingPath, fileSize));
                         }
 
@@ -179,10 +181,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }
                 }
 
-                // Handle regular file requests (no range or non-video files)
                 res.setHeader('Content-Length', fileSize);
 
-                // For videos without range, check if we have it cached
                 if (isVideo) {
                     const fullCachePath = path.join(os.tmpdir(), file.fileName);
                     if (fs.existsSync(fullCachePath)) {
@@ -193,14 +193,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 return;
                             }
                         } catch {
-                            // If cache file is corrupted, delete it
                             fs.unlink(fullCachePath, () => { });
                         }
                     }
                 }
 
-                // For non-videos, try cache first
-                if (!isVideo) {
+                if (!isVideo && !isLocalStorage) {
                     const cachePath = path.join(os.tmpdir(), file.fileName);
                     if (fs.existsSync(cachePath)) {
                         fs.createReadStream(cachePath).pipe(res);
@@ -212,6 +210,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const stream = await db.imageDrive.get(file.fileName);
 
                     if (!isVideo) {
+                        if (isLocalStorage) {
+                            // Direct stream for local storage, do not cache
+                            stream.pipe(res);
+                            return;
+                        }
+
                         const cachePath = path.join(os.tmpdir(), file.fileName);
                         const cacheWriteStream = fs.createWriteStream(cachePath);
                         stream.pipe(res);
@@ -224,6 +228,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     } else {
                         const fullCachePath = path.join(os.tmpdir(), file.fileName);
                         const cachingPath = `${fullCachePath}.caching`;
+
+                        if (isLocalStorage) return stream.pipe(res);
 
                         if (!fs.existsSync(cachingPath) && !fs.existsSync(fullCachePath)) {
                             const cacheWriteStream = fs.createWriteStream(cachingPath);
@@ -247,7 +253,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 fs.unlink(cachingPath, () => { });
                             });
                         } else {
-                            // Just stream directly if already caching
                             stream.pipe(res);
                         }
                     }
