@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function Contact() {
   return (
     <div className="flex flex-col min-h-screen text-black bg-black">
-      <NextSeo title="RAPID HOST - 404" description="Uh ohhhhh" />
+      <NextSeo title="Horreum - 404" description="Uh ohhhhh" />
       <Header />
 
       <main className="flex-grow flex items-center justify-center text-center px-4">

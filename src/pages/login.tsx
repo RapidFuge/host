@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen text-white bg-black">
-      <NextSeo title="RAPID HOST - Login" description="Login to Rapid Host" />
+      <NextSeo title="Horreum - Login" description="Login to Horreum" />
       <Header />
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <form onSubmit={handleSubmit} className="p-6 rounded-md shadow-md w-full max-w-sm">

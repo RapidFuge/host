@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AlignJustify, X, LogIn, LogOut, User, Upload, Link as LinkIcon, FileText } from 'lucide-react';
 import { useSession, signOut } from "next-auth/react";
 import { toast } from "sonner";
@@ -33,7 +34,8 @@ export default function Header() {
       <div className="mx-auto flex flex-wrap p-5 flex-col md:flex-row md:items-center md:relative">
         <div className="flex items-center justify-between w-full md:w-auto">
           <Link href="/" className="flex text-3xl text-white font-black">
-            RAPID HOST
+            <Image src="/favicon.ico" alt="Horreum" width={32} height={32} className="w-8 h-8" />
+            <span className="ml-2">HORREUM</span>
           </Link>
           <button
             className="text-white cursor-pointer leading-none px-3 py-1 outline-none focus:outline-none relative md:hidden"

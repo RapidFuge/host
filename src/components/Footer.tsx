@@ -85,7 +85,7 @@ export default function Footer() {
               <span>{buildInfo.type}</span>
             </div>
             <div className="text-xs text-gray-400">
-              <span className="font-medium">Rapid Host</span>
+              <span className="font-medium">Horreum</span>
               <span className="mx-1">•</span>
               <span className="font-medium">v{version}</span>
               <span className="mx-1">•</span>

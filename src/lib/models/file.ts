@@ -10,6 +10,7 @@ export interface File extends Document {
   owner: string;
   isPrivate: boolean;
   expiresAt?: Date;
+  fileType?: 'file' | 'paste';
 }
 
 const FileSchema: Schema<File> = new Schema({
@@ -51,6 +52,12 @@ const FileSchema: Schema<File> = new Schema({
   expiresAt: {
     type: Date,
     required: false
+  },
+  fileType: {
+    type: String,
+    required: false,
+    enum: ['file', 'paste'],
+    default: 'file'
   }
 });
 

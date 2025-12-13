@@ -82,7 +82,7 @@ export default function Dashboard({
   return (
     <div className="flex flex-col min-h-screen bg-black text-zinc-200">
       <NextSeo
-        title="RAPID HOST - Dashboard"
+        title="Horreum - Dashboard"
         description="Le fancy dashboard"
       />
       <Header />

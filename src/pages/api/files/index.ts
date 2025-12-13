@@ -32,7 +32,8 @@ async function processAndStoreFinalFile(
     isPrivate: boolean,
     keepOriginalName: boolean,
     expiresIn: string,
-    req: NextApiRequest
+    req: NextApiRequest,
+    fileType: 'file' | 'paste' = 'file'
 ) {
     await removeGPS(tempFilepath).catch(error => {
         console.error(`GPS removal failed for ${tempFilepath}:`, error);
@@ -89,7 +90,7 @@ async function processAndStoreFinalFile(
 
     const publicFileName = keepOriginalName && originalFilename ? originalFilename : (ext ? `${id}.${ext}` : id);
 
-    await db.addFile(finalStorageFilename, id, ext, user.username, currentFilesize, isPrivate, publicFileName, expiresAt);
+    await db.addFile(finalStorageFilename, id, ext, user.username, currentFilesize, isPrivate, publicFileName, expiresAt, fileType);
 
     const base = getBase(req);
     return {
@@ -117,9 +118,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const keepOriginalName = req.headers.keeporiginalname === 'true';
     const expiresIn = req.headers.expiresin as string;
     const uploadId = req.headers['x-upload-id'] as string;
+    const fileType = req.headers.filetype === 'paste' ? 'paste' : 'file';
 
     if (uploadId) {
-        const chunksDir = path.join(os.tmpdir(), 'rapid-host-chunks');
+        const chunksDir = path.join(os.tmpdir(), 'horreum-chunks');
         const uploadDir = path.join(chunksDir, uploadId);
         await fs.ensureDir(uploadDir);
 
@@ -188,7 +190,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const stats = await fs.stat(assembledFilePath);
                 const result = await processAndStoreFinalFile(
                     assembledFilePath, storageFilename, originalFilename, stats.size,
-                    db, user, isPrivate, keepOriginalName, expiresIn, req
+                    db, user, isPrivate, keepOriginalName, expiresIn, req, fileType
                 );
 
                 if (db.imageDrive instanceof LocalStorageClient) {
@@ -231,7 +233,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         });
 
-        return form.parse(req, async (err, fields, files) => {
+        form.parse(req, async (err, fields, files) => {
             if (err) {
                 console.error("Formidable parsing error:", err);
                 return res.status(400).json(errorGenerator(400, "Failed to process file upload."));
@@ -251,7 +253,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 try {
                     const result = await processAndStoreFinalFile(
                         file.filepath, file.newFilename, file.originalFilename, file.size,
-                        db, user, isPrivate, keepOriginalName, expiresIn, req
+                        db, user, isPrivate, keepOriginalName, expiresIn, req, fileType
                     );
                     results.push(result);
                 } catch (uploadError) {
@@ -260,8 +262,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             if (results.length === 0) return res.status(500).json(errorGenerator(500, "All files failed to process."));
-
             return res.status(200).json({ ...results[0], files: results });
         });
+
     }
 }

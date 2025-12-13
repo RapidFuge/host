@@ -37,7 +37,7 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col min-h-screen text-white bg-black">
-      <NextSeo title="RAPID HOST - Sign Up" description="Sign up to Rapid Host" />
+      <NextSeo title="Horreum - Sign Up" description="Sign up to Horreum" />
       <Header />
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <form onSubmit={handleSubmit} className="p-6 rounded-md shadow-md w-full max-w-sm">

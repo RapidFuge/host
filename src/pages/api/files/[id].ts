@@ -201,6 +201,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (!isVideo && !isLocalStorage) {
                     const cachePath = path.join(os.tmpdir(), file.fileName);
                     if (fs.existsSync(cachePath)) {
+                        // Serve from cache
                         fs.createReadStream(cachePath).pipe(res);
                         return;
                     }

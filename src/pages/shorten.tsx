@@ -49,7 +49,7 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
 
   return (
     <div className="flex flex-col min-h-screen text-white bg-black">
-      <NextSeo title="RAPID HOST - URL Shortener" description="Shorten your URLs quickly and easily" />
+      <NextSeo title="Horreum - URL Shortener" description="Shorten your URLs quickly and easily" />
       <Header />
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <form onSubmit={handleSubmit} className="p-4 rounded-md shadow-md w-full max-w-sm">

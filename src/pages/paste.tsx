@@ -29,18 +29,50 @@ const languageOptions = [
     { value: 'markdown', label: 'Markdown', ext: 'md' },
     { value: 'javascript', label: 'JavaScript', ext: 'js' },
     { value: 'typescript', label: 'TypeScript', ext: 'ts' },
+    { value: 'tsx', label: 'TypeScript React', ext: 'tsx' },
+    { value: 'jsx', label: 'JavaScript React', ext: 'jsx' },
     { value: 'python', label: 'Python', ext: 'py' },
     { value: 'html', label: 'HTML', ext: 'html' },
     { value: 'css', label: 'CSS', ext: 'css' },
+    { value: 'scss', label: 'SCSS', ext: 'scss' },
+    { value: 'less', label: 'LESS', ext: 'less' },
     { value: 'json', label: 'JSON', ext: 'json' },
-    { value: 'shell', label: 'Shell / Bash', ext: 'sh' },
+    { value: 'jsonc', label: 'JSON with Comments', ext: 'jsonc' },
+    { value: 'shell', label: 'Shell', ext: 'sh' },
+    { value: 'bash', label: 'Bash', ext: 'bash' },
     { value: 'sql', label: 'SQL', ext: 'sql' },
     { value: 'java', label: 'Java', ext: 'java' },
     { value: 'csharp', label: 'C#', ext: 'cs' },
     { value: 'cpp', label: 'C++', ext: 'cpp' },
+    { value: 'c', label: 'C', ext: 'c' },
     { value: 'ruby', label: 'Ruby', ext: 'rb' },
     { value: 'go', label: 'Go', ext: 'go' },
     { value: 'php', label: 'PHP', ext: 'php' },
+    { value: 'rust', label: 'Rust', ext: 'rs' },
+    { value: 'swift', label: 'Swift', ext: 'swift' },
+    { value: 'kotlin', label: 'Kotlin', ext: 'kt' },
+    { value: 'lua', label: 'Lua', ext: 'lua' },
+    { value: 'xml', label: 'XML', ext: 'xml' },
+    { value: 'yaml', label: 'YAML', ext: 'yaml' },
+    { value: 'yml', label: 'YML', ext: 'yml' },
+    { value: 'ini', label: 'INI', ext: 'ini' },
+    { value: 'toml', label: 'TOML', ext: 'toml' },
+    { value: 'batch', label: 'Batch', ext: 'bat' },
+    { value: 'powershell', label: 'PowerShell', ext: 'ps1' },
+    { value: 'perl', label: 'Perl', ext: 'pl' },
+    { value: 'r', label: 'R', ext: 'r' },
+    { value: 'dart', label: 'Dart', ext: 'dart' },
+    { value: 'haskell', label: 'Haskell', ext: 'hs' },
+    { value: 'erlang', label: 'Erlang', ext: 'erl' },
+    { value: 'elixir', label: 'Elixir', ext: 'ex' },
+    { value: 'clojure', label: 'Clojure', ext: 'clj' },
+    { value: 'scala', label: 'Scala', ext: 'scala' },
+    { value: 'groovy', label: 'Groovy', ext: 'groovy' },
+    { value: 'vim', label: 'Vim Script', ext: 'vim' },
+    { value: 'dockerfile', label: 'Dockerfile', ext: 'dockerfile' },
+    { value: 'makefile', label: 'Makefile', ext: 'makefile' },
+    { value: 'gradle', label: 'Gradle', ext: 'gradle' },
+    { value: 'maven', label: 'Maven', ext: 'maven' },
 ];
 
 export default function PastePage({ defaultExpiration }: { defaultExpiration: string }) {
@@ -112,6 +144,7 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
             xhr.setRequestHeader("isPrivate", isPrivate.toString());
             xhr.setRequestHeader("keepOriginalName", (fileName.trim().length > 0).toString());
             xhr.setRequestHeader("expiresIn", expiration);
+            xhr.setRequestHeader("fileType", "paste");
             xhr.onload = () => {
                 setIsUploading(false);
                 if (xhr.status >= 200 && xhr.status < 300) {

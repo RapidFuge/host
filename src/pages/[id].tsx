@@ -11,7 +11,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import rehypeReact from "rehype-react";
 import rehypePrismPlus from "rehype-prism-plus";
-import { LoaderCircle, Download, Trash2 } from "lucide-react";
+import { LoaderCircle, Download, Trash2, Edit3 } from "lucide-react";
 import { jsx, jsxs } from "react/jsx-runtime";
 
 import {
@@ -41,6 +41,7 @@ interface FileData {
   owner: string;
   isPrivate: boolean;
   expiresAt?: string | null;
+  fileType?: 'file' | 'paste';
   ownerEmbedPreference?: boolean;
   ownerCustomDescription?: string | null;
 }
@@ -726,6 +727,15 @@ export default function FileViewerPage({
                   />{" "}
                   Download
                 </Link>
+                {isAuthenticated && isOwner && fileData.fileType === 'paste' && (
+                  <Link
+                    href={`/edit-paste/${id}`}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center"
+                    title="Edit Paste"
+                  >
+                    <Edit3 className="mr-2 w-3 h-3" /> Edit
+                  </Link>
+                )}
                 {isAuthenticated && isOwner && (
                   <>
                     <button
@@ -877,6 +887,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     owner: string;
     isPrivate: boolean;
     expiresAt?: Date;
+    fileType?: 'file' | 'paste';
     ownerEmbedPreference?: boolean;
     ownerCustomDescription?: string | null;
   };
@@ -922,6 +933,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     owner: rawApiFileData.owner,
     isPrivate: rawApiFileData.isPrivate,
     expiresAt: rawApiFileData.expiresAt ? new Date(rawApiFileData.expiresAt).toISOString() : null,
+    fileType: rawApiFileData.fileType,
     ownerEmbedPreference:
       rawApiFileData.ownerEmbedPreference === undefined
         ? false

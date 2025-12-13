@@ -198,8 +198,8 @@ export class Database {
 	}
 
 	// Adds file
-	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false, publicFileName?: string, expiresAt?: Date) {
-		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate, publicFileName, expiresAt });
+	public async addFile(fileName: string, id: string, extension: string | undefined, userId: string, size: number, isPrivate = false, publicFileName?: string, expiresAt?: Date, fileType: 'file' | 'paste' = 'file') {
+		return this.fileBase.create({ fileName, id, extension, owner: userId, created: Date.now(), size, isPrivate, publicFileName, expiresAt, fileType });
 	}
 
 	public async addUser(username: string, passwordHash: string, token: string) {

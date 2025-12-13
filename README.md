@@ -1,6 +1,6 @@
-# Rapid Host - File Hosting & URL Shortening Service
+# Horreum - File Hosting & URL Shortening Service
 
-Rapid Host is a self-hostable service for managing your files and shortening URLs, built with Next.js and React. It provides a user-friendly dashboard, ShareX compatibility, and admin controls.
+Horreum is a self-hostable service for managing your files and shortening URLs, built with Next.js and React. It provides a user-friendly dashboard, ShareX compatibility, and admin controls.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
@@ -159,7 +159,7 @@ A `Dockerfile` is provided for containerized deployments.
             S3_SECRET_KEY: S3_SECRET_KEY 
         volumes: # If STORAGE is set to 1
             - ./uploads:/app/uploads # local_folder:/app/uploads do not change /app/uploads 
-        # If you're going to have mongodb with rapid host in the same compose file
+        # If you're going to have mongodb with horreum in the same compose file
         # depends_on:  
         #     - mongodb
         #     - minio # if minio is in the same compose file
@@ -172,4 +172,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 
-Rapid Host is licensed under the [**MIT License**](https://opensource.org/license/MIT).
+Horreum is licensed under the [**MIT License**](https://opensource.org/license/MIT).

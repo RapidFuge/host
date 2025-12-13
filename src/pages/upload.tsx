@@ -256,8 +256,8 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
       onPaste={handlePaste}
     >
       <NextSeo
-        title="RAPID HOST - Upload"
-        description="Upload Files to Rapid Host"
+        title="Horreum - Upload"
+        description="Upload Files to Horreum"
       />
 
       <Header />

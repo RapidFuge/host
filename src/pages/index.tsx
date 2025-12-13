@@ -28,7 +28,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         if (!data.match && data.remoteVersion > data.localVersion) {
-          toast("You are running an outdated version of Rapid Host", { position: 'top-right', duration: 10000, description: <span><br /><p>Local Version: {data.localVersion}</p><p>Remote Version: {data.remoteVersion}</p></span> })
+          toast("You are running an outdated version of Horreum", { position: 'top-right', duration: 10000, description: <span><br /><p>Local Version: {data.localVersion}</p><p>Remote Version: {data.remoteVersion}</p></span> })
         }
       }
     }
@@ -38,18 +38,18 @@ export default function Home() {
   return (
     <div className="bg-black flex flex-col min-h-screen">
       <NextSeo
-        title="RAPID HOST"
-        description="Rapid Host. File Hosting & URL Shortening Service"
+        title="Horreum"
+        description="Horreum. File Hosting & URL Shortening Service"
       />
       <Header />
 
       <section className="flex-grow flex text-gray-600 body-font">
         <div className="max-w-5xl pt-16 md:pt-52 pb-24 mx-auto">
           <h1 className="text-6xl lg:text-8xl md:text-7xl text-center lh-6 ld-04 font-black text-white mb-6">
-            RAPID HOST
+            HORREUM
           </h1>
           <h2 className="text-2xl font-semibold lh-6 ld-04 pb-11 text-gray-300 text-center">
-            Rapid Host. File Hosting & URL Shortening Service
+            Horreum. File Hosting & URL Shortening Service
           </h2>
 
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
