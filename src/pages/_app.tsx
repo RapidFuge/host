@@ -4,7 +4,10 @@ import { AppProps } from "next/app";
 import { Toaster } from 'sonner';
 import { ProgressProvider } from "@bprogress/next/pages";
 import "../styles/globals.css";
-import "prismjs/themes/prism-okaidia.css";
+
+import { Prism } from "prism-react-renderer";
+(typeof global !== "undefined" ? global : window).Prism = Prism;
+import("prismjs/components/prism-lua");
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (

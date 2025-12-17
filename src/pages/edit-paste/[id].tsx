@@ -96,7 +96,7 @@ export default function EditPastePage({ pasteData }: { pasteData: any; }) {
                         .use(remarkRehype, { allowDangerousHtml: true })
                         .use(rehypeRaw)
                         .use(rehypeSlug)
-                        .use(rehypePrismPlus, { ignoreMissing: true, showLineNumbers: false })
+                        .use(rehypePrismPlus, { ignoreMissing: true })
                         .use(rehypeReact, {
                             createElement: React.createElement,
                             Fragment: React.Fragment,

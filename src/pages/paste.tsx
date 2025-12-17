@@ -107,7 +107,7 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
                         .use(remarkRehype, { allowDangerousHtml: true })
                         .use(rehypeRaw)
                         .use(rehypeSlug)
-                        .use(rehypePrismPlus, { ignoreMissing: true, showLineNumbers: false })
+                        .use(rehypePrismPlus, { ignoreMissing: true })
                         .use(rehypeReact, {
                             createElement: React.createElement,
                             Fragment: React.Fragment,
@@ -180,7 +180,7 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
 
     return (
         <div className="flex flex-col min-h-screen bg-black text-zinc-100">
-            <NextSeo title="Create a Paste - RapidHost" description="Quickly paste and share text or code snippets." />
+            <NextSeo title="Horreum - Create a Paste" description="Quickly paste and share text or code snippets." />
             <Header />
 
             <main className="flex-grow flex flex-col items-center w-full px-4 py-8">

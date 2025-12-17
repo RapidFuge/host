@@ -21,6 +21,7 @@ import {
   LineInputProps,
   TokenInputProps,
 } from "prism-react-renderer";
+
 import { filesize } from "filesize";
 import mime from "mime-types";
 
@@ -66,6 +67,7 @@ interface SyntaxHighlightRenderProps {
 
 const getLanguage = (extension?: string | null): Language => {
   const langMap: { [key: string]: string } = {
+    txt: "plain text",
     js: "javascript",
     jsx: "jsx",
     ts: "typescript",
@@ -74,7 +76,10 @@ const getLanguage = (extension?: string | null): Language => {
     md: "markdown",
     html: "markup",
     css: "css",
+    scss: "scss",
+    less: "less",
     json: "json",
+    jsonc: "json",
     java: "java",
     c: "c",
     cpp: "cpp",
@@ -84,10 +89,32 @@ const getLanguage = (extension?: string | null): Language => {
     php: "php",
     swift: "swift",
     sh: "bash",
+    bash: "bash",
     yaml: "yaml",
     yml: "yaml",
     lua: "lua",
     pl: "perl",
+    sql: "sql",
+    rs: "rust",
+    kt: "kotlin",
+    xml: "xml",
+    ini: "ini",
+    toml: "toml",
+    bat: "batch",
+    ps1: "powershell",
+    r: "r",
+    dart: "dart",
+    hs: "haskell",
+    erl: "erlang",
+    ex: "elixir",
+    clj: "clojure",
+    scala: "scala",
+    groovy: "groovy",
+    vim: "vim",
+    docker: "docker",
+    makefile: "makefile",
+    gradle: "gradle",
+    maven: "maven",
   };
   return (langMap[extension?.toLowerCase() || ""] || "clike") as Language;
 };
@@ -194,8 +221,7 @@ export default function FileViewerPage({
             .use(rehypeRaw)
             .use(rehypeSlug)
             .use(rehypePrismPlus, {
-              ignoreMissing: true,
-              showLineNumbers: false,
+              ignoreMissing: true
             })
             .use(rehypeReact, {
               createElement: React.createElement,
@@ -219,14 +245,14 @@ export default function FileViewerPage({
   let seoConfig = {};
   if (error) {
     seoConfig = {
-      title: "Error - RapidHost",
+      title: "Horreum - Error",
       description: error,
       noindex: true,
       nofollow: true,
     };
   } else if (!fileData) {
     seoConfig = {
-      title: "File Not Found - RapidHost",
+      title: "Horreum - File Not Found",
       description: "The requested file could not be found.",
       noindex: true,
       nofollow: true,
@@ -370,7 +396,7 @@ export default function FileViewerPage({
   const isTextBased = extension
     ? TEXT_BASED_EXTENSIONS.has(extension.toLowerCase())
     : false;
-  const syntaxThemeForRawView = themes.vsDark;
+  const syntaxThemeForRawView = themes.oneDark;
 
   const handleDelete = async () => {
     if (isOwner) {
