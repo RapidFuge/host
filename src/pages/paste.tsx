@@ -84,6 +84,7 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
     const [isUploading, setIsUploading] = useState(false);
     const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
     const [renderedMarkdown, setRenderedMarkdown] = useState<React.ReactElement | null>(null);
+    const [customTag, setCustomTag] = useState('');
 
     const expirationOptions = [
         { value: "never", label: "Expires in: Never" },
@@ -133,8 +134,13 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
         try {
             const langInfo = languageOptions.find(opt => opt.value === language);
             const ext = langInfo?.ext || 'txt';
-            let finalFileName: string = "file.txt";
-            if (fileName.trim()) finalFileName = fileName.includes('.') ? fileName : `${fileName}.${ext}`;
+            
+            let finalFileName: string;
+            if (fileName.trim()) {
+                finalFileName = fileName.includes('.') ? fileName : `${fileName}.${ext}`;
+            } else {
+                finalFileName = `paste.${ext}`;
+            }
 
             const fileToUpload = new File([content], finalFileName, { type: 'text/plain' });
             const formData = new FormData();
@@ -145,18 +151,76 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
             xhr.setRequestHeader("keepOriginalName", (fileName.trim().length > 0).toString());
             xhr.setRequestHeader("expiresIn", expiration);
             xhr.setRequestHeader("fileType", "paste");
-            xhr.onload = () => {
+            xhr.onload = async () => {
                 setIsUploading(false);
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const result = JSON.parse(xhr.responseText);
-                    toast.success(
-                        <Link href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                            {result.url}
-                        </Link>,
-                        { duration: Infinity }
-                    );
+                    const pasteId = result.url.split('/').pop(); // Extract the ID from the URL
+
+                    // If a custom tag was provided, create a tag for this paste
+                    if (customTag.trim()) {
+                        try {
+                            const tagResponse = await fetch('/api/pastes/tags', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'paste-id': pasteId,
+                                },
+                                body: JSON.stringify({ tag: customTag.trim() }),
+                            });
+
+                            const tagResult = await tagResponse.json();
+
+                            if (tagResponse.ok && tagResult.success) {
+                                toast.success(
+                                    <div>
+                                        <p>Paste created successfully!</p>
+                                        <Link href={tagResult.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1">
+                                            {tagResult.url}
+                                        </Link>
+                                    </div>,
+                                    { duration: Infinity }
+                                );
+                            } else {
+                                // If tag creation failed, show the original URL and inform about the failure
+                                toast.success(
+                                    <div>
+                                        <p>Paste created successfully! (Custom tag failed)</p>
+                                        <Link href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1">
+                                            {result.url} (direct link)
+                                        </Link>
+                                    </div>,
+                                    { duration: Infinity }
+                                );
+                                toast.error(`Custom tag creation failed: ${tagResult.error?.message || tagResult.message || 'Unknown error'}`);
+                            }
+                        } catch (_tagError) {
+                            // If tag creation failed due to network error, show the original URL
+                            toast.success(
+                                <div>
+                                    <p>Paste created successfully! (Custom tag failed)</p>
+                                    <Link href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1">
+                                        {result.url} (direct link)
+                                    </Link>
+                                </div>,
+                                { duration: Infinity }
+                            );
+                            toast.error("Failed to create custom tag.");
+                        }
+                    } else {
+                        // No custom tag, just show the original URL
+                        toast.success(
+                            <Link href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                {result.url}
+                            </Link>,
+                            { duration: Infinity }
+                        );
+                    }
+
+                    // Reset form
                     setContent('');
                     setFileName('');
+                    setCustomTag('');
                 } else {
                     try {
                         const errorData = JSON.parse(xhr.responseText);
@@ -187,7 +251,7 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
                 <div className="w-full max-w-4xl">
                     <h1 className="text-3xl font-bold mb-6 text-center">Create a New Paste</h1>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <input
                             type="text"
                             placeholder="Optional: filename.js, notes.md..."
@@ -202,6 +266,14 @@ export default function PastePage({ defaultExpiration }: { defaultExpiration: st
                         >
                             {languageOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
+                        <input
+                            type="text"
+                            placeholder="Optional: custom tag for direct access"
+                            value={customTag}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setCustomTag(e.target.value)}
+                            className="w-full px-4 py-2 border border-neutral-700 bg-neutral-900 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            title="Custom tag for direct access to this paste (e.g., /mytag instead of /randomid)"
+                        />
                     </div>
 
                     <div className="w-full border border-neutral-700 rounded-md overflow-hidden">

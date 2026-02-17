@@ -852,28 +852,46 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     return { notFound: true };
   }
 
+  let resolvedId = reqId; // Use a separate variable to hold the resolved ID
+
   try {
-    const shortUrlCheckResponse = await fetch(
-      `${pageBaseUrl}/api/links/${reqId}`
+    // Check for paste tag first
+    const pasteTagCheckResponse = await fetch(
+      `${pageBaseUrl}/api/pastes/tags/${reqId}`
     );
-    if (shortUrlCheckResponse.ok) {
-      const targetData = await shortUrlCheckResponse.json();
-      if (targetData?.link?.url) {
-        return {
-          redirect: { destination: targetData.link.url, permanent: false },
-        };
+    if (pasteTagCheckResponse.ok) {
+      const targetData = await pasteTagCheckResponse.json();
+      if (targetData?.pasteTag?.pasteId) {
+        // Resolve the tag to the actual paste ID
+        resolvedId = targetData.pasteTag.pasteId;
+      }
+    }
+
+    // Then check for link shortener (only if not already resolved as a paste tag)
+    if (reqId === resolvedId && !reqId.includes('.')) { // Only check for links if there was no paste tag and no file extension
+      const shortUrlCheckResponse = await fetch(
+        `${pageBaseUrl}/api/links/${reqId}`
+      );
+      if (shortUrlCheckResponse.ok) {
+        const targetData = await shortUrlCheckResponse.json();
+        if (targetData?.link?.url) {
+          return {
+            redirect: { destination: targetData.link.url, permanent: false },
+          };
+        }
       }
     }
   } catch (e) {
-    console.warn(`Short URL check failed for ${reqId}:`, e);
+    console.warn(`Tag/Link check failed for ${reqId}:`, e);
   }
 
+  // Use the resolved ID for file processing
   const fileInfoReqHeaders: HeadersInit = { getInfo: "true" };
   if (session?.user.token) {
     fileInfoReqHeaders["Authorization"] = session.user.token;
   }
 
-  const fileInfoResponse = await fetch(`${pageBaseUrl}/api/files/${reqId}`, {
+  const fileInfoResponse = await fetch(`${pageBaseUrl}/api/files/${resolvedId}`, {
     headers: fileInfoReqHeaders,
   });
 

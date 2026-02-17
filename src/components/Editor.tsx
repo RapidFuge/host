@@ -90,6 +90,7 @@ const Editor: React.FC<EditorProps> = ({
                             top: 0,
                             left: 0,
                             pointerEvents: 'none',
+														overflow: 'auto',
                         }}
                         aria-hidden="true"
                     >

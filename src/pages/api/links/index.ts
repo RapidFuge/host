@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { errorGenerator, getBase } from '@lib';
 import { getDatabase } from '@lib/db';
-import { isURL, trim } from 'validator';
-import * as generators from '@lib/generators';
+import { isURL, trim, isAscii } from 'validator';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 
-const validTag = (tag: string) => typeof tag === "string" && tag.length > 2 && tag.length < 69;
+const validTag = (tag: string) => typeof tag === "string" && tag.length > 2 && tag.length < 69 && isAscii(tag) && isURL(tag) !== true; // Make sure it's not a URL, has proper length and ASCII chars
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== "POST") return res.setHeader('Allow', ['POST']).status(405).json({ error: 'Method Not Allowed' });
@@ -26,14 +25,40 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
         };
 
         const providedTag = body.tag;
-        const generator: generators.shorteners = body.shortener || "random";
         const isValid = validTag(providedTag);
-        const inUse = await db.getLink(providedTag);
 
-        const tag = (isValid && !inUse) ? providedTag : generators[generator](generator === 'gfycat' ? 2 : 6);
-        await db.addLink(tag, trim(url), user.username);
+        if (!isValid) {
+            return res.status(400).json(errorGenerator(400, 'Invalid tag format. Tag must be 3-68 ASCII characters long.'));
+        }
 
-        return res.status(200).json({ success: true, url: `${getBase(req)}/${tag}` });
+        const linkInUse = await db.getLink(providedTag);
+        const pasteTagInUse = await db.getPasteTag(providedTag); // Check if tag conflicts with existing paste tag
+
+        // Check if the tag points to an existing resource (not orphaned)
+        let isOrphaned = false;
+        if (linkInUse) {
+            // For links, we consider them active as we can't easily verify if the target URL is still valid
+            return res.status(409).json(errorGenerator(409, 'Tag already in use by another URL shortener.'));
+        } else if (pasteTagInUse) {
+            // Check if the paste the tag points to still exists
+            const targetPaste = await db.getFile(pasteTagInUse.pasteId);
+            if (!targetPaste) {
+                // The tag points to a non-existent paste, so it's orphaned
+                isOrphaned = true;
+            } else {
+                return res.status(409).json(errorGenerator(409, 'Tag already in use by a paste.'));
+            }
+        }
+
+        // If tag exists but is orphaned (for paste tags), remove the old tag first
+        if (isOrphaned) {
+            await db.removePasteTag(providedTag);
+        }
+
+        // Use the provided tag since validation passed
+        await db.addLink(providedTag, trim(url), user.username);
+
+        return res.status(200).json({ success: true, url: `${getBase(req)}/${providedTag}` });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         return res.status(500).json({ error: error.message });

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import userBase from './models/user';
 import linkBase from './models/url';
 import fileBase, { File } from './models/file';
+import pasteTagBase from './models/pasteTag';
 import upTokens from './models/upTokens';
 import { shorteners } from './generators';
 import LocalStorageClient from './local';
@@ -16,6 +17,7 @@ export class Database {
 	public userBase = userBase;
 	public linkBase = linkBase;
 	public fileBase = fileBase;
+	public pasteTagBase = pasteTagBase;
 	public upTokens = upTokens;
 	public imageDrive: LocalStorageClient | AWSS3Client;
 	private initialized = false;
@@ -278,6 +280,29 @@ export class Database {
 
 	public async setLink(id: string, opt: { url?: string, id?: string }) {
 		return this.linkBase.updateOne({ id }, { $set: opt });
+	}
+
+	// Paste tags
+	public async getPasteTag(tag: string) {
+		return this.pasteTagBase.findOne({ tag });
+	}
+
+	public async addPasteTag(tag: string, pasteId: string, owner: string) {
+		return this.pasteTagBase.create({ tag, pasteId, owner, created: Date.now() });
+	}
+
+	public async removePasteTag(tag: string) {
+		const pasteTag = await this.getPasteTag(tag);
+		if (!pasteTag) return true;
+		return this.pasteTagBase.deleteOne({ tag });
+	}
+
+	public async setPasteTag(tag: string, opt: { tag?: string, pasteId?: string }) {
+		return this.pasteTagBase.updateOne({ tag }, { $set: opt });
+	}
+
+	public async getPasteTagByPasteId(pasteId: string) {
+		return this.pasteTagBase.findOne({ pasteId });
 	}
 
 	public async expireToken(username: string) {

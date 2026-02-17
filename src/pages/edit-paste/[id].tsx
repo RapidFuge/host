@@ -84,6 +84,9 @@ export default function EditPastePage({ pasteData }: { pasteData: any; }) {
     const [isUpdating, setIsUpdating] = useState(false);
     const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
     const [renderedMarkdown, setRenderedMarkdown] = useState<React.ReactElement | null>(null);
+    const [existingTag, setExistingTag] = useState(pasteData.existingTag || '');
+    const [newTag, setNewTag] = useState('');
+    const [isManagingTag, setIsManagingTag] = useState(false);
 
     useEffect(() => {
         if (viewMode === 'preview' && language === 'md' && content) {
@@ -146,6 +149,105 @@ export default function EditPastePage({ pasteData }: { pasteData: any; }) {
             toast.error("An unexpected error occurred.");
         } finally {
             setIsUpdating(false);
+        }
+    };
+
+    const handleCreateTag = async () => {
+        if (!newTag.trim()) {
+            toast.error("Please enter a tag name.");
+            return;
+        }
+
+        setIsManagingTag(true);
+        try {
+            const response = await fetch('/api/pastes/tags', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'paste-id': pasteData.id,
+                },
+                body: JSON.stringify({ tag: newTag.trim() }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success(
+                    <div>
+                        <p>Tag created successfully!</p>
+                        <Link href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1">
+                            {result.url}
+                        </Link>
+                    </div>,
+                    { duration: Infinity }
+                );
+                setExistingTag(newTag.trim());
+                setNewTag('');
+            } else {
+                toast.error(result.error?.message || result.message || "Failed to create tag.");
+            }
+        } catch (_error) {
+            toast.error("An error occurred while creating the tag.");
+        } finally {
+            setIsManagingTag(false);
+        }
+    };
+
+    const handleUpdateTag = async () => {
+        if (!newTag.trim()) {
+            toast.error("Please enter a new tag name.");
+            return;
+        }
+
+        setIsManagingTag(true);
+        try {
+            const response = await fetch(`/api/pastes/tags/${existingTag}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ tag: newTag.trim() }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success("Tag updated successfully!");
+                setExistingTag(newTag.trim());
+                setNewTag('');
+            } else {
+                toast.error(result.error?.message || result.message || "Failed to update tag.");
+            }
+        } catch (_error) {
+            toast.error("An error occurred while updating the tag.");
+        } finally {
+            setIsManagingTag(false);
+        }
+    };
+
+    const handleDeleteTag = async () => {
+        setIsManagingTag(true);
+        try {
+            const response = await fetch(`/api/pastes/tags/${existingTag}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success("Tag deleted successfully!");
+                setExistingTag('');
+                setNewTag('');
+            } else {
+                toast.error(result.error?.message || result.message || "Failed to delete tag.");
+            }
+        } catch (_error) {
+            toast.error("An error occurred while deleting the tag.");
+        } finally {
+            setIsManagingTag(false);
         }
     };
 
@@ -238,6 +340,56 @@ export default function EditPastePage({ pasteData }: { pasteData: any; }) {
                             {isUpdating ? (<><LoaderCircle className="animate-spin mr-2" /> Updating...</>) : <><Save className="mr-2 w-4 h-4" /> Update Paste</>}
                         </button>
                     </div>
+
+                    {/* Tag Management Section */}
+                    <div className="mt-8 p-4 border border-neutral-700 rounded-md bg-neutral-900">
+                        <h2 className="text-xl font-semibold mb-4">Tag Management</h2>
+
+                        {existingTag ? (
+                            <div className="mb-4">
+                                <p className="mb-2">Current tag: <span className="font-mono bg-neutral-800 px-2 py-1 rounded">{existingTag}</span></p>
+                                <div className="flex flex-wrap gap-2">
+                                    <Link
+                                        href={`/${existingTag}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                                    >
+                                        View Tag
+                                    </Link>
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm(`Are you sure you want to delete the tag "${existingTag}"?`)) {
+                                                handleDeleteTag();
+                                            }
+                                        }}
+                                        className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                                    >
+                                        Delete Tag
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="mb-4">This paste does not have a custom tag yet.</p>
+                        )}
+
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                                type="text"
+                                placeholder={existingTag ? "New tag name" : "Tag name"}
+                                value={newTag}
+                                onChange={(e) => setNewTag(e.target.value)}
+                                className="flex-grow px-4 py-2 border border-neutral-700 bg-neutral-800 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                                onClick={existingTag ? handleUpdateTag : handleCreateTag}
+                                disabled={isManagingTag}
+                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-neutral-600 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {isManagingTag ? "Processing..." : existingTag ? "Update Tag" : "Create Tag"}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </main>
 
@@ -300,9 +452,22 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
         const content = await contentResponse.text();
 
+        // Check if this paste has an associated tag
+        let pasteTag = null;
+        try {
+            const db = await import('@lib/db'); // Import the db module to access methods
+            const databaseInstance = await db.getDatabase();
+            const tagRecord = await databaseInstance.getPasteTagByPasteId(pasteData.id);
+            if (tagRecord) {
+                pasteTag = tagRecord.tag;
+            }
+        } catch (error) {
+            console.warn('Could not check for existing paste tag:', error);
+        }
+
         return {
             props: {
-                pasteData: { ...pasteData, content },
+                pasteData: { ...pasteData, content, existingTag: pasteTag },
                 baseUrl
             }
         };

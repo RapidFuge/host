@@ -75,6 +75,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (!user) return res.status(401).json(errorGenerator(401, "Unauthorized."));
                 if (file.owner !== user.username && !user.isAdmin) return res.status(403).json(errorGenerator(403, "Forbidden."));
 
+                // Remove any associated paste tags
+                const pasteTag = await db.getPasteTagByPasteId(file.id);
+                if (pasteTag) {
+                    await db.removePasteTag(pasteTag.tag);
+                }
+
                 await db.removeFile(file.id);
                 await db.imageDrive.remove(file.fileName);
                 return res.status(200).json({ success: true, message: "File deleted." });
