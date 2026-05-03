@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy, CopyCheck, LoaderCircle } from "lucide-react";
+import { Copy, CopyCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Button, Input } from "@components/ui";
 
 interface ClientSignUpToken {
   token: string;
@@ -13,9 +14,7 @@ interface SignUpTokensManagerProps {
   onClose: () => void;
 }
 
-const isTokenExpired = (expiresDate: Date): boolean => {
-  return new Date() > expiresDate;
-};
+const isTokenExpired = (expiresDate: Date): boolean => new Date() > expiresDate;
 
 export default function SignUpTokensManagerModal({
   isOpen,
@@ -52,36 +51,29 @@ export default function SignUpTokensManagerModal({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchTokens();
-    }
-  }, [isOpen, fetchTokens]);
+  useEffect(() => { if (isOpen) fetchTokens(); }, [isOpen, fetchTokens]);
 
   const handleCreateToken = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExpiration.trim()) {
-      toast.error("Expiration time is required.")
-      return;
-    }
+    if (!newExpiration.trim()) { toast.error("Expiration time is required."); return; }
     setIsCreating(true);
     try {
       const response = await fetch("/api/users/tokens", { method: "POST", headers: { expires: newExpiration } });
       const data = await response.json();
       if (!response.ok) throw data.error || data.message || "Failed to create token.";
-      toast.success(`Token created! Expires in ${data.token.expires}.`)
+      toast.success(`Token created! Expires in ${data.token.expires}.`);
       setNewExpiration("");
       fetchTokens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      toast.error(err.message || err || "Failed to create token.")
+      toast.error(err.message || err || "Failed to create token.");
     } finally {
       setIsCreating(false);
     }
   };
 
   const handleDeleteToken = async (tokenValue: string) => {
-    toast(`Are you sure you want to delete token: ${tokenValue}?`, {
+    toast(`Delete token "${tokenValue}"?`, {
       duration: 10000,
       action: {
         label: "Delete",
@@ -90,7 +82,7 @@ export default function SignUpTokensManagerModal({
             const response = await fetch(`/api/users/tokens/${tokenValue}`, { method: "DELETE" });
             const data = await response.json();
             if (!response.ok) throw data.error || data.message || "Failed to delete token.";
-            toast.success(`Token ${tokenValue} deleted.`)
+            toast.success(`Token deleted.`);
             fetchTokens();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (err: any) {
@@ -98,91 +90,77 @@ export default function SignUpTokensManagerModal({
           }
         },
       },
-      cancel: {
-        label: "Cancel",
-        onClick: () => { return },
-      },
+      cancel: { label: "Cancel", onClick: () => {} },
     });
   };
 
   const handleCopyToClipboard = (tokenToCopy: string) => {
     navigator.clipboard.writeText(tokenToCopy)
       .then(() => {
-        toast.success("Token copied successfully!");
+        toast.success("Copied!");
         setCopiedTokenValue(tokenToCopy);
-        setTimeout(() => {
-          setCopiedTokenValue(null);
-        }, 2000);
+        setTimeout(() => setCopiedTokenValue(null), 2000);
       })
-      .catch(() => {
-        toast.error("Failed to copy token.")
-      });
+      .catch(() => toast.error("Failed to copy."));
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4 transition-opacity"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="bg-neutral-800 border border-neutral-800 p-4 sm:p-6 rounded-md shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col text-zinc-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-white">Manage Sign Up Tokens</h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-white text-2xl leading-none p-1">×</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} />
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col glass-strong rounded-md border border-[var(--border-default)] shadow-2xl">
+        <div className="flex justify-between items-center px-5 py-4 border-b border-[var(--border-subtle)]">
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">Sign Up Tokens</h3>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xl p-1 transition-colors">&times;</button>
         </div>
-        <form onSubmit={handleCreateToken} className="mb-4 flex flex-col sm:flex-row gap-3 items-end">
+
+        <form onSubmit={handleCreateToken} className="px-5 py-4 flex flex-col sm:flex-row gap-3 items-end border-b border-[var(--border-subtle)]">
           <div className="flex-grow w-full sm:w-auto">
-            <label htmlFor="modal-token-expiration" className="block text-sm font-medium text-zinc-300 mb-1">New Token Expiration</label>
-            <input type="text" id="modal-token-expiration" value={newExpiration} onChange={(e) => setNewExpiration(e.target.value)} placeholder='e.g., "1h", "7d"' className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <Input
+              placeholder='Expiration (e.g. "1h", "7d")'
+              value={newExpiration}
+              onChange={(e) => setNewExpiration(e.target.value)}
+            />
           </div>
-          <button type="submit" disabled={isCreating} className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:bg-neutral-700 disabled:text-neutral-400 h-[42px]">
-            {isCreating ? (
-              <span className="flex items-center">
-                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                Creating
-              </span>
-            ) : ("Create Token")}
-          </button>
+          <Button type="submit" loading={isCreating} size="sm">
+            Create token
+          </Button>
         </form>
-        <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-black pr-1">
-          {isLoading && <p className="text-neutral-400 text-center py-4">Loading tokens...</p>}
-          {!isLoading && tokens.length === 0 && <p className="text-neutral-400 text-center py-4">No sign up tokens found.</p>}
+
+        <div className="flex-1 overflow-y-auto p-5">
+          {isLoading && <p className="text-[var(--text-muted)] text-center py-4 text-sm">Loading...</p>}
+          {!isLoading && tokens.length === 0 && <p className="text-[var(--text-muted)] text-center py-4 text-sm">No tokens found.</p>}
           {tokens.length > 0 && (
-            <div className="overflow-x-auto rounded-md">
-              <table className="min-w-full divide-y divide-neutral-700 rounded-md">
-                <thead className="bg-neutral-700 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Token</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Created</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Expires (Status)</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Actions</th>
+            <div className="overflow-x-auto rounded-md border border-[var(--border-subtle)]">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--border-subtle)]">
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Token</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider hidden sm:table-cell">Created</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Expires</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-neutral-800 divide-y divide-neutral-600">
+                <tbody className="divide-y divide-[var(--border-subtle)]">
                   {tokens.map((t) => {
                     const isExpired = isTokenExpired(t.expires);
-                    const expiresDisplay = t.expires.toLocaleString();
                     return (
-                      <tr key={t.token} className={`${isExpired ? "opacity-50 bg-neutral-900" : "hover:bg-neutral-800"} transition-colors`}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-zinc-200">
+                      <tr key={t.token} className={`${isExpired ? "opacity-40" : ""} transition-opacity`}>
+                        <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="truncate max-w-[150px] sm:max-w-[200px]" title={t.token}>{t.token}</span>
-                            <button onClick={() => handleCopyToClipboard(t.token)} title="Copy token" className="p-1 text-neutral-400 hover:text-zinc-100 transition-colors">
-                              {copiedTokenValue === t.token ? (
-                                <CopyCheck className="h-4 w-4 text-green-400" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
+                            <span className="font-mono text-xs text-[var(--text-primary)] truncate max-w-[150px]" title={t.token}>{t.token}</span>
+                            <button onClick={() => handleCopyToClipboard(t.token)} className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                              {copiedTokenValue === t.token ? <CopyCheck className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                             </button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-300">{t.created.toLocaleString()}</td>
-                        <td className={`px-4 py-3 whitespace-nowrap text-sm ${isExpired ? "text-red-400" : "text-green-400"}`}>{expiresDisplay} {isExpired ? "(Expired)" : "(Active)"}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                          <button onClick={() => handleDeleteToken(t.token)} className="text-red-500 hover:text-red-400 disabled:text-neutral-500 disabled:cursor-not-allowed">Delete</button>
+                        <td className="px-4 py-2.5 text-xs text-[var(--text-muted)] hidden sm:table-cell whitespace-nowrap">{t.created.toLocaleString()}</td>
+                        <td className={`px-4 py-2.5 text-xs whitespace-nowrap ${isExpired ? "text-red-400" : "text-emerald-400"}`}>
+                          {t.expires.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <button onClick={() => handleDeleteToken(t.token)} className="text-xs text-red-400 hover:text-red-300 transition-colors">Delete</button>
                         </td>
                       </tr>
                     );
@@ -192,8 +170,9 @@ export default function SignUpTokensManagerModal({
             </div>
           )}
         </div>
-        <div className="mt-4 pt-4 border-t border-neutral-800 flex justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-neutral-700 hover:bg-neutral-600 rounded text-white">Close</button>
+
+        <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex justify-end">
+          <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
         </div>
       </div>
     </div>

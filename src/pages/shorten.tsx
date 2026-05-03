@@ -7,18 +7,19 @@ import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { getBase } from "@lib";
 import { toast } from "sonner";
-import { shorteners as validShorteners } from "@lib/generators"; // Assuming shorteners array is from here
-import { LoaderCircle, Link as LinkIcon } from "lucide-react";
+import { shorteners as validShorteners } from "@lib/generators";
+import { Link as LinkIcon } from "lucide-react";
+import { Button, Input, Select, Card } from "@components/ui";
 
 export default function ShortenerPage({ userShortener }: { userShortener: string }) {
   const [url, setUrl] = useState("");
   const [tag, setTag] = useState("");
   const [shortener, setShortenerType] = useState(userShortener);
-  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading to true
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/links", {
@@ -34,7 +35,7 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
       setIsLoading(false);
 
       if (response.ok && data.success) {
-        toast.success(<Link href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{data.url}</Link>, { duration: Infinity })
+        toast.success(<Link href={data.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{data.url}</Link>, { duration: Infinity })
         setUrl("");
         setTag("");
       } else {
@@ -48,68 +49,50 @@ export default function ShortenerPage({ userShortener }: { userShortener: string
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-white bg-black">
-      <NextSeo title="Horreum - URL Shortener" description="Shorten your URLs quickly and easily" />
+    <div className="flex flex-col min-h-screen">
+      <NextSeo title="Rapid Host - URL Shortener" description="Shorten your URLs quickly and easily" />
       <Header />
-      <main className="flex-grow flex items-center justify-center text-center px-4">
-        <form onSubmit={handleSubmit} className="p-4 rounded-md shadow-md w-full max-w-sm">
-          <h1 className="text-2xl font-bold mb-6">URL Shortener</h1>
-          <div className="mb-4">
-            <label htmlFor="url" className="block text-sm font-semibold mb-1 text-left">Enter URL to Shorten</label>
-            <input
+      <main className="flex-grow flex items-center justify-center px-4 py-8">
+        <Card className="w-full max-w-sm" padding="lg">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="mb-2">
+              <h1 className="text-xl font-bold text-[var(--text-primary)]">Shorten URL</h1>
+              <p className="text-sm text-[var(--text-muted)] mt-1">Create a short link from any URL</p>
+            </div>
+            <Input
+              label="URL to shorten"
               type="url"
-              id="url"
-              name="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
+              placeholder="https://example.com/very-long-url"
             />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="tag" className="block text-sm font-semibold mb-1 text-left">Custom Tag (Optional)</label>
-            <input
-              type="text"
-              id="tag"
-              name="tag"
+            <Input
+              label="Custom tag (optional)"
               value={tag}
               onChange={(e) => setTag(e.target.value)}
-              className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Leave blank for random ID"
               disabled={isLoading}
+              placeholder="Leave blank for random"
             />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="shortenerType" className="block text-sm font-semibold mb-1 text-left">ID Generator (if no custom tag)</label>
-            <select
-              id="shortenerType"
+            <Select
+              label="ID Generator"
+              options={validShorteners.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
               value={shortener}
               onChange={(e) => setShortenerType(e.target.value)}
-              className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
+            />
+            <Button
+              type="submit"
+              loading={isLoading}
+              icon={<LinkIcon className="w-4 h-4" />}
+              className="w-full"
+              size="lg"
             >
-              {validShorteners.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full px-4 py-2 font-semibold rounded focus:outline-none transition-colors flex items-center justify-center ${isLoading ? "bg-neutral-500 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                Shortening URL
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <LinkIcon className="mr-2 w-5 h-5" />
-                Shorten URL
-              </span>
-            )}
-          </button>
-        </form>
+              Shorten URL
+            </Button>
+          </form>
+        </Card>
       </main>
       <Footer />
     </div>
@@ -124,7 +107,7 @@ export async function getServerSideProps(context: GetSessionParams & GetServerSi
   }
 
   const baseUrl = getBase(context.req);
-  let userShortener = "random"; // Default
+  let userShortener = "random";
 
   try {
     const userResponse = await fetch(`${baseUrl}/api/users/${session.user.username}`, {

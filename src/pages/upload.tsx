@@ -6,10 +6,11 @@ import { NextSeo } from "next-seo";
 import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 import { filesize } from "filesize";
-import { LoaderCircle, Upload } from "lucide-react";
+import { Upload, X, FileUp } from "lucide-react";
 import { getBase } from "@lib";
 import { toast } from "sonner";
 import { random } from "@lib/generators";
+import { Button, Select, Toggle } from "@components/ui";
 
 const CHUNK_SIZE = 50 * 1024 * 1024;
 const MAX_FILE_SIZE = 95 * 1024 * 1024;
@@ -24,14 +25,14 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
   const [expiration, setExpiration] = useState(expireDate || "never");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const expirationOptions = [
-    { value: "never", label: "Expires in: Never" },
-    { value: "1h", label: "Expires in: 1 Hour" },
-    { value: "6h", label: "Expires in: 6 Hours" },
-    { value: "1d", label: "Expires in: 1 Day" },
-    { value: "1w", label: "Expires in: 1 Week" },
-    { value: "30d", label: "Expires in: 1 Month" },
-    { value: "90d", label: "Expires in: 3 Months" },
-    { value: "1y", label: "Expires in: 1 Year" },
+    { value: "never", label: "Never" },
+    { value: "1h", label: "1 Hour" },
+    { value: "6h", label: "6 Hours" },
+    { value: "1d", label: "1 Day" },
+    { value: "1w", label: "1 Week" },
+    { value: "30d", label: "1 Month" },
+    { value: "90d", label: "3 Months" },
+    { value: "1y", label: "1 Year" },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,7 +187,7 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
     results.forEach((result, index) => {
       if (result.status === "fulfilled" && result.value.url) {
         toast.success(
-          <Link href={result.value.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+          <Link href={result.value.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
             {result.value.url}
           </Link>,
           { duration: Infinity }
@@ -202,46 +203,6 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
     setUploading(false);
   };
 
-  const renderFileList = () => {
-    if (files.length === 0) return null;
-
-    return (
-      <ul className="list-none mt-4 text-left w-96">
-        {files.map((file, index) => {
-          const progress = uploadProgress[file.name] || 0;
-          return (
-            <li
-              key={index}
-              className="text-sm text-gray-400 mb-2"
-            >
-              <div className="flex justify-between items-center">
-                <span className="truncate pr-2">
-                  {file.name} - {filesize(file.size)}
-                </span>
-                {!uploading && (
-                  <button
-                    className="ml-4 text-red-500 hover:text-red-700 flex-shrink-0"
-                    onClick={() => handleRemoveFile(index)}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              {uploading && (
-                <div className="w-full bg-gray-700 rounded-full h-2.5 mt-1">
-                  <div
-                    className="bg-blue-600 h-2.5 rounded-full"
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    );
-  };
-
   const handleRemoveFile = (index: number) => {
     const updatedFiles = files.filter((_, i) => i !== index);
     setFiles(updatedFiles);
@@ -249,115 +210,123 @@ export default function UploadPage({ expireDate }: { expireDate: string }) {
 
   return (
     <div
-      className="flex flex-col min-h-screen bg-black"
+      className="flex flex-col min-h-screen"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onPaste={handlePaste}
     >
       <NextSeo
-        title="Horreum - Upload"
-        description="Upload Files to Horreum"
+        title="Rapid Host - Upload"
+        description="Upload Files to Rapid Host"
       />
-
       <Header />
 
-      <main className="flex-grow flex flex-col items-center justify-center text-center px-4">
-        <h1 className="text-2xl font-bold mb-4 text-white ">File Uploader</h1>
-        <div
-          className="relative w-96 h-48 border-4 border-dashed border-neutral-400 p-4 cursor-pointer mb-4"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <div
-            className={`absolute inset-0 bg-transparent flex items-center justify-center ${dragging ? "text-blue-500" : "text-gray-500"
-              }`}
-          >
-            {dragging ? (
-              <p className="text-xl">Drop files here</p>
-            ) : (
-              <p className="text-lg">
-                Drag and drop files, paste from clipboard, or click to select
-              </p>
-            )}
+      <main className="flex-grow flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-lg">
+          <div className="text-center mb-6">
+            <h1 className="text-xl font-bold text-[var(--text-primary)]">Upload files</h1>
+            <p className="text-sm text-[var(--text-muted)] mt-1">Drag & drop, paste from clipboard, or click to browse</p>
           </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileSelect}
-            multiple
-            className="hidden"
-          />
-        </div>
 
-        {renderFileList()}
-
-        <div className="flex items-center space-x-2 mt-2">
-          <input
-            type="checkbox"
-            id="keepname-checkbox"
-            checked={isKeepingOrig}
-            onChange={(e) => setKeepOrig(e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="keepname-checkbox" className="text-sm text-gray-300">
-            Keep the original name of the file(s)
-          </label>
-        </div>
-
-        <div className="flex items-center space-x-2 mb-2">
-          <input
-            type="checkbox"
-            id="private-checkbox"
-            checked={isPrivate}
-            onChange={(e) => setIsPrivate(e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="private-checkbox" className="text-sm text-gray-300">
-            Make files private
-          </label>
-        </div>
-
-        <div className="flex items-center space-x-5 mb-4">
-          <select
-            id="shortenerType"
-            value={expiration}
-            onChange={(e) => setExpiration(e.target.value)}
-            className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          <div
+            className={`
+              relative cursor-pointer rounded-md border-2 border-dashed transition-all duration-200
+              ${dragging
+                ? "border-blue-500/50 bg-blue-500/5"
+                : "border-[var(--border-default)] hover:border-[var(--border-accent)] bg-surface-elevated/50"
+              }
+            `}
+            onClick={() => fileInputRef.current?.click()}
           >
-            {expirationOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </div>
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className={`p-3 rounded-md mb-3 transition-colors ${dragging ? "bg-blue-500/10" : "bg-surface-hover"}`}>
+                <FileUp className={`w-6 h-6 ${dragging ? "text-blue-400" : "text-[var(--text-muted)]"}`} />
+              </div>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {dragging ? "Drop files here" : "Click or drop files to upload"}
+              </p>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              multiple
+              className="hidden"
+            />
+          </div>
 
-        <button
-          onClick={handleUpload}
-          disabled={uploading}
-          className={`w-auto px-6 py-2 tr04 ${uploading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
-            } text-white font-semibold rounded focus:outline-none flex items-center justify-center`}
-        >
-          {uploading ? (
-            <span className="flex items-center">
-              <LoaderCircle className="animate-spin mr-2 w-5 h-5 text-white" />
-              Uploading
-            </span>
-          ) : (
-            <span className="flex items-center">
-              <Upload className="mr-2 w-5 h-5 text-white" />
-              Upload Files
-            </span>
+          {files.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {files.map((file, index) => {
+                const progress = uploadProgress[file.name] || 0;
+                return (
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-md bg-surface-elevated border border-[var(--border-subtle)]">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[var(--text-primary)] truncate">{file.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{filesize(file.size)}</p>
+                      {uploading && (
+                        <div className="mt-2 h-1 rounded-full bg-surface-hover overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {!uploading && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemoveFile(index); }}
+                        className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </button>
-        <p className="mt-4 text-neutral-500">
-          While the uploader can support multiple file uploads, the result will
-          only give one URL. To see other files, visit your{" "}
-          <Link href="/dashboard" className="text-blue-500 hover:underline">
-            dashboard
-          </Link>
-          .
-        </p>
+
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center gap-4 flex-wrap">
+              <Toggle
+                id="keepname-checkbox"
+                checked={isKeepingOrig}
+                onChange={(e) => setKeepOrig(e.target.checked)}
+                label="Keep original name"
+              />
+              <Toggle
+                id="private-checkbox"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                label="Private"
+              />
+            </div>
+
+            <Select
+              options={expirationOptions}
+              value={expiration}
+              onChange={(e) => setExpiration(e.target.value)}
+            />
+
+            <Button
+              onClick={handleUpload}
+              loading={uploading}
+              disabled={files.length === 0}
+              icon={<Upload className="w-4 h-4" />}
+              className="w-full"
+              size="lg"
+            >
+              Upload {files.length > 0 ? `(${files.length})` : ""}
+            </Button>
+
+            <p className="text-xs text-[var(--text-muted)] text-center mt-2">
+              Each file gets its own URL. View all uploads in your{" "}
+              <Link href="/dashboard" className="text-blue-400 hover:underline">dashboard</Link>.
+            </p>
+          </div>
+        </div>
       </main>
 
       <Footer />

@@ -4,19 +4,19 @@ import { useRouter } from "next/router";
 import Header from "@components/Header";
 import Footer from "@components/Footer";
 import { NextSeo } from "next-seo";
-import { toast } from "sonner";
 import Link from "next/link";
-import { LoaderCircle } from "lucide-react";
+import { toast } from "sonner";
+import { Button, Input, Card } from "@components/ui";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading to true
+    setIsLoading(true);
 
     const res = await signIn("credentials", {
       redirect: false,
@@ -24,7 +24,7 @@ export default function LoginPage() {
       password,
     });
 
-    setIsLoading(false); // Set loading to false
+    setIsLoading(false);
 
     if (res?.error) {
       toast.error(res.error || "Invalid credentials");
@@ -35,57 +35,52 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-white bg-black">
-      <NextSeo title="Horreum - Login" description="Login to Horreum" />
+    <div className="flex flex-col min-h-screen">
+      <NextSeo title="Rapid Host - Login" description="Login to Rapid Host" />
       <Header />
-      <main className="flex-grow flex items-center justify-center text-center px-4">
-        <form onSubmit={handleSubmit} className="p-6 rounded-md shadow-md w-full max-w-sm">
-          <h1 className="text-2xl font-bold mb-6">Login</h1>
-          <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-semibold mb-1 text-left">Username</label>
-            <input
+      <main className="flex-grow flex items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-sm" padding="lg">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <h1 className="text-xl font-bold text-[var(--text-primary)] mb-1">
+              Welcome back
+            </h1>
+            <p className="text-sm text-[var(--text-muted)] mb-6">
+              Sign in to your account
+            </p>
+            <Input
+              label="Username"
               type="text"
-              id="username"
-              name="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
+              autoComplete="username"
             />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-semibold mb-1 text-left">Password</label>
-            <input
+            <Input
+              label="Password"
               type="password"
-              id="password"
-              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-neutral-700 bg-black rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
+              autoComplete="current-password"
             />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full px-4 py-2 font-semibold rounded focus:outline-none transition-colors flex items-center justify-center ${isLoading ? "bg-neutral-500 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                Logging in
-              </span>
-            ) : (
-              "Login"
-            )}
-          </button>
-          <p className="mt-4 text-sm text-neutral-400">
+            <Button
+              type="submit"
+              loading={isLoading}
+              className="w-full"
+              size="lg"
+            >
+              Sign in
+            </Button>
+          </form>
+          <p className="mt-6 text-sm text-center text-[var(--text-muted)]">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-blue-400 hover:underline">Sign up</Link>
+            <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
+              Sign up
+            </Link>
           </p>
-        </form>
+        </Card>
       </main>
       <Footer />
     </div>

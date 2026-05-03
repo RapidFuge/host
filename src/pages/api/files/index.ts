@@ -121,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fileType = req.headers.filetype === 'paste' ? 'paste' : 'file';
 
     if (uploadId) {
-        const chunksDir = path.join(os.tmpdir(), 'horreum-chunks');
+        const chunksDir = path.join(os.tmpdir(), 'rapid-host-chunks');
         const uploadDir = path.join(chunksDir, uploadId);
         await fs.ensureDir(uploadDir);
 

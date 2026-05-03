@@ -1,7 +1,7 @@
-// components/dashboard/settings/CreateUser.tsx
-import { LoaderCircle, UserRoundPlus } from "lucide-react";
-import { useState, useEffect } from "react"; // Added useEffect for ESC key
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { Button, Input } from "@components/ui";
+import { UserRoundPlus } from "lucide-react";
 
 export default function CreateUserForm() {
   const [username, setUsername] = useState("");
@@ -9,26 +9,19 @@ export default function CreateUserForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openModal = () => {
-    setUsername(""); // Reset form fields
-    setPassword("");
-    setIsModalOpen(true);
-  };
-  const closeModal = () => setIsModalOpen(false);
-
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeModal();
+      if (event.key === "Escape") setIsModalOpen(false);
     };
     if (isModalOpen) {
       document.addEventListener("keydown", handleEscKey);
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
     }
     return () => {
       document.removeEventListener("keydown", handleEscKey);
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
     };
   }, [isModalOpen]);
 
@@ -38,19 +31,18 @@ export default function CreateUserForm() {
     try {
       const response = await fetch("/api/users/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" }, // Admin auth handled by API via session/cookie
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
       const data = await response.json();
       if (!response.ok) throw data.error;
-
-      toast.success(`User "${data.username}" created successfully!`);
-      setUsername(""); // Clear form on success
+      toast.success(`User "${data.username}" created!`);
+      setUsername("");
       setPassword("");
-      // router.reload(); // Consider if reload is best UX or just update a user list if displayed elsewhere
+      setIsModalOpen(false);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      toast.error(err.message || err || "Error creating user")
+      toast.error(err.message || err || "Error creating user");
     } finally {
       setIsLoading(false);
     }
@@ -58,90 +50,42 @@ export default function CreateUserForm() {
 
   return (
     <>
-      <button
-        onClick={openModal}
-        className="flex bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => { setUsername(""); setPassword(""); setIsModalOpen(true); }}
+        icon={<UserRoundPlus className="w-4 h-4" />}
       >
-        <UserRoundPlus className="mr-2 w-5 h-5" strokeWidth={2.5} />
-        Create New User
-      </button>
+        Create user
+      </Button>
 
       {isModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4 transition-opacity"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeModal();
-          }}
-        >
-          <div className="bg-neutral-800 border border-neutral-800 p-6 rounded-md shadow-xl w-full max-w-md flex flex-col text-zinc-100">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-white">
-                Create New User
-              </h3>
-              <button
-                onClick={closeModal}
-                className="text-neutral-400 hover:text-white text-2xl leading-none p-1"
-              >
-                ×
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }} />
+          <div className="relative w-full max-w-sm glass-strong rounded-md border border-[var(--border-default)] shadow-2xl">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-[var(--border-subtle)]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">Create New User</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xl p-1 transition-colors">&times;</button>
             </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="new-username"
-                  className="block text-sm font-medium text-zinc-300 mb-1"
-                >
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="new-username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Alphanumeric, 3-50 chars"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="new-password"
-                  className="block text-sm font-medium text-zinc-300 mb-1"
-                >
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Min 3 chars"
-                />
-              </div>
-              <div className="mt-6 pt-4 border-t border-neutral-700 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 text-sm bg-neutral-700 hover:bg-neutral-600 rounded text-white"
-                  disabled={isLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white disabled:bg-neutral-700 disabled:text-neutral-400"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <LoaderCircle className="animate-spin mr-2 w-5 h-5" />
-                      Creating
-                    </span>
-                  ) : ("Create User")}
-                </button>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <Input
+                label="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                placeholder="Alphanumeric, 3-50 chars"
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Min 3 chars"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setIsModalOpen(false)} disabled={isLoading}>Cancel</Button>
+                <Button type="submit" size="sm" loading={isLoading}>Create</Button>
               </div>
             </form>
           </div>

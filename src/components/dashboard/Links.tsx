@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy, CopyCheck, RefreshCw, X } from "lucide-react";
+import { Copy, CopyCheck, RefreshCw, X, QrCode } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Button } from "@components/ui";
+import QRModal from "@components/QRModal";
 
 interface ShortenedLink {
   id: string;
@@ -12,6 +14,8 @@ interface ShortenedLink {
 
 interface LinksComponentProps {
   username: string | null;
+  isAdmin: boolean;
+  loggedInUsername: string;
   token: string;
   baseUrl: string;
 }
@@ -30,72 +34,51 @@ const EditLinkModal = ({
   const [editedTag, setEditedTag] = useState(link.id);
   const [editedUrl, setEditedUrl] = useState(link.url);
 
-  const handleSave = () => {
-    onSave(editedTag, editedUrl);
-  };
-
   return (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-neutral-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-neutral-700">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-white">Edit Link</h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-white">
-            <X size={24} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md glass-strong rounded-md border border-[var(--border-default)] shadow-2xl">
+        <div className="flex justify-between items-center px-5 py-4 border-b border-[var(--border-subtle)]">
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">Edit Link</h3>
+          <button onClick={onClose} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+            <X size={18} />
           </button>
         </div>
-        <div className="space-y-4">
+        <div className="p-5 space-y-4">
           <div>
-            <label htmlFor="tag" className="block text-sm font-medium text-neutral-300 mb-1">
-              Tag (Short ID)
-            </label>
+            <label className="block text-sm text-[var(--text-secondary)] mb-1">Tag</label>
             <input
               type="text"
-              id="tag"
               value={editedTag}
               onChange={(e) => setEditedTag(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-600 text-white rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-md text-sm bg-surface-secondary border border-[var(--border-suble)] text-[var(--text-primary)] focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
             />
           </div>
           <div>
-            <label htmlFor="url" className="block text-sm font-medium text-neutral-300 mb-1">
-              Original URL
-            </label>
+            <label className="block text-sm text-[var(--text-secondary)] mb-1">Original URL</label>
             <input
               type="url"
-              id="url"
               value={editedUrl}
               onChange={(e) => setEditedUrl(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-600 text-white rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-md text-sm bg-surface-secondary border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
             />
           </div>
         </div>
-        <div className="mt-6 flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-neutral-600 text-white rounded-md hover:bg-neutral-700 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-wait transition-colors"
-          >
-            {isLoading ? "Saving..." : "Save Changes"}
-          </button>
+        <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={() => onSave(editedTag, editedUrl)} loading={isLoading}>
+            Save
+          </Button>
         </div>
       </div>
     </div>
   );
 };
 
-
 export default function LinksComponent({
   username,
+  isAdmin,
+  loggedInUsername,
   baseUrl,
 }: LinksComponentProps) {
   const [links, setLinks] = useState<ShortenedLink[]>([]);
@@ -103,29 +86,22 @@ export default function LinksComponent({
   const [isUpdating, setIsUpdating] = useState(false);
   const [copiedURLValue, setCopiedURLValue] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<ShortenedLink | null>(null);
+  const [qrLink, setQrLink] = useState<{ url: string; label: string } | null>(null);
 
   const fetchLinks = useCallback(async () => {
-    if (!username) {
-      setLinks([]);
-      return;
-    }
+    if (!username) { setLinks([]); return; }
     setIsLoading(true);
     try {
-      const apiUrl = `/api/users/${username}/links`;
-      const response = await fetch(apiUrl);
+      const response = await fetch(`/api/users/${username}/links`);
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: `HTTP error ${response.status}` }));
+        const errorData = await response.json().catch(() => ({ message: `HTTP error ${response.status}` }));
         throw new Error(errorData.message || `Failed to fetch links.`);
       }
       const data = await response.json();
       if (data.success) {
         setLinks(data.links);
       } else {
-        throw new Error(
-          data.message || "API returned success=false while fetching links"
-        );
+        throw new Error(data.message || "API returned success=false");
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -136,17 +112,10 @@ export default function LinksComponent({
     }
   }, [username]);
 
-  useEffect(() => {
-    fetchLinks();
-  }, [fetchLinks]);
-
-  const handleRefresh = () => {
-    fetchLinks();
-  };
+  useEffect(() => { fetchLinks(); }, [fetchLinks]);
 
   const handleUpdateLink = async (newTag: string, newUrl: string) => {
     if (!editingLink) return;
-
     setIsUpdating(true);
     try {
       const response = await fetch(`/api/links/${editingLink.id}`, {
@@ -154,13 +123,9 @@ export default function LinksComponent({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tag: newTag, url: newUrl }),
       });
-
       const responseData = await response.json();
-      if (!response.ok) {
-        throw new Error(responseData.error.message || `HTTP error ${response.status}`);
-      }
-
-      toast.success(responseData.message || "Link updated successfully!");
+      if (!response.ok) throw new Error(responseData.error.message || `HTTP error ${response.status}`);
+      toast.success(responseData.message || "Link updated!");
       setEditingLink(null);
       fetchLinks();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,33 +138,22 @@ export default function LinksComponent({
 
   const handleDeleteLink = async (linkTag: string) => {
     if (!username) return;
-
-    toast(`Are you sure you want to delete the link with tag "${linkTag}"?`, {
+    toast(`Delete link "${linkTag}"?`, {
       duration: 10000,
       action: {
         label: "Delete",
         onClick: async () => {
           setIsLoading(true);
           try {
-            const response = await fetch(`/api/links/${linkTag}`, {
-              method: "DELETE",
-            });
+            const response = await fetch(`/api/links/${linkTag}`, { method: "DELETE" });
             if (!response.ok) {
-              const errorData = await response.json().catch(() => ({
-                message: `HTTP error ${response.status} while deleting.`,
-              }));
-              throw new Error(
-                errorData.error || errorData.message || `Failed to delete link.`
-              );
+              const errorData = await response.json().catch(() => ({ message: `HTTP error ${response.status}` }));
+              throw new Error(errorData.error || errorData.message || `Failed to delete link.`);
             }
             const responseData = await response.json();
-            if (!responseData.success) {
-              throw new Error(
-                responseData.message || "API reported failure during delete."
-              );
-            }
+            if (!responseData.success) throw new Error(responseData.message || "Delete failed.");
             fetchLinks();
-            toast.success(responseData.message || "Link deleted successfully!")
+            toast.success(responseData.message || "Link deleted!")
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (err: any) {
             toast.error(`Delete failed: ${err.message}`);
@@ -208,32 +162,22 @@ export default function LinksComponent({
           }
         },
       },
-      cancel: {
-        label: "Cancel",
-        onClick: () => { return },
-      },
+      cancel: { label: "Cancel", onClick: () => {} },
     });
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
+    navigator.clipboard.writeText(text)
       .then(() => {
-        toast.success("URL Copied successfully!");
+        toast.success("Copied!");
         setCopiedURLValue(text);
-        setTimeout(() => {
-          setCopiedURLValue(null);
-        }, 2000);
+        setTimeout(() => setCopiedURLValue(null), 2000);
       })
-      .catch(() => toast.error("Failed to copy URL."));
+      .catch(() => toast.error("Failed to copy."));
   };
 
   if (!username && !isLoading) {
-    return (
-      <div className="p-4 text-center text-neutral-400">
-        Select a user to view their links.
-      </div>
-    );
+    return <div className="p-8 text-center text-[var(--text-muted)]">Select a user to view their links.</div>;
   }
 
   return (
@@ -246,139 +190,87 @@ export default function LinksComponent({
           isLoading={isUpdating}
         />
       )}
-      <div className="p-4 h-full flex flex-col">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
-          <h2 className="text-2xl font-semibold text-white">
-            {username ? `Links: ${username}` : "Links"}
+      <div className="p-4 sm:p-5 h-full flex flex-col">
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+            {isAdmin ? `Links: ${username === loggedInUsername ? 'root' : username}` : "Links"}
           </h2>
-          <button
-            onClick={handleRefresh}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchLinks}
             disabled={isLoading || !username}
-            className="flex px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-neutral-500 disabled:cursor-not-allowed transition-colors text-sm"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />}
           >
-            {isLoading ? (
-              <span className="flex items-center">
-                <RefreshCw className="animate-spin mr-2 w-5 h-5" />
-                Refreshing
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <RefreshCw className="mr-2 w-5 h-5" />
-                Refresh
-              </span>
-            )}
-          </button>
+            Refresh
+          </Button>
         </div>
+
         {isLoading && links.length === 0 && (
-          <div className="text-center py-10 text-neutral-400">
-            Loading links
+          <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm">
+            Loading links...
           </div>
         )}
         {!isLoading && links.length === 0 && username && (
-          <div className="text-center py-10 text-neutral-400">
-            No links found for this user.
+          <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm">
+            No links found.
           </div>
         )}
         {links.length > 0 && (
-          <div className="overflow-x-auto flex-grow scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-800 rounded-md">
-            <table className="min-w-full divide-y divide-neutral-700 bg-neutral-800 rounded-md shadow">
-              <thead className="bg-neutral-700">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider"
-                  >
-                    Tag (Short ID)
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider"
-                  >
-                    Short URL
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider"
-                  >
-                    Original URL
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider"
-                  >
-                    Created
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
+          <div className="overflow-x-auto flex-grow rounded-md border border-[var(--border-subtle)]">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border-subtle)]">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Tag</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Short URL</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider hidden sm:table-cell">Original</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider hidden md:table-cell">Created</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-700">
+              <tbody className="divide-y divide-[var(--border-subtle)]">
                 {links.map((link) => {
                   const shortUrl = `${baseUrl}/${link.id}`;
                   return (
-                    <tr
-                      key={link.id}
-                      className="hover:bg-neutral-700 transition-colors duration-150"
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-200 font-mono">
-                        {link.id}
+                    <tr key={link.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)]">{link.id}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <Link href={shortUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs">
+                            {shortUrl}
+                          </Link>
+                          <button
+                            onClick={() => copyToClipboard(shortUrl)}
+                            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                          >
+                            {copiedURLValue === shortUrl ? (
+                              <CopyCheck className="h-3.5 w-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <Link
-                          href={shortUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 hover:underline"
-                        >
-                          {shortUrl}
-                        </Link>
-                        <button
-                          onClick={() => copyToClipboard(shortUrl)}
-                          className="ml-2 p-1 text-neutral-400 hover:text-zinc-200"
-                          title="Copy short URL"
-                        >
-                          {copiedURLValue === shortUrl ? (
-                            <CopyCheck className="h-4 w-4 text-green-400" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </button>
-                      </td>
-                      <td
-                        className="px-4 py-3 text-sm text-zinc-300 truncate max-w-xs"
-                        title={link.url}
-                      >
-                        <Link
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline"
-                        >
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <Link href={link.url} target="_blank" rel="noopener noreferrer" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs truncate max-w-xs block transition-colors">
                           {link.url}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-400">
+                      <td className="px-4 py-3 text-xs text-[var(--text-muted)] hidden md:table-cell whitespace-nowrap">
                         {new Date(link.created).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-4">
-                        <button
-                          onClick={() => setEditingLink(link)}
-                          className="text-blue-400 hover:text-blue-300 inline-flex items-center"
-                          title="Edit Link"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLink(link.id)}
-                          className="text-red-400 hover:text-red-300 inline-flex items-center"
-                          title="Delete Link"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex gap-2">
+                           <button onClick={() => setQrLink({ url: shortUrl, label: link.id })} className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                             <QrCode className="h-3.5 w-3.5" />
+                           </button>
+                           <button onClick={() => setEditingLink(link)} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteLink(link.id)} className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -388,6 +280,14 @@ export default function LinksComponent({
           </div>
         )}
       </div>
+      {qrLink && (
+        <QRModal
+          url={qrLink.url}
+          label={qrLink.label}
+          isOpen={!!qrLink}
+          onClose={() => setQrLink(null)}
+        />
+      )}
     </>
   );
 }

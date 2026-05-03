@@ -5,12 +5,11 @@ import { NextSeo } from "next-seo";
 import { getSession, GetSessionParams } from "next-auth/react";
 import { GetServerSidePropsContext } from "next";
 import { getBase } from "@lib";
-import { X, AlignLeft, Images, Link as LinkIcon, Settings, User } from "lucide-react";
+import { X, AlignLeft, Images, Link as LinkIcon, Settings, User } from 'lucide-react';
 
 import GalleryComponent from "@components/dashboard/Gallery";
 import LinksComponent from "@components/dashboard/Links";
 import SettingsComponent from "@components/dashboard/Settings";
-// import AnalyticsComponent from "@components/dashboard/AnalyticsComponent";
 
 export interface DashboardUser {
   username: string;
@@ -23,6 +22,14 @@ interface DashboardProps {
   users: { username: string }[];
 }
 
+type PageName = "Gallery" | "Links" | "Settings";
+
+const pageConfig: { name: PageName; icon: typeof Images }[] = [
+  { name: "Gallery", icon: Images },
+  { name: "Links", icon: LinkIcon },
+  { name: "Settings", icon: Settings },
+];
+
 export default function Dashboard({
   user: loggedInUser,
   users,
@@ -31,35 +38,40 @@ export default function Dashboard({
     typeof window !== "undefined"
       ? `${window.location.protocol}//${window.location.host}`
       : "";
-  const [activePage, setActivePage] = useState<
-    "Gallery" | "Links" | "Settings" | "Analytics"
-  >("Gallery");
+  const [activePage, setActivePage] = useState<PageName>("Gallery");
   const [selectedUser, setSelectedUser] = useState<string>(
     loggedInUser.username
   );
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (!loggedInUser.isAdmin && activePage === "Analytics") {
-      setActivePage("Gallery");
-    }
-  }, [loggedInUser.isAdmin, activePage]);
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const handleSelectUser = (username: string) => {
     setSelectedUser(username);
-    if (isSidebarOpen && window.innerWidth < 1024) {
-      setSidebarOpen(false);
-    }
+    if (isMobile) setSidebarOpen(false);
+  };
+
+  const handlePageChange = (page: PageName) => {
+    setActivePage(page);
+    if (isMobile) setSidebarOpen(false);
   };
 
   const renderActivePage = () => {
     switch (activePage) {
       case "Gallery":
-        return <GalleryComponent username={selectedUser} />;
+        return <GalleryComponent username={selectedUser} isAdmin={loggedInUser.isAdmin} loggedInUsername={loggedInUser.username} />;
       case "Links":
         return (
           <LinksComponent
             username={selectedUser}
+            isAdmin={loggedInUser.isAdmin}
+            loggedInUsername={loggedInUser.username}
             token={loggedInUser.token}
             baseUrl={pageBaseUrl}
           />
@@ -72,122 +84,102 @@ export default function Dashboard({
             baseUrl={pageBaseUrl}
           />
         );
-      // case "Analytics":
-      //   return loggedInUser.isAdmin ? <AnalyticsComponent adminToken={loggedInUser.token} /> : null;
       default:
         return null;
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-zinc-200">
+    <div className="flex flex-col min-h-screen">
       <NextSeo
-        title="Horreum - Dashboard"
-        description="Le fancy dashboard"
+        title="Rapid Host - Dashboard"
+        description="Dashboard"
       />
       <Header />
-      <div className="flex flex-col lg:flex-row flex-grow px-2 sm:px-4 pt-4 lg:pt-6 pb-4 gap-4">
-        <button
-          className="lg:hidden fixed top-[calc(theme(spacing.16)+2.4rem)] right-4 z-30 bg-neutral-900 text-zinc-100 p-2 rounded hover:bg-neutral-800 shadow-lg"
-          onClick={() => setSidebarOpen(!isSidebarOpen)}
-          aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isSidebarOpen}
-        >
-          {isSidebarOpen ? (
-            <X className="h-6 w-6" />
+      <div className="flex flex-col lg:flex-row flex-grow px-3 sm:px-4 pt-4 lg:pt-5 pb-4 gap-4">
+        {isMobile && (
+          <button
+            className="fixed top-[4.5rem] right-4 z-30 p-2 rounded-md bg-surface-elevated border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-lg transition-colors"
+            onClick={() => setSidebarOpen(!isSidebarOpen)}
+            aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+          >
+            {isSidebarOpen ? <X className="h-5 w-5" /> : <AlignLeft className="h-5 w-5" />}
+          </button>
+        )}
 
-          ) : (
-            <AlignLeft className="h-6 w-6" />
-          )}
-        </button>
+        {isMobile && isSidebarOpen && (
+          <div
+            className="fixed inset-0 z-20 bg-black/40 backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         <aside
-          className={`fixed lg:sticky top-16 lg:top-[calc(theme(spacing.16)+1.5rem)] left-0 z-20 h-[calc(100vh-4rem)] lg:h-auto w-3/4 sm:w-1/2 lg:w-64 xl:w-1/5 bg-black border border-neutral-900 p-4 rounded-md shadow-lg space-y-4 transition-transform duration-300 ease-in-out ${isSidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
-            } lg:max-h-[calc(100vh-theme(spacing.16)-3rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-900`}
+          className={`
+            ${isMobile ? "fixed top-0 left-0 z-20 h-full w-72 pt-16" : "lg:w-60 xl:w-56 shrink-0 lg:sticky lg:top-[5.5rem] lg:h-[calc(100vh-7rem)]"}
+            bg-surface-secondary border-r border-b border-[var(--border-subtle)] rounded-r-lg p-4 shadow-lg
+            transition-transform duration-200 ease-out
+            ${isMobile ? (isSidebarOpen ? "translate-x-0" : "-translate-x-full") : ""}
+            overflow-y-auto
+          `}
         >
-          <div className="text-center mb-6">
-            <h1 className="text-xl font-bold text-white">
-              Hello, {loggedInUser.username}!
-            </h1>
+          <div className="mb-6">
+            <p className="text-sm text-[var(--text-muted)]">Logged in as</p>
+            <p className="text-base font-semibold text-[var(--text-primary)]">
+              {loggedInUser.username}
+            </p>
             {loggedInUser.isAdmin && selectedUser !== loggedInUser.username && (
-              <p className="text-sm text-yellow-400 mt-1">
+              <p className="text-xs text-blue-400 mt-1">
                 Viewing: {selectedUser}
               </p>
             )}
           </div>
-          <nav className="space-y-2">
-            {(["Gallery", "Links", "Settings"] as const).map((pageName) => (
+
+          <nav className="space-y-1">
+            {pageConfig.map(({ name, icon: Icon }) => (
               <button
-                key={pageName}
-                className={`flex w-full px-4 py-2.5 rounded text-left transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activePage === pageName
-                  ? "bg-blue-600 border border-blue-500 text-white shadow-md"
-                  : "bg-neutral-800 hover:bg-neutral-700 border border-transparent hover:border-neutral-700 text-zinc-200"
-                  }`}
-                onClick={() => {
-                  setActivePage(pageName);
-                  if (isSidebarOpen && window.innerWidth < 1024)
-                    setSidebarOpen(false);
-                }}
+                key={name}
+                className={`
+                  flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-sm font-medium transition-all duration-150
+                  ${activePage === name
+                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-transparent"
+                  }
+                `}
+                onClick={() => handlePageChange(name)}
               >
-                {pageName === "Gallery" && (
-                  <Images className="mr-2 w-5 h-5" />
-                )}
-
-                {pageName === "Links" && (
-                  <LinkIcon className="mr-2 w-5 h-5" />
-                )}
-
-                {pageName === "Settings" && (
-                  <Settings className="mr-2 w-5 h-5" />
-                )}
-
-                {/* {pageName === "Analytics" && (
-                  <Images className="mr-2 w-5 h-5" />
-                )} */}
-                {pageName}
+                <Icon className="w-4 h-4" />
+                {name}
               </button>
             ))}
-            {/* {loggedInUser.isAdmin && (
-              <button
-                key="Analytics"
-                className={`w-full px-4 py-2.5 rounded text-left transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  activePage === "Analytics"
-                    ? "bg-blue-600 border border-blue-500 text-white shadow-md"
-                    : "bg-neutral-800 hover:bg-neutral-700 border border-transparent hover:border-neutral-700 text-zinc-200"
-                }`}
-                onClick={() => {
-                  setActivePage("Analytics");
-                  if (isSidebarOpen && window.innerWidth < 1024)
-                    setSidebarOpen(false);
-                }}
-              >
-                Analytics
-              </button>
-            )} */}
           </nav>
+
           {loggedInUser.isAdmin && (
-            <div className="mt-8 pt-4 border-t border-neutral-900">
-              <h2 className="text-lg font-semibold mb-3 text-zinc-300">
-                Admin: View As
-              </h2>
-              <ul className="space-y-1.5 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-900 pr-1">
+            <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+              <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                View as
+              </p>
+              <ul className="space-y-0.5 max-h-48 overflow-y-auto">
                 {[
                   loggedInUser,
                   ...users.filter((u) => u.username !== loggedInUser.username),
                 ].map((userOption) => (
                   <li key={userOption.username}>
                     <button
-                      className={`flex w-full px-3 py-2 rounded text-left text-sm transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-blue-400 ${selectedUser === userOption.username
-                        ? "bg-blue-500 border border-blue-400 text-white font-medium"
-                        : "bg-neutral-800 hover:bg-neutral-700 border border-transparent hover:border-neutral-700 text-zinc-200"
-                        }`}
+                      className={`
+                        flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm transition-all duration-150
+                        ${selectedUser === userOption.username
+                          ? "bg-blue-500/10 text-blue-400"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5"
+                        }
+                      `}
                       onClick={() => handleSelectUser(userOption.username)}
                     >
-                      <User className="mr-2 w-5 h-5" />
-                      {userOption.username}
-                      {userOption.username === loggedInUser.username &&
-                        " (You)"}
+                      <User className="w-3.5 h-3.5" />
+                      <span className="truncate">{userOption.username}</span>
+                      {userOption.username === loggedInUser.username && (
+                        <span className="text-[var(--text-muted)] text-xs">(you)</span>
+                      )}
                     </button>
                   </li>
                 ))}
@@ -195,13 +187,9 @@ export default function Dashboard({
             </div>
           )}
         </aside>
-        <main className="flex-grow bg-black border border-neutral-900 rounded-md shadow-lg lg:ml-0 w-full overflow-hidden">
-          <div
-            className={`h-full ${isSidebarOpen && window.innerWidth < 1024
-              ? "mt-12 lg:mt-0"
-              : "mt-0"
-              }`}
-          >
+
+        <main className="flex-grow min-w-0">
+          <div className="bg-surface-secondary border border-[var(--border-subtle)] rounded-md overflow-hidden min-h-[60vh]">
             {renderActivePage()}
           </div>
         </main>
