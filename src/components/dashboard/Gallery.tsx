@@ -27,6 +27,8 @@ const ITEMS_PER_PAGE_GALLERY = 10;
 
 export default function GalleryComponent({ username, isAdmin, loggedInUsername }: GalleryProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [allFiles, setAllFiles] = useState<FileItem[]>([]);
+  const [allFilesLoaded, setAllFilesLoaded] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -102,8 +104,60 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
     setCurrentPage(0);
   }, [username]);
 
+  const fetchAllFiles = useCallback(async () => {
+    if (!username) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/users/${username}/files?all=true`);
+      if (!res.ok) throw new Error("Failed to fetch files");
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "API error");
+      const processed = data.files.map((file: FileItem) => ({
+        id: file.id,
+        filename: file.extension ? `${file.id}.${file.extension}` : file.id,
+        publicFileName: file.publicFileName,
+        extension: file.extension,
+        mimetype: file.mimetype,
+        isPrivate: file.isPrivate,
+        created: file.created ? new Date(file.created) : undefined,
+        expiresAt: file.expiresAt ? new Date(file.expiresAt) : undefined,
+        url: `/api/files/${file.id}`,
+        openURL: `/${file.id}`,
+      }));
+      setAllFiles(processed);
+      setAllFilesLoaded(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      toast.error(err.message || "Search failed");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [username]);
+
+  useEffect(() => {
+    if (searchQuery.trim() && !allFilesLoaded) {
+      fetchAllFiles();
+      setShowAllFileTypes(true);
+    }
+    if (!searchQuery.trim()) {
+      setAllFilesLoaded(false);
+      setAllFiles([]);
+    }
+  }, [searchQuery, allFilesLoaded, fetchAllFiles]);
+
+  useEffect(() => {
+    setAllFilesLoaded(false);
+    setAllFiles([]);
+  }, [username]);
+
   const handleRefresh = () => {
-    if (username) fetchFiles(currentPage);
+    if (username) {
+      fetchFiles(currentPage);
+      if (searchQuery.trim()) {
+        setAllFilesLoaded(false);
+        setAllFiles([]);
+      }
+    }
   };
   const handlePreviousPage = () => setCurrentPage((prev) => Math.max(0, prev - 1));
   const handleNextPage = () => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
@@ -225,9 +279,11 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
     });
   };
 
+  const baseFiles = searchQuery.trim() && allFilesLoaded ? allFiles : files;
+
   let displayedFiles = showAllFileTypes
-    ? files
-    : files.filter((file) => file.mimetype && (file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/")));
+    ? baseFiles
+    : baseFiles.filter((file) => file.mimetype && (file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/")));
 
   if (searchQuery.trim()) {
     const q = searchQuery.trim().toLowerCase();
@@ -383,10 +439,22 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
         </div>
       )}
 
-      {!isLoading && files.length === 0 && username && (
+      {!isLoading && displayedFiles.length === 0 && username && searchQuery.trim() && (
+        <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm">
+          No files match &ldquo;{searchQuery.trim()}&rdquo;.
+        </div>
+      )}
+
+      {!isLoading && files.length === 0 && username && !searchQuery.trim() && (
         <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm">
           No files found.
         </div>
+      )}
+
+      {displayedFiles.length > 0 && searchQuery.trim() && (
+        <p className="text-xs text-[var(--text-muted)] mb-3">
+          {displayedFiles.length} result{displayedFiles.length !== 1 ? "s" : ""} across all pages
+        </p>
       )}
 
       {displayedFiles.length > 0 && (
@@ -486,7 +554,7 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
         </div>
       )}
 
-      {totalPages > 1 && (
+      {totalPages > 1 && !searchQuery.trim() && (
         <div className="mt-auto pt-4 flex flex-wrap justify-center items-center gap-1.5">
           <button
             onClick={handlePreviousPage}

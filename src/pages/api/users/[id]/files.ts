@@ -8,6 +8,7 @@ import { authOptions } from '../../auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { id } = req.query;
+    const all = req.query.all === 'true';
     const page = parseInt(req.query.page as string, 10) || 0;
     const db = await getDatabase();
 
@@ -31,14 +32,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(403).json(errorGenerator(403, "Forbidden: You are not authorized to view these files."));
     }
 
-    if (isNaN(page) || page < 0) {
+    if (!all && (isNaN(page) || page < 0)) {
         return res.status(400).json(errorGenerator(400, "Invalid page number"));
     }
 
     try {
-        const { files: dbFiles, totalPages } = await db.getUserFiles(id as string, page);
-
-        const processedFiles = dbFiles.map((file: DBFileType) => {
+        const processFile = (file: DBFileType) => {
             let determinedMimeType;
             if (file.extension === 'ts') {
                 determinedMimeType = 'text/typescript';
@@ -57,7 +56,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 expiresAt: file.expiresAt,
                 created: file.created,
             };
-        });
+        };
+
+        if (all) {
+            const dbFiles = await db.getAllUserFiles(id as string);
+            return res.json({
+                success: true,
+                files: dbFiles.map(processFile),
+                totalFiles: dbFiles.length,
+            });
+        }
+
+        const { files: dbFiles, totalPages } = await db.getUserFiles(id as string, page);
+
+        const processedFiles = dbFiles.map(processFile);
 
         return res.json({
             success: true,

@@ -246,9 +246,9 @@ Shortener types: random, gfycat, zws, nanoid, timestamp`,
       {
         method: "GET",
         path: "/api/users/[id]/files",
-        description: "Get paginated files for a user.",
+        description: "Get paginated files for a user. Use ?all=true to return all files in a single request.",
         auth: false,
-        params: "?page=0&limit=20",
+        params: "?page=0&limit=20 — paginated response\n?all=true — returns all files (no pagination)",
         response: `{
   "success": true,
   "files": [...],
