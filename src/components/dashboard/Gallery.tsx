@@ -134,16 +134,18 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
     }
   }, [username]);
 
+  const needsAllFiles = searchQuery.trim() || !(sortBy === "date" && sortOrder === "desc");
+
   useEffect(() => {
-    if (searchQuery.trim() && !allFilesLoaded) {
+    if (needsAllFiles && !allFilesLoaded) {
       fetchAllFiles();
-      setShowAllFileTypes(true);
+      if (searchQuery.trim()) setShowAllFileTypes(true);
     }
-    if (!searchQuery.trim()) {
+    if (!needsAllFiles) {
       setAllFilesLoaded(false);
       setAllFiles([]);
     }
-  }, [searchQuery, allFilesLoaded, fetchAllFiles]);
+  }, [needsAllFiles, allFilesLoaded, fetchAllFiles, searchQuery]);
 
   useEffect(() => {
     setAllFilesLoaded(false);
@@ -153,7 +155,7 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
   const handleRefresh = () => {
     if (username) {
       fetchFiles(currentPage);
-      if (searchQuery.trim()) {
+      if (needsAllFiles) {
         setAllFilesLoaded(false);
         setAllFiles([]);
       }
@@ -279,7 +281,7 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
     });
   };
 
-  const baseFiles = searchQuery.trim() && allFilesLoaded ? allFiles : files;
+  const baseFiles = needsAllFiles && allFilesLoaded ? allFiles : files;
 
   let displayedFiles = showAllFileTypes
     ? baseFiles
@@ -445,7 +447,7 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
         </div>
       )}
 
-      {!isLoading && files.length === 0 && username && !searchQuery.trim() && (
+      {!isLoading && files.length === 0 && username && !needsAllFiles && (
         <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm">
           No files found.
         </div>
@@ -554,7 +556,7 @@ export default function GalleryComponent({ username, isAdmin, loggedInUsername }
         </div>
       )}
 
-      {totalPages > 1 && !searchQuery.trim() && (
+      {totalPages > 1 && !needsAllFiles && (
         <div className="mt-auto pt-4 flex flex-wrap justify-center items-center gap-1.5">
           <button
             onClick={handlePreviousPage}

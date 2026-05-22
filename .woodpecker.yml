@@ -1,0 +1,83 @@
+when:
+  event: manual
+
+steps:
+  verify-sync:
+    image: alpine/curl
+    commands:
+      - |
+        COMMIT=${CI_COMMIT_SHA}
+
+        echo "Checking Forgejo..."
+        FORGEJO=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: token $FORGEJO_TOKEN" \
+          "https://git.fuge.dev/api/v1/repos/${CI_REPO}/git/commits/$COMMIT")
+
+        echo "Checking Codeberg..."
+        CODEBERG=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: token $CODEBERG_TOKEN" \
+          "https://codeberg.org/api/v1/repos/${CI_REPO}/git/commits/$COMMIT")
+
+        echo "Checking GitHub..."
+        GITHUB=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/repos/rapidfuge/${CI_REPO_NAME}/commits/$COMMIT")
+
+        echo "Forgejo: $FORGEJO | Codeberg: $CODEBERG | GitHub: $GITHUB"
+
+        if [ "$FORGEJO" != "200" ] || [ "$CODEBERG" != "200" ] || [ "$GITHUB" != "200" ]; then
+          echo "ERROR: Mirrors not in sync. Aborting."
+          exit 1
+        fi
+
+        echo "All three forges in sync. Proceeding."
+    environment:
+      FORGEJO_TOKEN: { from_secret: forgejo_token }
+      CODEBERG_TOKEN: { from_secret: codeberg_token }
+      GITHUB_TOKEN: { from_secret: github_token }
+
+  docker-build-primary:
+    image: woodpeckerci/plugin-docker-buildx
+    depends_on: [verify-sync]
+    privileged: true
+    environment:
+      FORGEJO_TOKEN: { from_secret: forgejo_token }
+    commands:
+      - |
+        # 1. Start the Docker daemon background
+        /usr/local/bin/dockerd-entrypoint.sh &
+        sleep 5 
+
+        # 2. Lowercase the repo name (Use $$ so Woodpecker doesn't eat the variable)
+        REPO_LOWER=$(echo "${CI_REPO}" | tr '[:upper:]' '[:lower:]')
+
+        # 3. Login and Build using standard Docker commands (The plugin binary is just a wrapper anyway)
+        echo "$${FORGEJO_TOKEN}" | docker login git.fuge.dev -u rapid --password-stdin
+
+        docker buildx create --use
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --build-arg GITHUB_RUN_NUMBER=${CI_PIPELINE_NUMBER} \
+          --build-arg GITHUB_SHA=${CI_COMMIT_SHA} \
+          --build-arg CI=true \
+          -t git.fuge.dev/$$REPO_LOWER:latest \
+          --push .
+
+  docker-sync-mirrors:
+    image: quay.io/skopeo/stable:latest
+    depends_on: [docker-build-primary]
+    environment:
+      FORGEJO_TOKEN: { from_secret: forgejo_token }
+      GITHUB_TOKEN: { from_secret: github_token }
+      CODEBERG_TOKEN: { from_secret: codeberg_token }
+    commands:
+      - |
+        # Use $$ for variables you create in the shell
+        REPO_LOWER=$(echo "${CI_REPO}" | tr '[:upper:]' '[:lower:]')
+        REPO_NAME_LOWER=$(echo "${CI_REPO_NAME}" | tr '[:upper:]' '[:lower:]')
+
+        skopeo copy --dest-creds "rapidfuge:$GITHUB_TOKEN" --src-creds "rapid:$FORGEJO_TOKEN" \
+          docker://git.fuge.dev/$$REPO_LOWER:latest docker://ghcr.io/rapidfuge/$$REPO_NAME_LOWER:latest
+
+        skopeo copy --dest-creds "rapid:$CODEBERG_TOKEN" --src-creds "rapid:$FORGEJO_TOKEN" \
+          docker://git.fuge.dev/$$REPO_LOWER:latest docker://codeberg.org/$$REPO_LOWER:latest

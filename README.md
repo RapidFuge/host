@@ -1,6 +1,6 @@
-# Horreum - File Hosting & URL Shortening Service
+# Rapid Host - File Hosting & URL Shortening Service
 
-Horreum is a self-hostable service for managing your files and shortening URLs, built with Next.js and React. It provides a user-friendly dashboard, ShareX compatibility, and admin controls.
+Rapid Host is a self-hostable service for managing your files and shortening URLs, built with Next.js and React. It provides a user-friendly dashboard, ShareX compatibility, and admin controls.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
@@ -79,6 +79,9 @@ Horreum is a self-hostable service for managing your files and shortening URLs, 
     S3_BUCKET=your-bucket-name # Name of the bucket for file storage
     S3_USE_SSL=false # Whether to use SSL or not
     S3_PORT=9010 # S3 Instance Port. Default is 9010
+
+    # Upload Settings
+    CHUNKED_UPLOADS=true # Set to false to disable chunked uploads (useful if not behind Cloudflare Tunnel)
     ```
     **Note:** For production, use strong, unique secrets and appropriate URLs.
 
@@ -157,9 +160,10 @@ A `Dockerfile` is provided for containerized deployments.
             S3_BUCKET: S3_BUCKET 
             S3_ACCESS_KEY: S3_ACCESS_KEY 
             S3_SECRET_KEY: S3_SECRET_KEY 
+            CHUNKED_UPLOADS: true # Set to false to disable chunked uploads (useful if not behind Cloudflare Tunnel)
         volumes: # If STORAGE is set to 1
             - ./uploads:/app/uploads # local_folder:/app/uploads do not change /app/uploads 
-        # If you're going to have mongodb with horreum in the same compose file
+        # If you're going to have mongodb with Rapid Host in the same compose file
         # depends_on:  
         #     - mongodb
         #     - minio # if minio is in the same compose file
@@ -172,4 +176,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 
-Horreum is licensed under the [**MIT License**](https://opensource.org/license/MIT).
+Rapid Host is licensed under the [**MIT License**](https://opensource.org/license/MIT).

@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
     CI: process.env.CI,
     DOCKER: process.env.DOCKER,
     CONTAINER: process.env.CONTAINER,
+    CHUNKED_UPLOADS: process.env.CHUNKED_UPLOADS !== 'false' ? 'true' : 'false',
   },
   webpack: (config, { isServer }) => {
     // Fixes npm packages that depend on `fs` module
