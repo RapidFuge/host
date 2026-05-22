@@ -1,8 +1,16 @@
 # Rapid Host - File Hosting & URL Shortening Service
+  [![status-badge](https://pecker.fuge.dev/api/badges/3/status.svg?events=manual)](https://pecker.fuge.dev/repos/3)
+  <a href="https://github.com/users/rapidfuge/packages/container/package/host">
+    <img src="https://img.shields.io/badge/docker-ghcr.io/dinosoftware/dinosonic-blue?style=flat&logo=docker" alt="GHCR Docker Image">
+  </a>
+  <a href="https://codeberg.org/rapid/-/packages/container/host">
+    <img src="https://img.shields.io/badge/docker-codeberg.org/dinosoftware/dinosonic-blue?style=flat&logo=docker" alt="Codeberg Docker Image">
+  </a>
+  <a href="https://git.fuge.dev/Rapid/-/packages/container/host">
+    <img src="https://img.shields.io/badge/docker-git.fuge.dev/dinosoftware/dinosonic-blue?style=flat&logo=docker" alt="Forgejo Docker Image">
+  </a>
 
 Rapid Host is a self-hostable service for managing your files and shortening URLs, built with Next.js and React. It provides a user-friendly dashboard, ShareX compatibility, and admin controls.
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
 ## Repositories
 
