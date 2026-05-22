@@ -76,8 +76,8 @@ steps:
         REPO_LOWER=$(echo "${CI_REPO}" | tr '[:upper:]' '[:lower:]')
         REPO_NAME_LOWER=$(echo "${CI_REPO_NAME}" | tr '[:upper:]' '[:lower:]')
 
-        skopeo copy --dest-creds "rapidfuge:$GITHUB_TOKEN" --src-creds "rapid:$FORGEJO_TOKEN" \
+        skopeo copy --all --dest-creds "rapidfuge:$GITHUB_TOKEN" --src-creds "rapid:$FORGEJO_TOKEN" \
           docker://git.fuge.dev/$$REPO_LOWER:latest docker://ghcr.io/rapidfuge/$$REPO_NAME_LOWER:latest
 
-        skopeo copy --dest-creds "rapid:$CODEBERG_TOKEN" --src-creds "rapid:$FORGEJO_TOKEN" \
+        skopeo copy --all --dest-creds "rapid:$CODEBERG_TOKEN" --src-creds "rapid:$FORGEJO_TOKEN" \
           docker://git.fuge.dev/$$REPO_LOWER:latest docker://codeberg.org/$$REPO_LOWER:latest
