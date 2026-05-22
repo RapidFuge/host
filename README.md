@@ -4,6 +4,26 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frapidfuge%2Fhost&env=MONGO_URI,STORAGE,ISPRODUCTION,ROOT_PASSWORD,NEXTAUTH_URL,NEXTAUTH_SECRET&envDescription=Go%20read%20the%20number%203%20of%20installation%20on%20the%20README%20for%20more%20information%20about%20the%20Environment%20variables.&envLink=https%3A%2F%2Fgithub.com%2FRapidFuge%2Fhost%2F%23installation)
 
+## Repositories
+
+Rapid Host is available on multiple platforms. GitHub serves as a mirror — the primary repository is on the self-hosted Forgejo instance.
+
+| Platform              | URL                                                            |
+| --------------------- | -------------------------------------------------------------- |
+| **Primary** (Forgejo) | [git.fuge.dev/rapid/host](https://git.fuge.dev/rapid/host)     |
+| **Mirror** (Codeberg) | [codeberg.org/rapid/host](https://codeberg.org/rapid/host)     |
+| **Mirror** (GitHub)   | [github.com/rapidfuge/host](https://github.com/rapidfuge/host) |
+
+## Docker Images
+
+Container images are published to multiple registries:
+
+| Registry              | Image                            |
+| --------------------- | -------------------------------- |
+| **Primary**           | `git.fuge.dev/rapid/host:latest` |
+| **Mirror** (Codeberg) | `codeberg.org/rapid/host:latest` |
+| **Mirror** (GitHub)   | `ghcr.io/rapidfuge/host:latest`  |
+
 ## Features
 
 *   **File Uploads:** Securely upload and manage various file types.
@@ -43,10 +63,10 @@ Rapid Host is a self-hostable service for managing your files and shortening URL
 ### Installation
 
 1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/rapidfuge/host
-    cd host
-    ```
+     ```bash
+     git clone https://git.fuge.dev/rapid/host
+     cd host
+     ```
 
 2.  **Install dependencies:**
     ```bash
@@ -138,13 +158,15 @@ A `Dockerfile` is provided for containerized deployments.
       -e S3_PASSWORD="your_secret_key_or_password" \
       -e S3_BUCKET="your_bucket" \
       ghcr.io/rapidfuge/host:latest
-    ```
+      # Also available: git.fuge.dev/rapid/host:latest
+      # Also available: codeberg.org/rapid/host:latest
+      ```
     **Use Docker Compose instead:**
     ```yaml
       services:  
         server:  
         container_name: host  
-        image: ghcr.io/rapidfuge/host:latest  
+         image: git.fuge.dev/rapid/host:latest  # Also: codeberg.org/rapid/host:latest | ghcr.io/rapidfuge/host:latest
         restart: always  
         ports:  
             - "3000:3000"  
